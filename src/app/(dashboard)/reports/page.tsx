@@ -1,10 +1,10 @@
 "use client";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { useAuth } from "@/hooks/useAuth";
+import { useDualAuth } from "@/hooks/useDualAuth";
 
 function ReportsContent() {
-  const { profile } = useAuth();
+  const { profile } = useDualAuth();
 
   return (
     <div className="p-6">

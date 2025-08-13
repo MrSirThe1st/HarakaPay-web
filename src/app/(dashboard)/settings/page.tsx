@@ -1,10 +1,10 @@
 "use client";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { useAuth } from "@/hooks/useAuth";
+import { useDualAuth } from "@/hooks/useDualAuth";
 
 function SettingsContent() {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useDualAuth();
 
   const handleSignOut = async () => {
     await signOut();

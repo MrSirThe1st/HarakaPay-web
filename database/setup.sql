@@ -1,8 +1,8 @@
 -- HarakaPay Database Schema
 -- Run this script in your Supabase SQL editor
 
--- Enable RLS (Row Level Security)
-ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
+-- Note: RLS is already enabled on auth.users by default in Supabase
+-- No need to manually enable it
 
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS profiles (

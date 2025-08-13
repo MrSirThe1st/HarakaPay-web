@@ -1,40 +1,35 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import type { User, UserProfile } from "@/types/user";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { useDualAuth } from "@/hooks/useDualAuth";
+import type { AuthUser } from "@/lib/adminValidation";
+import type { UserProfile } from "@/types/user";
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
   signIn: (
     email: string,
     password: string
-  ) => Promise<{ success: boolean; error: string | null }>;
-  signUp: (
-    email: string,
-    password: string,
-    metadata?: Record<string, unknown>
   ) => Promise<{
     success: boolean;
     error: string | null;
-    user?: SupabaseUser | null;
+    isPredefinedAdmin: boolean;
   }>;
   signOut: () => Promise<{ success: boolean; error: string | null }>;
-  resetPassword: (
-    email: string
-  ) => Promise<{ success: boolean; error: string | null }>;
   isAuthenticated: boolean;
   hasProfile: boolean;
+  isAdmin: boolean;
+  isSchoolStaff: boolean;
+  isPredefinedAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const auth = useAuth();
+  const auth = useDualAuth();
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }

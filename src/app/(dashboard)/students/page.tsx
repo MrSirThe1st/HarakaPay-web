@@ -1,12 +1,10 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useDualAuth } from "@/hooks/useDualAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function StudentsContent() {
-  const { user, profile } = useAuth();
-  const { isAdmin, isSchoolStaff } = useUserRole();
+  const { user, profile, isAdmin, isSchoolStaff } = useDualAuth();
 
   return (
     <div className="p-6">
@@ -23,7 +21,7 @@ function StudentsContent() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* School Staff Features */}
-        {isSchoolStaff() && (
+        {isSchoolStaff && (
           <>
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-semibold mb-4">Student Database</h2>
@@ -51,7 +49,7 @@ function StudentsContent() {
         )}
 
         {/* Admin Features - School Management */}
-        {isAdmin() && (
+        {isAdmin && (
           <>
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-semibold mb-4">

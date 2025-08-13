@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useDualAuth } from "@/hooks/useDualAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,9 +15,23 @@ export function ProtectedRoute({
   requiredRole,
   fallbackUrl = "/login",
 }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
-  const { hasRole } = useUserRole();
+  const { isAuthenticated, loading, isAdmin, isSchoolStaff } = useDualAuth();
   const router = useRouter();
+
+  const hasRequiredRole = useCallback(
+    (
+      role?: "admin" | "school_staff" | ("admin" | "school_staff")[]
+    ): boolean => {
+      if (!role) return true;
+
+      if (Array.isArray(role)) {
+        return role.some((r) => (r === "admin" ? isAdmin : isSchoolStaff));
+      }
+
+      return role === "admin" ? isAdmin : isSchoolStaff;
+    },
+    [isAdmin, isSchoolStaff]
+  );
 
   useEffect(() => {
     if (loading) return;
@@ -28,11 +41,20 @@ export function ProtectedRoute({
       return;
     }
 
-    if (requiredRole && !hasRole(requiredRole)) {
+    if (requiredRole && !hasRequiredRole(requiredRole)) {
       router.push("/unauthorized");
       return;
     }
-  }, [isAuthenticated, loading, requiredRole, hasRole, router, fallbackUrl]);
+  }, [
+    isAuthenticated,
+    loading,
+    requiredRole,
+    isAdmin,
+    isSchoolStaff,
+    router,
+    fallbackUrl,
+    hasRequiredRole,
+  ]);
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -44,7 +66,7 @@ export function ProtectedRoute({
   }
 
   // Don't render children if not authenticated or doesn't have required role
-  if (!isAuthenticated || (requiredRole && !hasRole(requiredRole))) {
+  if (!isAuthenticated || (requiredRole && !hasRequiredRole(requiredRole))) {
     return null;
   }
 

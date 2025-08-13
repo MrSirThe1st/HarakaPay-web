@@ -2,6 +2,21 @@ import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Helper function to check predefined admin from cookies
+function isPredefinedAdminAuthenticated(req: NextRequest): boolean {
+  // Check if there's a predefined admin token in cookies
+  const predefinedAdminCookie = req.cookies.get("predefined_admin");
+  if (predefinedAdminCookie) {
+    try {
+      const adminData = JSON.parse(predefinedAdminCookie.value);
+      return adminData && adminData.isPredefined === true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
@@ -11,15 +26,22 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // Check if user is authenticated (either Supabase session or predefined admin)
+  const hasSupabaseSession = !!session;
+  const hasPredefinedAdmin = isPredefinedAdminAuthenticated(req);
+  const isAuthenticated = hasSupabaseSession || hasPredefinedAdmin;
+
   // Protected dashboard routes
   const isDashboardRoute =
     req.nextUrl.pathname.startsWith("/students") ||
     req.nextUrl.pathname.startsWith("/payments") ||
     req.nextUrl.pathname.startsWith("/reports") ||
-    req.nextUrl.pathname.startsWith("/settings");
+    req.nextUrl.pathname.startsWith("/settings") ||
+    req.nextUrl.pathname.startsWith("/create-school") ||
+    req.nextUrl.pathname.startsWith("/create-admin");
 
   // If accessing a dashboard route without authentication, redirect to login
-  if (isDashboardRoute && !session) {
+  if (isDashboardRoute && !isAuthenticated) {
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirectTo", req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
@@ -27,7 +49,7 @@ export async function middleware(req: NextRequest) {
 
   // If authenticated and trying to access login/register, redirect to dashboard
   if (
-    session &&
+    isAuthenticated &&
     (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/register")
   ) {
     const redirectTo = req.nextUrl.searchParams.get("redirectTo");
@@ -35,8 +57,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Role-based access control
-  if (isDashboardRoute && session) {
+  // Role-based access control for Supabase users
+  if (isDashboardRoute && hasSupabaseSession && !hasPredefinedAdmin) {
     // Get user profile to check role
     const { data: profile } = await supabase
       .from("profiles")
@@ -59,11 +81,23 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/students", req.url));
     }
 
+    // Only admins can access create-school and create-admin
+    if (
+      (req.nextUrl.pathname.startsWith("/create-school") ||
+        req.nextUrl.pathname.startsWith("/create-admin")) &&
+      profile?.role !== "admin"
+    ) {
+      return NextResponse.redirect(new URL("/students", req.url));
+    }
+
     // Block access if user doesn't have admin or school_staff role
     if (profile?.role !== "admin" && profile?.role !== "school_staff") {
       return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
   }
+
+  // Predefined admins have full access (they are admins by definition)
+  // No additional role checking needed for them
 
   return res;
 }
