@@ -25,7 +25,7 @@ export default function LoginPage() {
       if (!result.success) {
         setError(result.error || "Sign in failed");
       } else {
-        router.push("/students");
+        router.push("/dashboard");
       }
     } catch {
       setError("An unexpected error occurred");

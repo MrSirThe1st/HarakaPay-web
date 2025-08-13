@@ -33,6 +33,7 @@ export async function middleware(req: NextRequest) {
 
   // Protected dashboard routes
   const isDashboardRoute =
+    req.nextUrl.pathname.startsWith("/dashboard") ||
     req.nextUrl.pathname.startsWith("/students") ||
     req.nextUrl.pathname.startsWith("/payments") ||
     req.nextUrl.pathname.startsWith("/reports") ||
@@ -53,7 +54,7 @@ export async function middleware(req: NextRequest) {
     (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/register")
   ) {
     const redirectTo = req.nextUrl.searchParams.get("redirectTo");
-    const redirectUrl = new URL(redirectTo || "/students", req.url);
+    const redirectUrl = new URL(redirectTo || "/dashboard", req.url);
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -71,14 +72,14 @@ export async function middleware(req: NextRequest) {
       req.nextUrl.pathname.startsWith("/reports") &&
       profile?.role !== "admin"
     ) {
-      return NextResponse.redirect(new URL("/students", req.url));
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     if (
       req.nextUrl.pathname.startsWith("/settings") &&
       profile?.role !== "admin"
     ) {
-      return NextResponse.redirect(new URL("/students", req.url));
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     // Only admins can access create-school and create-admin
@@ -87,7 +88,7 @@ export async function middleware(req: NextRequest) {
         req.nextUrl.pathname.startsWith("/create-admin")) &&
       profile?.role !== "admin"
     ) {
-      return NextResponse.redirect(new URL("/students", req.url));
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     // Block access if user doesn't have admin or school_staff role
