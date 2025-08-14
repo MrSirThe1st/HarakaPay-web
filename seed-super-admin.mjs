@@ -180,4 +180,4 @@ async function seedAdmin(email, password) {
     console.error('Full error:', error);
     process.exit(1);
   }
-})();
+})();1
