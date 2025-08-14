@@ -1,8 +1,5 @@
-
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 
 // Server-side Supabase client for use in server components

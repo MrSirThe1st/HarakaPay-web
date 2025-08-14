@@ -1,6 +1,8 @@
+
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 import { createClient } from '@supabase/supabase-js';
+
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -27,13 +29,15 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   }
 });
 
-async function seedAdmin(email, password) {
+async function seedAdmin(email, password, firstName, lastName) {
   if (!email || !password) {
     console.log('⚠️  Skipping admin - missing email or password');
     return;
   }
 
-  console.log(`👤 Processing admin: ${email}`);
+  // Prompt for first and last name
+
+  console.log(`👤 Processing admin: ${email} (${firstName} ${lastName})`);
 
   try {
     // Check if user already exists
@@ -60,26 +64,35 @@ async function seedAdmin(email, password) {
         const { error: profileError } = await supabase.from('profiles').insert({
           user_id: existingUser.id,
           role: 'admin',
-          first_name: 'Super',
-          last_name: 'Admin',
+          first_name: firstName,
+          last_name: lastName,
+          school_id: null,
         });
-        
         if (profileError) {
           console.warn(`⚠️  Could not create profile: ${profileError.message}`);
         } else {
           console.log(`✅ Profile created for existing user: ${email}`);
         }
-      } else if (profile.role !== 'admin') {
-        console.log(`🔄 Updating role to admin for: ${email}`);
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('user_id', existingUser.id);
-        
-        if (updateError) {
-          console.warn(`⚠️  Could not update role: ${updateError.message}`);
+      } else {
+        // Update role, name, and school_id if needed
+        let updateObj = {};
+        if (profile.role !== 'admin') updateObj.role = 'admin';
+        if (profile.first_name !== firstName) updateObj.first_name = firstName;
+        if (profile.last_name !== lastName) updateObj.last_name = lastName;
+        if (profile.school_id !== null) updateObj.school_id = null;
+        if (Object.keys(updateObj).length > 0) {
+          console.log(`🔄 Updating profile for: ${email}`);
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(updateObj)
+            .eq('user_id', existingUser.id);
+          if (updateError) {
+            console.warn(`⚠️  Could not update profile: ${updateError.message}`);
+          } else {
+            console.log(`✅ Profile updated for: ${email}`);
+          }
         } else {
-          console.log(`✅ Role updated to admin for: ${email}`);
+          console.log(`✅ Profile already up to date for: ${email}`);
         }
       }
       return;
@@ -93,8 +106,8 @@ async function seedAdmin(email, password) {
       email_confirm: true,
       user_metadata: {
         role: 'admin',
-        first_name: 'Super',
-        last_name: 'Admin'
+        first_name: firstName,
+        last_name: lastName
       },
     });
 
@@ -122,10 +135,10 @@ async function seedAdmin(email, password) {
       const { error: profileError } = await supabase.from('profiles').insert({
         user_id: data.user.id,
         role: 'admin',
-        first_name: 'Super',
-        last_name: 'Admin',
+        first_name: firstName,
+        last_name: lastName,
+        school_id: null,
       });
-
       if (profileError) {
         console.warn(`⚠️  Warning: Could not create profile for ${email}:`, profileError.message);
         console.warn('Profile error details:', profileError);
@@ -133,21 +146,25 @@ async function seedAdmin(email, password) {
         console.log(`✅ Profile created manually for: ${email}`);
       }
     } else {
-      // Update role if profile exists but has wrong role
-      if (existingProfile.role !== 'admin') {
-        console.log(`🔄 Updating profile role for: ${email}`);
+      // Update role, name, and school_id if needed
+      let updateObj = {};
+      if (existingProfile.role !== 'admin') updateObj.role = 'admin';
+      if (existingProfile.first_name !== firstName) updateObj.first_name = firstName;
+      if (existingProfile.last_name !== lastName) updateObj.last_name = lastName;
+      if (existingProfile.school_id !== null) updateObj.school_id = null;
+      if (Object.keys(updateObj).length > 0) {
+        console.log(`🔄 Updating profile for: ${email}`);
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ role: 'admin' })
+          .update(updateObj)
           .eq('user_id', data.user.id);
-        
         if (updateError) {
-          console.warn(`⚠️  Could not update profile role: ${updateError.message}`);
+          console.warn(`⚠️  Could not update profile: ${updateError.message}`);
         } else {
-          console.log(`✅ Profile role updated for: ${email}`);
+          console.log(`✅ Profile updated for: ${email}`);
         }
       } else {
-        console.log(`✅ Profile already exists with correct role for: ${email}`);
+        console.log(`✅ Profile already up to date for: ${email}`);
       }
     }
 
@@ -163,7 +180,7 @@ async function seedAdmin(email, password) {
   try {
     // Test database connection first
     console.log('🔄 Testing database connection...');
-    const { data, error } = await supabase.from('profiles').select('count').limit(1);
+  const { error } = await supabase.from('profiles').select('count').limit(1);
     if (error) {
       console.error('❌ Database connection test failed:', error.message);
       console.error('Make sure you have run the database/setup.sql script in your Supabase SQL editor');
@@ -171,8 +188,18 @@ async function seedAdmin(email, password) {
     }
     console.log('✅ Database connection successful');
     
-    await seedAdmin(process.env.ADMIN_EMAIL_1, process.env.ADMIN_PASSWORD_1);
-    await seedAdmin(process.env.ADMIN_EMAIL_2, process.env.ADMIN_PASSWORD_2);
+    await seedAdmin(
+      process.env.ADMIN_EMAIL_1,
+      process.env.ADMIN_PASSWORD_1,
+      process.env.ADMIN_FIRST_NAME_1 || 'Super',
+      process.env.ADMIN_LAST_NAME_1 || 'Admin'
+    );
+    await seedAdmin(
+      process.env.ADMIN_EMAIL_2,
+      process.env.ADMIN_PASSWORD_2,
+      process.env.ADMIN_FIRST_NAME_2 || 'Super',
+      process.env.ADMIN_LAST_NAME_2 || 'Admin'
+    );
     
     console.log('🎉 Admin seeding process completed successfully!');
   } catch (error) {
@@ -180,4 +207,4 @@ async function seedAdmin(email, password) {
     console.error('Full error:', error);
     process.exit(1);
   }
-})();1
+})();
