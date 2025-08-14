@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabaseServerOnly";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
     const adminData = await request.json();
-    const supabase = createServerClient();
+    // Use service role key for admin actions
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Generate random password if not provided
     const generateRandomPassword = () => {
