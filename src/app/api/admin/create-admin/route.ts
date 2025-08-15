@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       await supabase.auth.admin.createUser({
         email: adminData.email,
         password,
+        email_confirm: true,
         user_metadata: {
           first_name: adminData.firstName,
           last_name: adminData.lastName,
@@ -46,27 +47,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // The profile will be automatically created by the trigger
-    // Just need to update it with the correct role
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        role: "admin",
-        first_name: adminData.firstName,
-        last_name: adminData.lastName,
-      })
-      .eq("user_id", authData.user.id);
-
-    if (profileError) {
-      console.error("Profile update error:", profileError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to update profile: ${profileError.message}`,
-        },
-        { status: 400 }
-      );
-    }
+  // Profile will be created by the trigger; no manual update needed
 
     return NextResponse.json({
       success: true,
