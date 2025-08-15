@@ -25,16 +25,17 @@ export async function POST(request: NextRequest) {
     const password = generateRandomPassword();
 
     // Create the school user account in Supabase
-    const { data: authData, error: authError } =
-      await supabase.auth.admin.createUser({
-        email,
-        password,
-        user_metadata: {
-          first_name: schoolData.contactFirstName,
-          last_name: schoolData.contactLastName,
-          role: "school_staff",
-        },
-      });
+      const { data: authData, error: authError } =
+        await supabase.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            first_name: schoolData.contactFirstName,
+            last_name: schoolData.contactLastName,
+            role: "school_staff",
+          },
+        });
 
     if (authError) {
       console.error("Auth error:", authError);
