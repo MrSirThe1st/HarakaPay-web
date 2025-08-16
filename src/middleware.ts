@@ -17,6 +17,7 @@ function isPredefinedAdminAuthenticated(req: NextRequest): boolean {
   return false;
 }
 
+
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
@@ -32,17 +33,20 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = hasSupabaseSession || hasPredefinedAdmin;
 
   // Protected dashboard routes
+  const pathname = req.nextUrl.pathname;
   const isDashboardRoute =
-    req.nextUrl.pathname.startsWith("/dashboard") ||
-    req.nextUrl.pathname.startsWith("/students") ||
-    req.nextUrl.pathname.startsWith("/payments") ||
-    req.nextUrl.pathname.startsWith("/reports") ||
-    req.nextUrl.pathname.startsWith("/settings") ||
-    req.nextUrl.pathname.startsWith("/create-school") ||
-    req.nextUrl.pathname.startsWith("/create-admin");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/students") ||
+    pathname.startsWith("/payments") ||
+    pathname.startsWith("/reports") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/create-school") ||
+    pathname.startsWith("/create-admin");
+  const isLoginOrRegister =
+    pathname === '/login' || pathname === '/register';
 
   // If accessing a dashboard route without authentication, redirect to login
-  if (isDashboardRoute && !isAuthenticated) {
+  if (isDashboardRoute && !isAuthenticated && !isLoginOrRegister) {
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirectTo", req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
@@ -50,8 +54,7 @@ export async function middleware(req: NextRequest) {
 
   // If authenticated and trying to access login/register, redirect to dashboard
   if (
-    isAuthenticated &&
-    (req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/register")
+    isAuthenticated && isLoginOrRegister
   ) {
     const redirectTo = req.nextUrl.searchParams.get("redirectTo");
     const redirectUrl = new URL(redirectTo || "/dashboard", req.url);
@@ -100,18 +103,14 @@ export async function middleware(req: NextRequest) {
   // Predefined admins have full access (they are admins by definition)
   // No additional role checking needed for them
 
+  // Add security headers for all requests
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+
   return res;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

@@ -1,0 +1,40 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "welcome": "Welcome, {{name}}",
+    "lastLogin": "Last login: {{date}}",
+    "stats": {
+      "totalStudents": "Total Students",
+      "totalPayments": "Total Payments",
+      "pendingPayments": "Pending Payments",
+      "overduePayments": "Overdue Payments",
+      "thisMonth": "This Month",
+      "thisYear": "This Year",
+      "revenue": "Revenue",
+      "collections": "Collections"
+    },
+    "recentActivity": "Recent Activity",
+    "recentPayments": "Recent Payments",
+    "notifications": "Notifications",
+    "quickActions": "Quick Actions",
+    "viewAll": "View All",
+    "noData": "No data available",
+    "loading": "Loading data...",
+    "refreshData": "Refresh Data",
+    "exportData": "Export Data",
+    "chartLabels": {
+      "paymentsOverTime": "Payments Over Time",
+      "paymentMethods": "Payment Methods",
+      "studentsByClass": "Students by Class",
+      "monthlyRevenue": "Monthly Revenue"
+    },
+    "filters": {
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "thisYear": "This Year",
+      "allTime": "All Time"
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer",
+    "close": "Fermer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "switchTo": "Passer à {{language}}"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "students": "Élèves",
+    "payments": "Paiements",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "welcome": "Bienvenue sur HarakaPay",
+    "loginSubtitle": "Connectez-vous à votre portail scolaire",
+    "invalidCredentials": "Email ou mot de passe incorrect",
+    "loginSuccess": "Connexion réussie"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "overview": "Aperçu",
+    "totalStudents": "Total des élèves",
+    "totalPayments": "Total des paiements",
+    "pendingPayments": "Paiements en attente",
+    "recentActivity": "Activités récentes"
+  },
+  "students": {
+    "title": "Gestion des élèves",
+    "addStudent": "Ajouter un élève",
+    "studentName": "Nom de l'élève",
+    "studentId": "ID de l'élève",
+    "class": "Classe",
+    "parent": "Parent/Tuteur",
+    "phone": "Téléphone",
+    "email": "Email",
+    "feeBalance": "Solde des frais",
+    "status": "Statut",
+    "actions": "Actions",
+    "viewDetails": "Voir les détails",
+    "editStudent": "Modifier l'élève",
+    "deleteStudent": "Supprimer l'élève",
+    "noStudents": "Aucun élève trouvé"
+  },
+  "payments": {
+    "title": "Gestion des paiements",
+    "makePayment": "Effectuer un paiement",
+    "paymentHistory": "Historique des paiements",
+    "amount": "Montant",
+    "paymentMethod": "Méthode de paiement",
+    "date": "Date",
+    "reference": "Référence",
+    "status": "Statut",
+    "pending": "En attente",
+    "completed": "Terminé",
+    "failed": "Échoué",
+    "mPesa": "M-Pesa",
+    "airtelMoney": "Airtel Money",
+    "orangeMoney": "Orange Money",
+    "bankTransfer": "Virement bancaire"
+  },
+  "forms": {
+    "required": "Ce champ est obligatoire",
+    "invalidEmail": "Adresse email invalide",
+    "invalidPhone": "Numéro de téléphone invalide",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères",
+    "confirmPassword": "Confirmer le mot de passe",
+    "passwordsNoMatch": "Les mots de passe ne correspondent pas"
+  },
+  "messages": {
+    "success": "Opération réussie",
+    "error": "Une erreur s'est produite",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément ?",
+    "noData": "Aucune donnée disponible",
+    "networkError": "Erreur de connexion réseau",
+    "saveSuccess": "Données sauvegardées avec succès",
+    "deleteSuccess": "Suppression réussie"
+  },
+  "currency": {
+    "cdf": "FC",
+    "symbol": "FC"
+  }
+}

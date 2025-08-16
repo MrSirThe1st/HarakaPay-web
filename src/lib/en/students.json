@@ -1,0 +1,97 @@
+{
+  "students": {
+    "title": "Student Management",
+    "subtitle": "Manage student information and school fees",
+    "addStudent": "Add Student",
+    "editStudent": "Edit Student",
+    "deleteStudent": "Delete Student",
+    "importStudents": "Import Students",
+    "exportStudents": "Export List",
+    "totalStudents": "{{count}} students total",
+    "searchPlaceholder": "Search by name, ID, or class...",
+    "filters": {
+      "all": "All Students",
+      "active": "Active",
+      "inactive": "Inactive",
+      "class": "By Class",
+      "paymentStatus": "Payment Status"
+    },
+    "table": {
+      "studentName": "Student Name",
+      "studentId": "Student ID",
+      "class": "Class",
+      "parent": "Parent/Guardian",
+      "phone": "Phone",
+      "email": "Email",
+      "feeBalance": "Fee Balance",
+      "status": "Status",
+      "actions": "Actions",
+      "enrollmentDate": "Enrollment Date",
+      "lastPayment": "Last Payment"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended",
+      "graduated": "Graduated",
+      "transferred": "Transferred"
+    },
+    "paymentStatus": {
+      "upToDate": "Up to Date",
+      "partial": "Partial",
+      "overdue": "Overdue",
+      "exempt": "Exempt"
+    },
+    "form": {
+      "personalInfo": "Personal Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "dateOfBirth": "Date of Birth",
+      "gender": "Gender",
+      "address": "Address",
+      "parentInfo": "Parent/Guardian Information",
+      "parentName": "Parent Name",
+      "parentPhone": "Parent Phone",
+      "parentEmail": "Parent Email",
+      "relationship": "Relationship",
+      "academicInfo": "Academic Information",
+      "admissionDate": "Admission Date",
+      "academicYear": "Academic Year",
+      "section": "Section",
+      "previousSchool": "Previous School",
+      "emergencyContact": "Emergency Contact",
+      "emergencyName": "Contact Name",
+      "emergencyPhone": "Emergency Phone",
+      "medicalInfo": "Medical Information",
+      "allergies": "Allergies",
+      "medications": "Medications",
+      "specialNeeds": "Special Needs"
+    },
+    "actions": {
+      "viewProfile": "View Profile",
+      "editProfile": "Edit Profile",
+      "viewPayments": "View Payments",
+      "sendNotification": "Send Notification",
+      "suspendStudent": "Suspend Student",
+      "activateStudent": "Activate Student",
+      "deleteConfirm": "Are you sure you want to delete this student?"
+    },
+    "bulk": {
+      "selectAll": "Select All",
+      "selectedCount": "{{count}} student(s) selected",
+      "bulkActions": "Bulk Actions",
+      "sendBulkNotification": "Send Notification",
+      "exportSelected": "Export Selected",
+      "updateClass": "Update Class",
+      "updateStatus": "Update Status"
+    },
+    "messages": {
+      "studentAdded": "Student added successfully",
+      "studentUpdated": "Student information updated",
+      "studentDeleted": "Student deleted successfully",
+      "noStudentsFound": "No students found with these criteria",
+      "importSuccess": "{{count}} students imported successfully",
+      "importError": "Import error: {{error}}"
+    }
+  }
+}
