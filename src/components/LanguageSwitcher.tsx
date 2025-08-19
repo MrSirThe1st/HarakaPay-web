@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTranslations, getOppositeLocale } from '@/lib/i18n';
+import { useClientTranslations } from '@/hooks/useClientTranslations';
+import { getOppositeLocale } from '@/lib/i18n';
 import { Globe } from 'lucide-react';
 
 interface LanguageSwitcherProps {
@@ -11,7 +12,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   variant = 'default',
   className = '' 
 }) => {
-  const { locale, switchLanguage, t } = useTranslations();
+  const { locale, switchLanguage, t } = useClientTranslations();
   const oppositeLocale = getOppositeLocale(locale);
 
   const handleLanguageSwitch = () => {

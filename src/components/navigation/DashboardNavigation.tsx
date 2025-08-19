@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useDualAuth } from "@/hooks/useDualAuth";
 import { useEffect, useState } from "react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function DashboardNavigation() {
   const pathname = usePathname();
@@ -244,6 +245,11 @@ export function DashboardNavigation() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)" }}>
+            {/* Language Switcher */}
+            <div style={{ marginRight: "var(--space-sm)" }}>
+              <LanguageSwitcher variant="compact" />
+            </div>
+            
             {/* Admin Actions Dropdown */}
             {isAdmin && (
               <div style={{ position: "relative" }}>

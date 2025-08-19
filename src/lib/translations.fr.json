@@ -38,7 +38,11 @@
     "welcome": "Bienvenue sur HarakaPay",
     "loginSubtitle": "Connectez-vous à votre portail scolaire",
     "invalidCredentials": "Email ou mot de passe incorrect",
-    "loginSuccess": "Connexion réussie"
+    "loginSuccess": "Connexion réussie",
+    "selectLanguage": "Sélectionner la langue",
+    "language": "Langue",
+    "french": "Français",
+    "english": "Anglais"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -98,6 +102,22 @@
     "networkError": "Erreur de connexion réseau",
     "saveSuccess": "Données sauvegardées avec succès",
     "deleteSuccess": "Suppression réussie"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Gérez votre compte et vos préférences",
+    "language": "Langue",
+    "languageDescription": "Choisissez votre langue préférée pour l'application",
+    "currentLanguage": "Langue actuelle",
+    "selectLanguage": "Sélectionner la langue",
+    "savePreferences": "Sauvegarder les préférences",
+    "preferencesSaved": "Préférences sauvegardées avec succès",
+    "userManagement": "Gestion des utilisateurs",
+    "userManagementDescription": "Gérer les comptes utilisateurs, rôles et permissions",
+    "systemSettings": "Paramètres système",
+    "systemSettingsDescription": "Configurer les paramètres système globaux",
+    "account": "Compte",
+    "loggedInAs": "Connecté en tant que"
   },
   "currency": {
     "cdf": "FC",
