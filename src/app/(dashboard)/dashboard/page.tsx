@@ -25,11 +25,6 @@ function DashboardContent() {
               </div>
             )}
           </div>
-          <div className="page-header-actions">
-            <button onClick={signOut} className="btn btn-secondary">
-              Sign Out
-            </button>
-          </div>
         </div>
       </header>
 
