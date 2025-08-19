@@ -17,18 +17,21 @@ export function DashboardNavigation() {
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return (
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <span className="text-xl font-bold text-indigo-600">
-                  HarakaPay
-                </span>
-              </div>
+      <nav style={{
+        background: "#fff",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        borderBottom: "1px solid var(--color-base-bg-alt)",
+        fontFamily: "var(--font-family-base)",
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 var(--space-lg)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "64px" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <span style={{ fontSize: "1.25rem", fontWeight: "var(--font-weight-bold)", color: "var(--color-primary)" }}>
+                HarakaPay
+              </span>
             </div>
-            <div className="flex items-center">
-              <div className="animate-pulse bg-gray-300 h-8 w-20 rounded"></div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ background: "var(--color-base-bg-alt)", height: "32px", width: "80px", borderRadius: "var(--radius-md)", animation: "pulse 2s infinite" }}></div>
             </div>
           </div>
         </div>
@@ -202,44 +205,64 @@ export function DashboardNavigation() {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold text-indigo-600">
-                HarakaPay
-              </span>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+    <nav style={{
+      background: "#fff",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      borderBottom: "1px solid var(--color-base-bg-alt)",
+      fontFamily: "var(--font-family-base)",
+    }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 var(--space-lg)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "64px" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span style={{ fontSize: "1.25rem", fontWeight: "var(--font-weight-bold)", color: "var(--color-primary)" }}>
+              HarakaPay
+            </span>
+            <div style={{ marginLeft: "var(--space-lg)", display: "flex", gap: "var(--space-md)" }}>
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`${
-                      isActive
-                        ? "border-indigo-500 text-gray-900"
-                        : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "0 var(--space-sm)",
+                      borderBottom: isActive ? "2px solid var(--color-primary)" : "2px solid transparent",
+                      color: isActive ? "var(--color-text-main)" : "var(--color-text-muted)",
+                      fontWeight: "var(--font-weight-normal)",
+                      fontSize: "1rem",
+                      textDecoration: "none",
+                      transition: "color 0.2s, border-bottom 0.2s",
+                    }}
                   >
-                    <span className="mr-2">{item.icon}</span>
+                    <span style={{ marginRight: "8px" }}>{item.icon}</span>
                     {item.name}
                   </Link>
                 );
               })}
             </div>
           </div>
-
-          <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)" }}>
             {/* Admin Actions Dropdown */}
             {isAdmin && (
-              <div className="relative group">
-                <button className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <div style={{ position: "relative" }}>
+                <button style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "var(--space-sm) var(--space-md)",
+                  border: "1px solid var(--color-base-bg-alt)",
+                  fontSize: "1rem",
+                  fontWeight: "var(--font-weight-normal)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--color-text-main)",
+                  background: "#fff",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}>
                   Admin Actions
                   <svg
-                    className="ml-2 -mr-1 h-4 w-4"
+                    style={{ marginLeft: "8px", width: "16px", height: "16px" }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -252,35 +275,31 @@ export function DashboardNavigation() {
                     />
                   </svg>
                 </button>
-                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <div className="py-1">
-                    {adminActions.map((action) => (
-                      <Link
-                        key={action.name}
-                        href={action.href}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <span className="mr-3">{action.icon}</span>
-                        {action.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                {/* Dropdown menu can be implemented with a state for visibility if needed */}
               </div>
             )}
-
             {/* User info and sign out */}
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-700">
-                {user?.name || user?.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Sign Out
-              </button>
-            </div>
+            <span style={{ fontSize: "1rem", color: "var(--color-text-main)" }}>
+              {user?.name || user?.email}
+            </span>
+            <button
+              onClick={handleSignOut}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "var(--space-sm) var(--space-md)",
+                border: "none",
+                fontSize: "1rem",
+                fontWeight: "var(--font-weight-bold)",
+                borderRadius: "var(--radius-md)",
+                color: "#fff",
+                background: "var(--color-primary)",
+                cursor: "pointer",
+                transition: "background 0.2s",
+              }}
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

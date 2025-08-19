@@ -1,0 +1,33 @@
+/* HarakaPay Design Tokens - CSS Custom Properties */
+:root {
+  /* Colors */
+  --color-base-bg: #ffffff;
+  --color-base-bg-alt: #f5f6fa;
+  --color-primary: #0080ff;
+  --color-primary-rgba: rgba(0,128,255,1);
+  --color-text-main: #222b45;
+  --color-text-muted: #6c757d;
+
+  /* Typography */
+  --font-family-base: 'IBM Plex', 'Helvetica Neue', Arial, sans-serif;
+  --font-size-base: 16px;
+  --font-size-heading: 2rem;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 32px;
+  --space-xl: 64px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* Grid */
+  --grid-gap: 24px;
+  --grid-columns: 12;
+}
