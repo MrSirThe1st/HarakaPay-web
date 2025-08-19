@@ -219,6 +219,153 @@
   --breakpoint-2xl: 1536px;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Warning icon color for pending payments */
+.stat-icon-warning {
+  background: rgba(251, 191, 36, 0.1);
+  color: rgb(251, 191, 36);
+}
+
+/* Feature card enhancements */
+.feature-card-stat {
+  font-size: 0.875rem;
+  color: rgb(107, 114, 128);
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.feature-card-badge {
+  display: inline-block;
+  background: rgba(107, 114, 128, 0.1);
+  color: rgb(107, 114, 128);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.feature-card-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.feature-card-icon-secondary {
+  background: rgba(107, 114, 128, 0.1);
+  color: rgb(107, 114, 128);
+}
+
+/* Loading and error states */
+.dashboard-container .animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .page-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Stat value formatting for large numbers */
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgb(17, 24, 39);
+}
+
+/* Better spacing for feature cards */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.stat-card {
+  background: var(--card-bg);
+  padding: var(--space-xl);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: var(--card-border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.stat-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon-primary {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.stat-icon-success {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.stat-icon-info {
+  background: var(--color-info-light);
+  color: var(--color-info);
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  margin: var(--space-xs) 0 0 0;
+}
+
 /* ===== DARK MODE SUPPORT - DISABLED ===== */
 /* Removed dark mode overrides to ensure white backgrounds */
 
