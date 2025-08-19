@@ -68,3 +68,25 @@ Admin Dashboard
 • Monitor transactions, platform usage, and resolve disputes.
 • Manage user roles and permissions (parents, school staff, admins).
 • Enforce security policies, including blocking or banning accounts if necessary.
+
+
+HarakaPay
+
+
+Style
+
+The design should feel enterprise-grade, minimal, trustworthy, and futuristic, with a strong grid layout, lots of whitespace, modern sans-serif typography, and abstract data-inspired graphics. Use gradients, geometric shapes, and subtle animations instead of stock photos. Prioritize clarity and scalability (for complex product ecosystems). Always communicate authority and innovation without overwhelming the user with visuals.
+
+*   Clean, minimalistic but professional layouts
+*   Dark mode or gradient-heavy hero sections
+*   Lots of abstract 3D/2D illustrations (waves, spheres, geometric shapes, network diagrams)
+*   Trust-building design → logos of clients,"enterprise-ready", scalability graphics
+*   Focus on products, solutions, and docs rather than flashy visuals
+* Apple’s Human Interface Guidelines
+* Font will be IBM Plex
+* Lightning design system
+* Target audience: Developers, CTOs, IT managers, enterprise clients → people who value clarity and authority over playfulness.
+* Layout: Grid-based, spacious, consistent spacing system. No clutter, everything has a purpose
+* Inspired by salesforce website, IBM and AWS
+* Color Palette: Base: Neutral (white, light gray).
+* Color Palette: Primary: Brand Color (#0080ff blue. rgba(0,128,255,255) used sparingly.
