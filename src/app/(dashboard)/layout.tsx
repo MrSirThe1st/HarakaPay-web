@@ -17,11 +17,9 @@ export default function DashboardLayout({
     >
       <DashboardNavigation />
       <main
-        className="container"
         style={{
-          maxWidth: "1200px",
-          margin: "0 auto",
-          padding: "var(--space-lg)",
+          width: "100%",
+          minHeight: "calc(100vh - var(--nav-height))",
         }}
       >
         {children}

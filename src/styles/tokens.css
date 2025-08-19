@@ -136,7 +136,7 @@
   --container-lg: 1024px;
   --container-xl: 1280px;
   --container-2xl: 1400px;
-  --container-max-width: var(--container-2xl);
+  --container-max-width: 100%;
 
   /* ===== ANIMATIONS & TRANSITIONS ===== */
   /* Timing functions */
@@ -204,6 +204,12 @@
   /* Sidebar */
   --sidebar-width: 16rem;       /* 256px */
   --sidebar-width-collapsed: 4rem; /* 64px */
+  
+  /* Layout Containers - Full Width Support */
+  --layout-padding-x: var(--space-xl);
+  --layout-padding-x-sm: var(--space-lg);
+  --section-max-width: none; /* Full width by default */
+  --content-max-width: var(--container-2xl); /* Constrained content when needed */
   
   /* ===== RESPONSIVE BREAKPOINTS ===== */
   --breakpoint-sm: 640px;

@@ -329,9 +329,10 @@ function DashboardContent() {
         }
 
         .main-content {
-          max-width: var(--container-max-width);
-          margin: 0 auto;
-          padding: var(--space-3xl) var(--space-xl);
+          max-width: none;
+          margin: 0;
+          padding: var(--space-3xl) var(--layout-padding-x);
+          width: 100%;
         }
 
         .content-grid {

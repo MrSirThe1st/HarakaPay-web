@@ -76,8 +76,8 @@ function CreateSchoolContent() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
+  <div className="create-school-container">
+  <div className="create-school-header">
         <h1 className="text-3xl font-bold text-gray-900">Create New School</h1>
         <p className="text-gray-600">
           Register a new school and create their admin account
@@ -118,8 +118,8 @@ function CreateSchoolContent() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <form onSubmit={handleSubmit} className="create-school-form">
+  <div className="create-school-grid">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               School Name *
@@ -191,7 +191,7 @@ function CreateSchoolContent() {
             School Admin Credentials
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="create-school-admin-grid">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Admin Email *
@@ -240,16 +240,73 @@ function CreateSchoolContent() {
           </div>
         </div>
 
-        <div className="flex justify-end">
+  <div className="create-school-actions">
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="create-school-submit"
           >
             {loading ? "Creating School..." : "Create School"}
           </button>
         </div>
       </form>
+      <style jsx>{`
+        .create-school-container {
+          width: 100%;
+          padding: var(--space-3xl) var(--space-xl);
+          box-sizing: border-box;
+        }
+        .create-school-header {
+          margin-bottom: var(--space-2xl);
+        }
+        .create-school-form {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2xl);
+        }
+        .create-school-grid {
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: var(--space-xl);
+        }
+        .create-school-admin-grid {
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: var(--space-xl);
+        }
+        .create-school-actions {
+          display: flex;
+          justify-content: flex-end;
+        }
+        .create-school-submit {
+          padding: var(--space-lg) var(--space-2xl);
+          background: var(--color-primary);
+          color: var(--color-text-on-primary);
+          border: none;
+          border-radius: var(--radius-lg);
+          font-size: var(--font-size-lg);
+          font-weight: var(--font-weight-bold);
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .create-school-submit:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        @media (max-width: 768px) {
+          .create-school-container {
+            padding: var(--space-xl) var(--space-md);
+          }
+          .create-school-grid,
+          .create-school-admin-grid {
+            grid-template-columns: 1fr;
+            gap: var(--space-lg);
+          }
+        }
+      `}</style>
     </div>
   );
 }
