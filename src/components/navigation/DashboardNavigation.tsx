@@ -18,23 +18,12 @@ export function DashboardNavigation() {
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return (
-      <nav style={{
-        background: "#fff",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-        borderBottom: "1px solid var(--color-base-bg-alt)",
-        fontFamily: "var(--font-family-base)",
-      }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 var(--space-lg)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "64px" }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span style={{ fontSize: "1.25rem", fontWeight: "var(--font-weight-bold)", color: "var(--color-primary)" }}>
-                HarakaPay
-              </span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div style={{ background: "var(--color-base-bg-alt)", height: "32px", width: "80px", borderRadius: "var(--radius-md)", animation: "pulse 2s infinite" }}></div>
-            </div>
+      <nav className="enterprise-nav">
+        <div className="nav-container">
+          <div className="nav-brand">
+            HarakaPay
           </div>
+          <div className="loading-spinner"></div>
         </div>
       </nav>
     );
@@ -206,107 +195,68 @@ export function DashboardNavigation() {
   };
 
   return (
-    <nav style={{
-      background: "#fff",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-      borderBottom: "1px solid var(--color-base-bg-alt)",
-      fontFamily: "var(--font-family-base)",
-    }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 var(--space-lg)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "64px" }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ fontSize: "1.25rem", fontWeight: "var(--font-weight-bold)", color: "var(--color-primary)" }}>
-              HarakaPay
-            </span>
-            <div style={{ marginLeft: "var(--space-lg)", display: "flex", gap: "var(--space-md)" }}>
-              {navigationItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "0 var(--space-sm)",
-                      borderBottom: isActive ? "2px solid var(--color-primary)" : "2px solid transparent",
-                      color: isActive ? "var(--color-text-main)" : "var(--color-text-muted)",
-                      fontWeight: "var(--font-weight-normal)",
-                      fontSize: "1rem",
-                      textDecoration: "none",
-                      transition: "color 0.2s, border-bottom 0.2s",
-                    }}
-                  >
-                    <span style={{ marginRight: "8px" }}>{item.icon}</span>
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
+    <nav className="enterprise-nav">
+      <div className="nav-container">
+        <div className="flex items-center">
+          <Link href="/dashboard" className="nav-brand">
+            HarakaPay
+          </Link>
+          <div className="nav-menu">
+            {navigationItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`nav-link ${isActive ? 'active' : ''}`}
+                >
+                  <span>{item.icon}</span>
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)" }}>
-            {/* Language Switcher */}
-            <div style={{ marginRight: "var(--space-sm)" }}>
-              <LanguageSwitcher variant="compact" />
-            </div>
-            
-            {/* Admin Actions Dropdown */}
-            {isAdmin && (
-              <div style={{ position: "relative" }}>
-                <button style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "var(--space-sm) var(--space-md)",
-                  border: "1px solid var(--color-base-bg-alt)",
-                  fontSize: "1rem",
-                  fontWeight: "var(--font-weight-normal)",
-                  borderRadius: "var(--radius-md)",
-                  color: "var(--color-text-main)",
-                  background: "#fff",
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                }}>
-                  Admin Actions
-                  <svg
-                    style={{ marginLeft: "8px", width: "16px", height: "16px" }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-                {/* Dropdown menu can be implemented with a state for visibility if needed */}
-              </div>
-            )}
-            {/* User info and sign out */}
-            <span style={{ fontSize: "1rem", color: "var(--color-text-main)" }}>
-              {user?.name || user?.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "var(--space-sm) var(--space-md)",
-                border: "none",
-                fontSize: "1rem",
-                fontWeight: "var(--font-weight-bold)",
-                borderRadius: "var(--radius-md)",
-                color: "#fff",
-                background: "var(--color-primary)",
-                cursor: "pointer",
-                transition: "background 0.2s",
-              }}
-            >
-              Sign Out
-            </button>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {/* Language Switcher */}
+          <div>
+            <LanguageSwitcher variant="compact" />
           </div>
+          
+          {/* Admin Actions Dropdown */}
+          {isAdmin && (
+            <div className="relative">
+              <button className="btn btn-secondary">
+                Admin Actions
+                <svg
+                  className="ml-2 w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {/* Dropdown menu can be implemented with a state for visibility if needed */}
+            </div>
+          )}
+          
+          {/* User info and sign out */}
+          <span className="text-sm color-text-main">
+            {user?.name || user?.email}
+          </span>
+          <button
+            onClick={handleSignOut}
+            className="btn btn-primary"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
     </nav>

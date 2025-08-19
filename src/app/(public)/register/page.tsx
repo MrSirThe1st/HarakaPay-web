@@ -7,31 +7,31 @@ export default function RegisterPage() {
   const { t } = useClientTranslations();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Language Selector */}
         <div className="absolute top-4 right-4">
           <LanguageSelector />
         </div>
 
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <div className="text-center">
+          <h2 className="page-title text-center">
             {t('auth.welcome')}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="page-subtitle text-center">
             Contact admin to register your school
           </p>
         </div>
 
         <div className="mt-8 space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="enterprise-card">
+            <h3 className="text-lg font-medium color-text-main mb-4">
               School Registration
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="color-text-secondary mb-4">
               To register your school on HarakaPay, please contact the platform administrator.
             </p>
-            <div className="bg-blue-50 p-4 rounded-md">
+            <div className="enterprise-card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
               <h4 className="text-sm font-medium text-blue-800 mb-2">
                 Contact Information:
               </h4>
@@ -45,7 +45,7 @@ export default function RegisterPage() {
           <div className="text-center">
             <a
               href="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="btn btn-secondary"
             >
               Back to Login
             </a>
