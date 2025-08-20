@@ -1,7 +1,7 @@
+// src/app/(dashboard)/dashboard/page.tsx
 "use client";
 
 import { useDualAuth } from "@/hooks/useDualAuth";
-import MainLayout from "@/components/layout/MainLayout";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Link from "next/link";
@@ -93,200 +93,228 @@ function DashboardContent() {
 
   return (
     <div className="enterprise-container">
-      {/* Removed old top navbar and header. You can add a Carbon page header here if needed. */}
+      {/* Page Header */}
+      <div className="page-header-content mb-8">
+        <div className="page-header-main">
+          <h1 className="page-title">
+            {isAdmin ? 'Platform Dashboard' : 'School Dashboard'}
+          </h1>
+          <p className="page-subtitle">
+            {isAdmin 
+              ? 'Comprehensive overview of all schools and platform metrics'
+              : 'Overview of your school\'s payment activities and student data'
+            }
+          </p>
+          <div className="user-role-badge">
+            {isAdmin ? 'Platform Administrator' : 'School Staff Member'}
+          </div>
+        </div>
+      </div>
 
-      {/* Stats Overview */}
+      {/* Statistics Grid */}
+      <div className="enterprise-grid mb-8">
+        {/* Schools Card - Admin Only */}
+        {isAdmin && (
+          <div className="enterprise-card">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm color-text-secondary mb-1">Total Schools</p>
+                <p className="text-3xl font-bold color-text-main">{formatNumber(schools)}</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+            <div className="text-sm color-text-secondary">
+              <span className="text-green-600">↗ Active schools on platform</span>
+            </div>
+          </div>
+        )}
+
+        {/* Students Card */}
+        <div className="enterprise-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm color-text-secondary mb-1">
+                {isAdmin ? 'Total Students' : 'School Students'}
+              </p>
+              <p className="text-3xl font-bold color-text-main">{formatNumber(students)}</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
+              <GraduationCap className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <div className="text-sm color-text-secondary">
+            <span className="text-green-600">↗ Enrolled students</span>
+          </div>
+        </div>
+
+        {/* Revenue Card */}
+        <div className="enterprise-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm color-text-secondary mb-1">Total Revenue</p>
+              <p className="text-3xl font-bold color-text-main">{formatCurrency(totalRevenue)}</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+          <div className="text-sm color-text-secondary">
+            <span className="text-green-600">↗ Collected this month</span>
+          </div>
+        </div>
+
+        {/* Success Rate Card */}
+        <div className="enterprise-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm color-text-secondary mb-1">Success Rate</p>
+              <p className="text-3xl font-bold color-text-main">{successRate.toFixed(1)}%</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <div className="text-sm color-text-secondary">
+            <span className="text-green-600">↗ Payment completion rate</span>
+          </div>
+        </div>
+
+        {/* Pending Payments Card */}
+        <div className="enterprise-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm color-text-secondary mb-1">Pending Payments</p>
+              <p className="text-3xl font-bold color-text-main">{formatNumber(pendingPayments)}</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-yellow-50 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+          </div>
+          <div className="text-sm color-text-secondary">
+            <span className="text-yellow-600">→ Awaiting processing</span>
+          </div>
+        </div>
+
+        {/* Completed Payments Card */}
+        <div className="enterprise-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm color-text-secondary mb-1">Completed Payments</p>
+              <p className="text-3xl font-bold color-text-main">{formatNumber(completedPayments)}</p>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <div className="text-sm color-text-secondary">
+            <span className="text-green-600">↗ Successfully processed</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
       <section className="enterprise-section">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon stat-icon-primary">
-              <Users className="w-5 h-5" />
+        <h2 className="text-2xl font-bold color-text-main mb-6">Quick Actions</h2>
+        <div className="enterprise-grid enterprise-grid-compact">
+          {/* Common actions for both admin and school staff */}
+          <Link href="/payments" className="enterprise-card hover:shadow-lg transition-shadow">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mr-4">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold color-text-main">View Payments</h3>
+                <p className="text-sm color-text-secondary">Monitor and manage payment transactions</p>
+              </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-value">{formatNumber(isAdmin ? schools : students)}</div>
-              <div className="stat-label">{isAdmin ? "Active Schools" : "Students"}</div>
-            </div>
-          </div>
+          </Link>
 
-          <div className="stat-card">
-            <div className="stat-icon stat-icon-success">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{formatCurrency(totalRevenue)}</div>
-              <div className="stat-label">{isAdmin ? "Total Revenue" : "School Revenue"}</div>
-            </div>
-          </div>
+          {isSchoolStaff && (
+            <Link href="/students" className="enterprise-card hover:shadow-lg transition-shadow">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center mr-4">
+                  <Users className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold color-text-main">Manage Students</h3>
+                  <p className="text-sm color-text-secondary">Add and manage student records</p>
+                </div>
+              </div>
+            </Link>
+          )}
 
-          <div className="stat-card">
-            <div className="stat-icon stat-icon-info">
-              <CheckCircle className="w-5 h-5" />
-            </div>
-            <div className="stat-content">
-              <div className="stat-value">{successRate}%</div>
-              <div className="stat-label">Payment Success Rate</div>
-            </div>
-          </div>
+          {isAdmin && (
+            <>
+              <Link href="/schools" className="enterprise-card hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mr-4">
+                    <Building2 className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold color-text-main">Manage Schools</h3>
+                    <p className="text-sm color-text-secondary">Approve and configure school accounts</p>
+                  </div>
+                </div>
+              </Link>
 
-          {/* Additional stat card for payments */}
-          <div className="stat-card">
-            <div className="stat-icon stat-icon-warning">
-              <Clock className="w-5 h-5" />
+              <Link href="/reports" className="enterprise-card hover:shadow-lg transition-shadow">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center mr-4">
+                    <BarChart3 className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold color-text-main">Platform Reports</h3>
+                    <p className="text-sm color-text-secondary">View detailed analytics and reports</p>
+                  </div>
+                </div>
+              </Link>
+            </>
+          )}
+
+          <Link href="/settings" className="enterprise-card hover:shadow-lg transition-shadow">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center mr-4">
+                <Shield className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold color-text-main">Settings</h3>
+                <p className="text-sm color-text-secondary">Configure account and system settings</p>
+              </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-value">{pendingPayments}</div>
-              <div className="stat-label">Pending Payments</div>
-            </div>
-          </div>
+          </Link>
         </div>
       </section>
 
-      {/* Main Content Grid */}
-      <section className="enterprise-section">
-        {/* Admin Dashboard */}
-        {isAdmin && (
-          <div className="enterprise-grid">
-            <Link href="/create-school" className="feature-card">
-              <div className="feature-card-icon feature-card-icon-success">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Register New School</h3>
-                <p className="feature-card-description">
-                  Onboard educational institutions to the platform with comprehensive setup and verification.
-                </p>
-              </div>
-              <div className="feature-card-arrow">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            <Link href="/create-admin" className="feature-card">
-              <div className="feature-card-icon feature-card-icon-primary">
-                <Shield className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Create Administrator</h3>
-                <p className="feature-card-description">
-                  Grant platform administration privileges to trusted personnel for system oversight.
-                </p>
-              </div>
-              <div className="feature-card-arrow">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            <Link href="/reports" className="feature-card">
-              <div className="feature-card-icon feature-card-icon-info">
-                <BarChart3 className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Platform Analytics</h3>
-                <p className="feature-card-description">
-                  Comprehensive reports and analytics across all schools and transactions.
-                </p>
-              </div>
-              <div className="feature-card-arrow">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            <Link href="/students" className="feature-card">
-              <div className="feature-card-icon feature-card-icon-primary">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Manage Students</h3>
-                <p className="feature-card-description">
-                  View and manage student records across all registered schools.
-                </p>
-                <div className="feature-card-stat">
-                  {students} total students
+      {/* Coming Soon Features - Admin Only */}
+      {isAdmin && (
+        <section className="enterprise-section">
+          <h2 className="text-2xl font-bold color-text-main mb-6">Coming Soon</h2>
+          <div className="enterprise-grid enterprise-grid-compact">
+            <div className="enterprise-card opacity-75">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mr-4">
+                  <MessageSquare className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold color-text-main">Communication Center</h3>
+                  <p className="text-sm color-text-secondary">Bulk messaging and notification system</p>
                 </div>
               </div>
-              <div className="feature-card-arrow">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-          </div>
-        )}
-
-        {/* School Dashboard */}
-        {isSchoolStaff && (
-          <div className="enterprise-grid">
-            <Link href="/students" className="feature-card">
-              <div className="feature-card-icon feature-card-icon-primary">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Student Management</h3>
-                <p className="feature-card-description">
-                  Upload student databases, manage enrollments, and track student information.
-                </p>
-                <div className="feature-card-stat">
-                  {students} active students
-                </div>
-              </div>
-              <div className="feature-card-arrow">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            <Link href="/payments" className="feature-card">
-              <div className="feature-card-icon feature-card-icon-success">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Payment Tracking</h3>
-                <p className="feature-card-description">
-                  Monitor fee payments, track defaulters, and manage payment records.
-                </p>
-                <div className="feature-card-stat">
-                  {completedPayments} completed • {pendingPayments} pending
-                </div>
-              </div>
-              <div className="feature-card-arrow">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 1l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            <div className="feature-card feature-card-disabled">
-              <div className="feature-card-icon feature-card-icon-secondary">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <div className="feature-card-content">
-                <h3 className="feature-card-title">Communications</h3>
-                <p className="feature-card-description">
-                  Send announcements and notifications to parents via the mobile app.
-                </p>
-                <div className="feature-card-badge">Coming Soon</div>
-              </div>
+              <div className="feature-card-badge">Coming Soon</div>
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
 
 export default function DashboardPage() {
   return (
-    <MainLayout>
-      <ProtectedRoute requiredRole={["admin", "school_staff"]}>
-        <DashboardContent />
-      </ProtectedRoute>
-    </MainLayout>
+    <ProtectedRoute requiredRole={["admin", "school_staff"]}>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

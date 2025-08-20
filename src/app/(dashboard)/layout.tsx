@@ -1,5 +1,5 @@
-import { DashboardNavigation } from "@/components/navigation/DashboardNavigation";
-
+// src/app/(dashboard)/layout.tsx
+import MainLayout from "@/components/layout/MainLayout";
 
 export default function DashboardLayout({
   children,
@@ -7,23 +7,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--color-base-bg)",
-        fontFamily: "var(--font-family-base)",
-        color: "var(--color-text-main)",
-      }}
-    >
-      <DashboardNavigation />
-      <main
-        style={{
-          width: "100%",
-          minHeight: "calc(100vh - var(--nav-height))",
-        }}
-      >
-        {children}
-      </main>
-    </div>
+    <MainLayout>
+      {children}
+    </MainLayout>
   );
 }
