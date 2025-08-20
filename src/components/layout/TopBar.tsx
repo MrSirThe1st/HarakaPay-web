@@ -62,7 +62,6 @@ const TopBar = () => {
           {/* Notifications */}
           <HeaderGlobalAction 
             aria-label="Notifications"
-            tooltipText="Notifications"
           >
             <Notification size={20} />
           </HeaderGlobalAction>
@@ -71,7 +70,6 @@ const TopBar = () => {
           <div style={{ position: "relative" }}>
             <HeaderGlobalAction 
               aria-label="User Profile"
-              tooltipText={`${user?.email} (${getUserRole()})`}
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <UserAvatarFilledAlt size={20} />

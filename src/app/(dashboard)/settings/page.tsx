@@ -1,3 +1,4 @@
+// src/app/(dashboard)/settings/page.tsx
 "use client";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -5,12 +6,46 @@ import { useDualAuth } from "@/hooks/useDualAuth";
 import { useClientTranslations } from "@/hooks/useClientTranslations";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState } from "react";
+import { 
+  Grid, 
+  Column, 
+  Tile, 
+  Button,
+  RadioButtonGroup,
+  RadioButton,
+  InlineNotification,
+  Tabs,
+  Tab,
+  TabList,
+  TabPanels,
+  TabPanel,
+  TextInput,
+  Toggle,
+  Select,
+  SelectItem
+} from "@carbon/react";
+import { 
+  Settings, 
+  Language as LanguageIcon,
+  User,
+  Security,
+  Notification,
+  Save,
+  UserAvatarFilledAlt
+} from "@carbon/icons-react";
 
 function SettingsContent() {
-  const { user, signOut } = useDualAuth();
+  const { user, signOut, profile, isAdmin, isSchoolStaff } = useDualAuth();
   const { t } = useClientTranslations();
   const { currentLanguage, changeLanguage, availableLanguages } = useLanguage();
   const [preferencesSaved, setPreferencesSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Settings state
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [weeklyReports, setWeeklyReports] = useState(false);
+  const [theme, setTheme] = useState("system");
 
   const handleSignOut = async () => {
     await signOut();
@@ -22,111 +57,438 @@ function SettingsContent() {
     setTimeout(() => setPreferencesSaved(false), 3000);
   };
 
+  const getUserRole = () => {
+    if (isAdmin) return "Platform Administrator";
+    if (isSchoolStaff) return "School Staff Member";
+    return "User";
+  };
+
   return (
-    <div className="enterprise-container">
+    <div style={{ padding: "2rem 0" }}>
       {/* Page Header */}
-      <header className="page-header">
-        <div className="page-header-content">
-          <div className="page-header-main">
-            <h1 className="page-title">{t('settings.title')}</h1>
-            <p className="page-subtitle">{t('settings.subtitle')}</p>
+      <div style={{ marginBottom: "3rem" }}>
+        <div style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          marginBottom: "1rem" 
+        }}>
+          <Settings 
+            size={32} 
+            style={{ 
+              marginRight: "1rem", 
+              color: "var(--cds-icon-primary)" 
+            }} 
+          />
+          <div>
+            <h1 style={{ 
+              fontSize: "2.5rem", 
+              fontWeight: 600, 
+              margin: 0,
+              color: "var(--cds-text-primary)"
+            }}>
+              {t('settings.title')}
+            </h1>
+            <p style={{ 
+              fontSize: "1.125rem", 
+              color: "var(--cds-text-secondary)",
+              margin: "0.5rem 0 0 0"
+            }}>
+              {t('settings.subtitle')}
+            </p>
           </div>
         </div>
-      </header>
 
-      <section className="enterprise-section">
-        <div className="enterprise-grid">
-          {/* Language Settings */}
-          <div className="enterprise-card">
-            <div className="feature-card-icon feature-card-icon-info mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/>
-              </svg>
+        {/* User Info Card */}
+        <Tile style={{ 
+          padding: "1.5rem",
+          marginBottom: "2rem",
+          border: "1px solid var(--cds-border-subtle)"
+        }}>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "1rem" 
+          }}>
+            <div style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "50%",
+              background: "var(--cds-layer-accent)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px solid var(--cds-border-subtle)"
+            }}>
+              <UserAvatarFilledAlt size={32} style={{ color: "var(--cds-icon-primary)" }} />
             </div>
-            <h2 className="text-xl font-semibold mb-4 color-text-main">{t('settings.language')}</h2>
-            <p className="color-text-secondary mb-4">{t('settings.languageDescription')}</p>
-            
-            <div className="mb-4">
-              <label className="form-label">
-                {t('settings.currentLanguage')}
-              </label>
-              <div className="flex gap-2">
-                {availableLanguages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => changeLanguage(lang.code as 'en' | 'fr')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all duration-200 ${
-                      currentLanguage === lang.code
-                        ? 'border-primary bg-primary-light text-primary'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+            <div style={{ flex: 1 }}>
+              <h3 style={{ 
+                fontSize: "1.25rem", 
+                fontWeight: 600, 
+                margin: "0 0 0.25rem 0",
+                color: "var(--cds-text-primary)"
+              }}>
+                {user?.name || user?.email}
+              </h3>
+              <p style={{ 
+                color: "var(--cds-text-secondary)", 
+                margin: "0 0 0.5rem 0" 
+              }}>
+                {user?.email}
+              </p>
+              <div style={{ 
+                display: "inline-flex",
+                padding: "0.25rem 0.75rem",
+                background: "var(--cds-layer-accent)",
+                borderRadius: "1rem",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "var(--cds-text-primary)",
+                border: "1px solid var(--cds-border-subtle)"
+              }}>
+                {getUserRole()}
+              </div>
+            </div>
+          </div>
+        </Tile>
+      </div>
+
+      {/* Settings Tabs */}
+      <Tabs>
+        <TabList aria-label="Settings categories">
+          <Tab>
+            <LanguageIcon size={16} style={{ marginRight: "0.5rem" }} />
+            Language & Localization
+          </Tab>
+          <Tab>
+            <Notification size={16} style={{ marginRight: "0.5rem" }} />
+            Notifications
+          </Tab>
+          <Tab>
+            <Security size={16} style={{ marginRight: "0.5rem" }} />
+            Security
+          </Tab>
+          <Tab>
+            <User size={16} style={{ marginRight: "0.5rem" }} />
+            Profile
+          </Tab>
+        </TabList>
+
+        <TabPanels>
+          {/* Language Settings Tab */}
+          <TabPanel>
+            <Grid>
+              <Column lg={8} md={6} sm={4}>
+                <Tile style={{ 
+                  padding: "2rem",
+                  border: "1px solid var(--cds-border-subtle)"
+                }}>
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    marginBottom: "1.5rem" 
+                  }}>
+                    <LanguageIcon 
+                      size={24} 
+                      style={{ 
+                        marginRight: "1rem", 
+                        color: "var(--cds-icon-primary)" 
+                      }} 
+                    />
+                    <h3 style={{ 
+                      fontSize: "1.25rem", 
+                      fontWeight: 600, 
+                      margin: 0,
+                      color: "var(--cds-text-primary)"
+                    }}>
+                      {t('settings.language')}
+                    </h3>
+                  </div>
+                  
+                  <p style={{ 
+  color: "var(--cds-text-secondary)", 
+  marginBottom: "2rem" 
+}}>
+                    {t('settings.languageDescription')}
+                  </p>
+
+                  <div style={{ marginBottom: "2rem" }}>
+                    <RadioButtonGroup
+                      legendText={t('settings.currentLanguage')}
+                      name="language-selection"
+                      value={currentLanguage}
+                      onChange={(value) => changeLanguage(value as 'en' | 'fr')}
+                    >
+                      {availableLanguages.map((lang) => (
+                        <RadioButton
+                          key={lang.code}
+                          labelText={`${lang.flag} ${lang.name}`}
+                          value={lang.code}
+                          id={`lang-${lang.code}`}
+                        />
+                      ))}
+                    </RadioButtonGroup>
+                  </div>
+
+                  <Button 
+                    kind="primary" 
+                    size="md"
+                    renderIcon={Save}
+                    onClick={handleSavePreferences}
                   >
-                    <span className="text-lg">{lang.flag}</span>
-                    <span className="font-medium">{lang.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <button
-              onClick={handleSavePreferences}
-              className="btn btn-primary"
-            >
-              {t('settings.savePreferences')}
-            </button>
-            
-            {preferencesSaved && (
-              <div className="success-message mt-3">
-                {t('settings.preferencesSaved')}
-              </div>
-            )}
-          </div>
+                    Save Language Preferences
+                  </Button>
 
-          <div className="enterprise-card">
-            <div className="feature-card-icon feature-card-icon-primary mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold mb-4 color-text-main">{t('settings.userManagement')}</h2>
-            <p className="color-text-secondary">{t('settings.userManagementDescription')}</p>
-          </div>
+                  {preferencesSaved && (
+                    <InlineNotification
+                      kind="success"
+                      title="Settings saved"
+                      subtitle="Your language preferences have been updated successfully."
+                      style={{ marginTop: "1rem" }}
+                    />
+                  )}
+                </Tile>
+              </Column>
+            </Grid>
+          </TabPanel>
 
-          <div className="enterprise-card">
-            <div className="feature-card-icon feature-card-icon-warning mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 00-1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 001.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold mb-4 color-text-main">{t('settings.systemSettings')}</h2>
-            <p className="color-text-secondary">{t('settings.systemSettingsDescription')}</p>
-          </div>
+          {/* Notifications Tab */}
+          <TabPanel>
+            <Grid>
+              <Column lg={8} md={6} sm={4}>
+                <Tile style={{ 
+                  padding: "2rem",
+                  border: "1px solid var(--cds-border-subtle)"
+                }}>
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    marginBottom: "1.5rem" 
+                  }}>
+                    <Notification 
+                      size={24} 
+                      style={{ 
+                        marginRight: "1rem", 
+                        color: "var(--cds-icon-primary)" 
+                      }} 
+                    />
+                    <h3 style={{ 
+                      fontSize: "1.25rem", 
+                      fontWeight: 600, 
+                      margin: 0,
+                      color: "var(--cds-text-primary)"
+                    }}>
+                      Notification Preferences
+                    </h3>
+                  </div>
 
-          <div className="enterprise-card">
-            <div className="feature-card-icon feature-card-icon-success mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold mb-4 color-text-main">{t('settings.account')}</h2>
-            <p className="color-text-secondary mb-4">{t('settings.loggedInAs')}: {user?.email}</p>
-            <button
-              onClick={handleSignOut}
-              className="btn btn-secondary bg-red-600 hover:bg-red-700 text-white border-red-600"
-            >
-              {t('auth.signOut')}
-            </button>
-          </div>
-        </div>
-      </section>
+                  <div style={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    gap: "1.5rem" 
+                  }}>
+                    <Toggle
+                      labelText="Email Notifications"
+                      labelA="Disabled"
+                      labelB="Enabled"
+                      id="email-notifications"
+                      toggled={emailNotifications}
+                      onToggle={(checked) => setEmailNotifications(checked)}
+                    />
+
+                    <Toggle
+                      labelText="Push Notifications"
+                      labelA="Disabled"
+                      labelB="Enabled"
+                      id="push-notifications"
+                      toggled={pushNotifications}
+                      onToggle={(checked) => setPushNotifications(checked)}
+                    />
+
+                    <Toggle
+                      labelText="Weekly Reports"
+                      labelA="Disabled"
+                      labelB="Enabled"
+                      id="weekly-reports"
+                      toggled={weeklyReports}
+                      onToggle={(checked) => setWeeklyReports(checked)}
+                    />
+                  </div>
+
+                  <Button 
+                    kind="primary" 
+                    size="md"
+                    renderIcon={Save}
+                    style={{ marginTop: "2rem" }}
+                  >
+                    Save Notification Settings
+                  </Button>
+                </Tile>
+              </Column>
+            </Grid>
+          </TabPanel>
+
+          {/* Security Tab */}
+          <TabPanel>
+            <Grid>
+              <Column lg={8} md={6} sm={4}>
+                <Tile style={{ 
+                  padding: "2rem",
+                  border: "1px solid var(--cds-border-subtle)"
+                }}>
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    marginBottom: "1.5rem" 
+                  }}>
+                    <Security 
+                      size={24} 
+                      style={{ 
+                        marginRight: "1rem", 
+                        color: "var(--cds-icon-primary)" 
+                      }} 
+                    />
+                    <h3 style={{ 
+                      fontSize: "1.25rem", 
+                      fontWeight: 600, 
+                      margin: 0,
+                      color: "var(--cds-text-primary)"
+                    }}>
+                      Security Settings
+                    </h3>
+                  </div>
+
+                  <div style={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    gap: "1.5rem" 
+                  }}>
+                    <TextInput
+                      id="current-password"
+                      labelText="Current Password"
+                      type="password"
+                      placeholder="Enter current password"
+                    />
+
+                    <TextInput
+                      id="new-password"
+                      labelText="New Password"
+                      type="password"
+                      placeholder="Enter new password"
+                    />
+
+                    <TextInput
+                      id="confirm-password"
+                      labelText="Confirm New Password"
+                      type="password"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+
+                  <div style={{ 
+                    display: "flex", 
+                    gap: "1rem", 
+                    marginTop: "2rem" 
+                  }}>
+                    <Button kind="primary" size="md">
+                      Update Password
+                    </Button>
+                    <Button 
+                      kind="danger" 
+                      size="md"
+                      onClick={handleSignOut}
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                </Tile>
+              </Column>
+            </Grid>
+          </TabPanel>
+
+          {/* Profile Tab */}
+          <TabPanel>
+            <Grid>
+              <Column lg={8} md={6} sm={4}>
+                <Tile style={{ 
+                  padding: "2rem",
+                  border: "1px solid var(--cds-border-subtle)"
+                }}>
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    marginBottom: "1.5rem" 
+                  }}>
+                    <User 
+                      size={24} 
+                      style={{ 
+                        marginRight: "1rem", 
+                        color: "var(--cds-icon-primary)" 
+                      }} 
+                    />
+                    <h3 style={{ 
+                      fontSize: "1.25rem", 
+                      fontWeight: 600, 
+                      margin: 0,
+                      color: "var(--cds-text-primary)"
+                    }}>
+                      Profile Information
+                    </h3>
+                  </div>
+
+                  <div style={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    gap: "1.5rem" 
+                  }}>
+                    <TextInput
+                      id="display-name"
+                      labelText="Display Name"
+                      placeholder="Enter your display name"
+                      defaultValue={user?.name || ''}
+                    />
+
+                    <TextInput
+                      id="email"
+                      labelText="Email Address"
+                      placeholder="Enter your email"
+                      defaultValue={user?.email || ''}
+                      disabled
+                    />
+
+                    <Select
+                      id="theme"
+                      labelText="Theme Preference"
+                      value={theme}
+                      onChange={(e) => setTheme(e.target.value)}
+                    >
+                      <SelectItem value="light" text="Light" />
+                      <SelectItem value="dark" text="Dark" />
+                      <SelectItem value="system" text="System Default" />
+                    </Select>
+                  </div>
+
+                  <Button 
+                    kind="primary" 
+                    size="md"
+                    renderIcon={Save}
+                    style={{ marginTop: "2rem" }}
+                  >
+                    Update Profile
+                  </Button>
+                </Tile>
+              </Column>
+            </Grid>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
   );
 }
 
 export default function SettingsPage() {
   return (
-    <ProtectedRoute requiredRole="admin">
+    <ProtectedRoute requiredRole={["admin", "school_staff"]}>
       <SettingsContent />
     </ProtectedRoute>
   );
