@@ -1,426 +1,371 @@
 // src/app/(dashboard)/schools/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDualAuth } from "@/hooks/useDualAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { createClient } from "@/lib/supabaseClient";
+import Link from "next/link";
 import { 
   Grid, 
   Column, 
   Tile, 
   Button,
+  DataTable,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableToolbar,
+  TableToolbarContent,
+  TableToolbarSearch,
+  Tag,
+  Loading,
   InlineNotification
 } from "@carbon/react";
 import { 
-  Add
+  Add,
+  View,
+  Edit,
+  TrashCan
 } from "@carbon/icons-react";
 
-function CreateSchoolContent() {
+interface School {
+  id: string;
+  name: string;
+  address: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  registration_number: string | null;
+  status: "pending" | "approved" | "suspended";
+  created_at: string;
+  updated_at: string;
+}
+
+function SchoolsListContent() {
   const { user } = useDualAuth();
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<{
-    email: string;
-    password: string;
-  } | null>(null);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [formData, setFormData] = useState({
-    schoolName: "",
-    contactEmail: "",
-    contactPhone: "",
-    address: "",
-    registrationNumber: "",
-    contactFirstName: "",
-    contactLastName: "",
-  });
+  const supabase = createClient();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
+  const fetchSchools = async () => {
     try {
-      const response = await fetch("/api/admin/create-school", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.schoolName,
-          address: formData.address,
-          contactFirstName: formData.contactFirstName || "",
-          contactLastName: formData.contactLastName || "",
-          contactPhone: formData.contactPhone,
-          registrationNumber: formData.registrationNumber || "",
-        }),
-      });
+      setLoading(true);
+      setError(null);
 
-      const result = await response.json();
+      const { data, error: fetchError } = await supabase
+        .from("schools")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      if (result.success) {
-        setSuccess(result.credentials);
-        setFormData({
-          schoolName: "",
-          contactEmail: "",
-          contactPhone: "",
-          address: "",
-          registrationNumber: "",
-          contactFirstName: "",
-          contactLastName: "",
-        });
-      } else {
-        setError(result.error || "Failed to create school");
+      if (fetchError) {
+        throw fetchError;
       }
+
+      setSchools(data || []);
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error("Error fetching schools:", err);
+      setError("Failed to load schools. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchSchools();
+  }, []);
+
+  const handleRefresh = () => {
+    fetchSchools();
+  };
+
+  const getStatusTag = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <Tag type="green" size="sm">Approved</Tag>;
+      case "pending":
+        return <Tag type="yellow" size="sm">Pending</Tag>;
+      case "suspended":
+        return <Tag type="red" size="sm">Suspended</Tag>;
+      default:
+        return <Tag type="gray" size="sm">{status}</Tag>;
+    }
+  };
+
+  const filteredSchools = schools.filter(school =>
+    school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    school.contact_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    school.registration_number?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const headers = [
+    { key: "name", header: "School Name" },
+    { key: "contact_email", header: "Contact Email" },
+    { key: "contact_phone", header: "Phone" },
+    { key: "registration_number", header: "Registration #" },
+    { key: "status", header: "Status" },
+    { key: "created_at", header: "Created" },
+    { key: "actions", header: "Actions" }
+  ];
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        height: "400px" 
+      }}>
+        <Loading description="Loading schools..." />
+      </div>
+    );
+  }
+
   return (
-    <div style={{ padding: "2rem 0" }}>
-      {/* Page Header */}
-      <div style={{ marginBottom: "3rem" }}>
-        <div style={{ 
-          display: "flex", 
-          alignItems: "center", 
-          marginBottom: "1rem" 
-        }}>
-          <Add 
-            size={32} 
-            style={{ 
-              marginRight: "1rem", 
-              color: "var(--cds-icon-primary)" 
-            }} 
-          />
-          <div>
-            <h1 style={{ 
-              fontSize: "2.5rem", 
-              fontWeight: 600, 
-              margin: 0,
-              color: "var(--cds-text-primary)"
-            }}>
-              Create New School
-            </h1>
-            <p style={{ 
-              fontSize: "1.125rem", 
-              color: "var(--cds-text-secondary)",
-              margin: "0.5rem 0 0 0"
-            }}>
-              Register a new school and create their admin account
-            </p>
-          </div>
+    <div style={{ padding: "2rem" }}>
+      {/* Header Section */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center", 
+        marginBottom: "2rem" 
+      }}>
+        <div>
+          <h1 style={{ 
+            fontSize: "2rem", 
+            fontWeight: 600, 
+            margin: "0 0 0.5rem 0",
+            color: "var(--cds-text-primary)"
+          }}>
+            Schools Management
+          </h1>
+          <p style={{ 
+            fontSize: "1.125rem", 
+            color: "var(--cds-text-secondary)",
+            margin: 0
+          }}>
+            Manage all registered schools on the platform
+          </p>
         </div>
 
-        {/* Current Admin Info */}
-        <InlineNotification
-          kind="info"
-          title="Administrator Access"
-          subtitle={`Logged in as: ${user?.email} | Platform Administrator`}
-          style={{ marginBottom: "2rem" }}
-        />
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <Button 
+            kind="ghost" 
+            size="md" 
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+          <Link href="/schools/register">
+            <Button 
+              kind="primary" 
+              size="md" 
+              renderIcon={Add}
+            >
+              Register New School
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Create School Form */}
-      <Grid>
-        <Column lg={12} md={8} sm={4}>
+      {/* Error Notification */}
+      {error && (
+        <div style={{ marginBottom: "2rem" }}>
+          <InlineNotification
+            kind="error"
+            title="Error"
+            subtitle={error}
+            onCloseButtonClick={() => setError(null)}
+          />
+        </div>
+      )}
+
+      {/* Statistics */}
+      <Grid style={{ marginBottom: "2rem" }}>
+        <Column lg={4} md={4} sm={2}>
           <Tile style={{ 
-            padding: "2rem",
-            border: "1px solid var(--cds-border-subtle)"
+            padding: "1.5rem",
+            border: "1px solid var(--cds-border-subtle)",
+            textAlign: "center"
           }}>
-            {success && (
-              <div style={{ 
-                padding: "1.5rem", 
-                background: "var(--cds-support-success-inverse)", 
-                border: "1px solid var(--cds-support-success)",
-                borderRadius: "8px",
-                marginBottom: "2rem"
-              }}>
-                <h3 style={{ 
-                  fontSize: "1.125rem", 
-                  fontWeight: 600, 
-                  color: "var(--cds-support-success)",
-                  margin: "0 0 1rem 0"
-                }}>
-                  School Created Successfully!
-                </h3>
-                <p style={{ 
-                  color: "var(--cds-support-success)", 
-                  margin: "0 0 1rem 0" 
-                }}>
-                  Please provide these credentials to the school:
-                </p>
-                <div style={{ 
-                  background: "var(--cds-layer)", 
-                  padding: "1rem", 
-                  borderRadius: "4px",
-                  border: "1px solid var(--cds-border-subtle)"
-                }}>
-                  <p style={{ margin: "0 0 0.5rem 0", color: "var(--cds-text-primary)" }}>
-                    <strong>Email:</strong> {success.email}
-                  </p>
-                  <p style={{ margin: 0, color: "var(--cds-text-primary)" }}>
-                    <strong>Password:</strong> {success.password}
-                  </p>
-                </div>
-                <p style={{ 
-                  fontSize: "0.875rem", 
-                  color: "var(--cds-support-success)",
-                  margin: "1rem 0 0 0"
-                }}>
-                  The school can now log in with these credentials to access their dashboard.
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <InlineNotification
-                kind="error"
-                title="Error creating school"
-                subtitle={error}
-                style={{ marginBottom: "2rem" }}
-              />
-            )}
-
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-              {/* School Information Section */}
-              <div>
-                <h3 style={{ 
-                  fontSize: "1.25rem", 
-                  fontWeight: 600,
-                  color: "var(--cds-text-primary)",
-                  margin: "0 0 1.5rem 0"
-                }}>
-                  School Information
-                </h3>
-
-                <div style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
-                  gap: "1.5rem" 
-                }}>
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "var(--cds-text-primary)",
-                      marginBottom: "0.5rem"
-                    }}>
-                      School Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.schoolName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, schoolName: e.target.value }))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid var(--cds-border-strong)",
-                        borderRadius: "4px",
-                        fontSize: "0.875rem",
-                        color: "var(--cds-text-primary)",
-                        background: "var(--cds-field)"
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "var(--cds-text-primary)",
-                      marginBottom: "0.5rem"
-                    }}>
-                      Contact Phone *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.contactPhone}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          contactPhone: e.target.value,
-                        }))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid var(--cds-border-strong)",
-                        borderRadius: "4px",
-                        fontSize: "0.875rem",
-                        color: "var(--cds-text-primary)",
-                        background: "var(--cds-field)"
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "var(--cds-text-primary)",
-                      marginBottom: "0.5rem"
-                    }}>
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, address: e.target.value }))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid var(--cds-border-strong)",
-                        borderRadius: "4px",
-                        fontSize: "0.875rem",
-                        color: "var(--cds-text-primary)",
-                        background: "var(--cds-field)"
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "var(--cds-text-primary)",
-                      marginBottom: "0.5rem"
-                    }}>
-                      Registration Number
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.registrationNumber}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          registrationNumber: e.target.value,
-                        }))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid var(--cds-border-strong)",
-                        borderRadius: "4px",
-                        fontSize: "0.875rem",
-                        color: "var(--cds-text-primary)",
-                        background: "var(--cds-field)"
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information Section */}
-              <div style={{
-                borderTop: "1px solid var(--cds-border-subtle)",
-                paddingTop: "2rem"
-              }}>
-                <h3 style={{ 
-                  fontSize: "1.25rem", 
-                  fontWeight: 600,
-                  color: "var(--cds-text-primary)",
-                  margin: "0 0 1.5rem 0"
-                }}>
-                  Primary Contact Information
-                </h3>
-
-                <div style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
-                  gap: "1.5rem" 
-                }}>
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "var(--cds-text-primary)",
-                      marginBottom: "0.5rem"
-                    }}>
-                      Contact First Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.contactFirstName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          contactFirstName: e.target.value,
-                        }))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid var(--cds-border-strong)",
-                        borderRadius: "4px",
-                        fontSize: "0.875rem",
-                        color: "var(--cds-text-primary)",
-                        background: "var(--cds-field)"
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ 
-                      display: "block", 
-                      fontSize: "0.875rem", 
-                      fontWeight: 500, 
-                      color: "var(--cds-text-primary)",
-                      marginBottom: "0.5rem"
-                    }}>
-                      Contact Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.contactLastName}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          contactLastName: e.target.value,
-                        }))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        border: "1px solid var(--cds-border-strong)",
-                        borderRadius: "4px",
-                        fontSize: "0.875rem",
-                        color: "var(--cds-text-primary)",
-                        background: "var(--cds-field)"
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
-                <Button
-                  type="submit"
-                  kind="primary"
-                  size="md"
-                  disabled={loading}
-                  renderIcon={Add}
-                >
-                  {loading ? "Creating School..." : "Create School"}
-                </Button>
-              </div>
-            </form>
+            <h3 style={{ 
+              fontSize: "2rem", 
+              fontWeight: 600, 
+              margin: "0 0 0.5rem 0",
+              color: "var(--cds-text-primary)"
+            }}>
+              {schools.length}
+            </h3>
+            <p style={{ 
+              fontSize: "0.875rem", 
+              color: "var(--cds-text-secondary)",
+              margin: 0
+            }}>
+              Total Schools
+            </p>
+          </Tile>
+        </Column>
+        <Column lg={4} md={4} sm={2}>
+          <Tile style={{ 
+            padding: "1.5rem",
+            border: "1px solid var(--cds-border-subtle)",
+            textAlign: "center"
+          }}>
+            <h3 style={{ 
+              fontSize: "2rem", 
+              fontWeight: 600, 
+              margin: "0 0 0.5rem 0",
+              color: "var(--cds-support-success)"
+            }}>
+              {schools.filter(s => s.status === "approved").length}
+            </h3>
+            <p style={{ 
+              fontSize: "0.875rem", 
+              color: "var(--cds-text-secondary)",
+              margin: 0
+            }}>
+              Approved
+            </p>
+          </Tile>
+        </Column>
+        <Column lg={4} md={4} sm={2}>
+          <Tile style={{ 
+            padding: "1.5rem",
+            border: "1px solid var(--cds-border-subtle)",
+            textAlign: "center"
+          }}>
+            <h3 style={{ 
+              fontSize: "2rem", 
+              fontWeight: 600, 
+              margin: "0 0 0.5rem 0",
+              color: "var(--cds-support-warning)"
+            }}>
+              {schools.filter(s => s.status === "pending").length}
+            </h3>
+            <p style={{ 
+              fontSize: "0.875rem", 
+              color: "var(--cds-text-secondary)",
+              margin: 0
+            }}>
+              Pending
+            </p>
           </Tile>
         </Column>
       </Grid>
+
+      {/* Schools Table */}
+      <DataTable
+        rows={filteredSchools.map(school => ({
+          id: school.id,
+          name: school.name,
+          contact_email: school.contact_email || "—",
+          contact_phone: school.contact_phone || "—",
+          registration_number: school.registration_number || "—",
+          status: school.status,
+          created_at: formatDate(school.created_at),
+          actions: school.id
+        }))}
+        headers={headers}
+      >
+        {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+          <TableContainer
+            title="Registered Schools"
+            description="List of all schools registered on the platform"
+          >
+            <TableToolbar>
+              <TableToolbarContent>
+                <TableToolbarSearch
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search schools..."
+                />
+              </TableToolbarContent>
+            </TableToolbar>
+            <Table {...getTableProps()}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => (
+                    <TableHeader key={header.key} {...getHeaderProps({ header })}>
+                      {header.header}
+                    </TableHeader>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => {
+                  const school = schools.find(s => s.id === row.id);
+                  return (
+                    <TableRow key={row.id} {...getRowProps({ row })}>
+                      <TableCell>{row.cells[0].value}</TableCell>
+                      <TableCell>{row.cells[1].value}</TableCell>
+                      <TableCell>{row.cells[2].value}</TableCell>
+                      <TableCell>{row.cells[3].value}</TableCell>
+                      <TableCell>
+                        {school && getStatusTag(school.status)}
+                      </TableCell>
+                      <TableCell>{row.cells[5].value}</TableCell>
+                      <TableCell>
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <Button
+                            kind="ghost"
+                            size="sm"
+                            renderIcon={View}
+                            iconDescription="View details"
+                            hasIconOnly
+                          />
+                          <Button
+                            kind="ghost"
+                            size="sm"
+                            renderIcon={Edit}
+                            iconDescription="Edit school"
+                            hasIconOnly
+                          />
+                          <Button
+                            kind="danger-ghost"
+                            size="sm"
+                            renderIcon={TrashCan}
+                            iconDescription="Delete school"
+                            hasIconOnly
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </DataTable>
+
+      {filteredSchools.length === 0 && !loading && (
+        <div style={{ 
+          textAlign: "center", 
+          padding: "3rem",
+          color: "var(--cds-text-secondary)"
+        }}>
+          <p style={{ fontSize: "1.125rem", marginBottom: "1rem" }}>
+            {searchTerm ? "No schools found matching your search." : "No schools registered yet."}
+          </p>
+          {!searchTerm && (
+            <Link href="/schools/register">
+              <Button kind="primary" renderIcon={Add}>
+                Register First School
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -428,7 +373,7 @@ function CreateSchoolContent() {
 export default function SchoolsPage() {
   return (
     <ProtectedRoute requiredRole="admin">
-      <CreateSchoolContent />
+      <SchoolsListContent />
     </ProtectedRoute>
   );
 }
