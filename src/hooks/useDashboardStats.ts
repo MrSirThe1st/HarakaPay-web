@@ -1,3 +1,4 @@
+// src/hooks/useDashboardStats.ts
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Database } from '@/types/supabase';
@@ -13,7 +14,7 @@ interface DashboardStats {
   error: string | null;
 }
 
-export function useDashboardStats(isAdmin: boolean, schoolId?: string | null) {
+export function useDashboardStats(isAdmin: boolean, schoolId?: string | null, profileLoading?: boolean) {
   const [stats, setStats] = useState<DashboardStats>({
     schools: 0,
     students: 0,
@@ -28,8 +29,21 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null) {
   const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
+    // Don't fetch stats if profile is still loading
+    if (profileLoading) return;
+    
+    // For school staff, don't fetch if schoolId is not available yet
+    if (!isAdmin && !schoolId) {
+      setStats(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: 'School ID not found. Please contact your administrator.' 
+      }));
+      return;
+    }
+
     fetchDashboardStats();
-  }, [isAdmin, schoolId]);
+  }, [isAdmin, schoolId, profileLoading]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -47,7 +61,7 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null) {
       setStats(prev => ({ 
         ...prev, 
         loading: false, 
-        error: 'Failed to load dashboard statistics' 
+        error: error instanceof Error ? error.message : 'Failed to load dashboard statistics'
       }));
     }
   };
@@ -101,8 +115,9 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null) {
 
   const fetchSchoolStats = async () => {
     try {
+      // Double-check schoolId is available
       if (!schoolId) {
-        throw new Error('School ID is required for school staff');
+        throw new Error('School ID is required for school staff. Please ensure your profile is properly configured.');
       }
 
       // Fetch students count for this school
@@ -168,7 +183,10 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null) {
   };
 
   const refreshStats = () => {
-    fetchDashboardStats();
+    // Only refresh if we have the required data
+    if (!profileLoading && (isAdmin || schoolId)) {
+      fetchDashboardStats();
+    }
   };
 
   return {

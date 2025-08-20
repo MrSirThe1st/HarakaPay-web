@@ -38,7 +38,7 @@ export async function loadTranslations(locale: string): Promise<Translations> {
     // Dynamic imports for better code splitting
     const [common, auth, dashboard, students, payments] = await Promise.all([
       import(`./translations.${locale}.json`),
-      import(`./${locale}/auth/auth.json`),
+      import(`./${locale}/auth.json`),
       import(`./${locale}/dashboard.json`),
       import(`./${locale}/students.json`),
       import(`./${locale}/payments.json`),
