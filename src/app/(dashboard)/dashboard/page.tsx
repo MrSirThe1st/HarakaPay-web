@@ -1,6 +1,7 @@
 "use client";
 
 import { useDualAuth } from "@/hooks/useDualAuth";
+import MainLayout from "@/components/layout/MainLayout";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Link from "next/link";
@@ -9,29 +10,30 @@ import {
   DollarSign, 
   CheckCircle, 
   Clock, 
-  Plus, 
-  UserPlus, 
   BarChart3, 
   GraduationCap, 
-  MessageSquare,
-  RefreshCw,
-  Building2,
-  Shield
+  Shield, 
+  Building2, 
+  MessageSquare
 } from "lucide-react";
 
 function DashboardContent() {
-  const { user, profile, isAdmin, isSchoolStaff, signOut } = useDualAuth();
-  const { 
-    schools, 
-    students, 
-    totalRevenue, 
-    successRate, 
-    pendingPayments, 
+  const dualAuth = useDualAuth();
+  const profile = dualAuth?.profile;
+  const isAdmin = !!dualAuth?.isAdmin;
+  const isSchoolStaff = !!dualAuth?.isSchoolStaff;
+  const schoolId = (profile as any)?.school_id ?? undefined;
+  const {
+    schools,
+    students,
+    totalRevenue,
+    successRate,
+    pendingPayments,
     completedPayments,
-    loading, 
+    loading,
     error,
-    refreshStats 
-  } = useDashboardStats(isAdmin, profile?.school_id);
+    refreshStats
+  } = useDashboardStats(isAdmin, schoolId);
 
   // Format currency for display
   const formatCurrency = (amount: number) => {
@@ -91,33 +93,7 @@ function DashboardContent() {
 
   return (
     <div className="enterprise-container">
-      {/* Page Header */}
-      <header className="page-header">
-        <div className="page-header-content">
-          <div className="page-header-main">
-            <h1 className="page-title">
-              {isAdmin ? "Platform Administration" : "School Dashboard"}
-            </h1>
-            <p className="page-subtitle">
-              Welcome back, {user?.name || user?.email?.split('@')[0]}
-            </p>
-            {profile && (
-              <div className="user-role-badge">
-                {profile.role === "admin" ? "Platform Administrator" : "School Staff"}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={refreshStats}
-              className="btn btn-ghost"
-              title="Refresh data"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Removed old top navbar and header. You can add a Carbon page header here if needed. */}
 
       {/* Stats Overview */}
       <section className="enterprise-section">
@@ -307,8 +283,10 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <ProtectedRoute requiredRole={["admin", "school_staff"]}>
-      <DashboardContent />
-    </ProtectedRoute>
+    <MainLayout>
+      <ProtectedRoute requiredRole={["admin", "school_staff"]}>
+        <DashboardContent />
+      </ProtectedRoute>
+    </MainLayout>
   );
 }

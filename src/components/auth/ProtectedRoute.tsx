@@ -1,3 +1,6 @@
+// Temporarily modify your ProtectedRoute component to bypass authentication
+// In src/components/auth/ProtectedRoute.tsx
+
 "use client";
 
 import { useCallback, useEffect } from "react";
@@ -15,6 +18,16 @@ export function ProtectedRoute({
   requiredRole,
   fallbackUrl = "/login",
 }: ProtectedRouteProps) {
+  
+  // DEVELOPMENT ONLY: Bypass all authentication checks
+  const DEVELOPMENT_MODE = true; // Set to false when you want auth back
+  
+  if (DEVELOPMENT_MODE) {
+    // Skip all auth checks and render children directly
+    return <>{children}</>;
+  }
+
+  // Original authentication logic (commented out for development)
   const { isAuthenticated, loading, isAdmin, isSchoolStaff } = useDualAuth();
   const router = useRouter();
 
