@@ -1,14 +1,14 @@
+// src/hooks/useDualAuth.ts - SIMPLIFIED VERSION
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
-import { validatePredefinedAdmin, type AuthUser } from "@/lib/adminValidation";
 import type { UserProfile } from "@/types/user";
 import type { Session } from "@supabase/supabase-js";
 
 interface AuthState {
-  user: AuthUser | null;
+  user: any | null; // Using any for now to avoid type issues
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
@@ -22,7 +22,6 @@ export function useDualAuth() {
     error: null,
   });
 
-  const [isPredefinedAdmin, setIsPredefinedAdmin] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -60,24 +59,18 @@ export function useDualAuth() {
           loading: false,
           error: null,
         });
-        setIsPredefinedAdmin(false);
         return;
       }
 
-      const user: AuthUser = {
+      // Create user object from session
+      const user = {
         id: session.user.id,
         email: session.user.email || "",
-        name:
-          session.user.user_metadata?.full_name ||
-          session.user.user_metadata?.name,
+        name: session.user.user_metadata?.full_name || 
+              session.user.user_metadata?.name || 
+              `${session.user.user_metadata?.first_name || ''} ${session.user.user_metadata?.last_name || ''}`.trim(),
         role: session.user.user_metadata?.role,
       };
-
-      // Check if this is a predefined admin
-
-  // If you need to check for predefined admin, use validatePredefinedAdmin
-  // Otherwise, setIsPredefinedAdmin(false);
-  setIsPredefinedAdmin(false);
 
       // Fetch user profile from database
       const profile = await fetchUserProfile(session.user.id);
@@ -113,55 +106,64 @@ export function useDualAuth() {
     return () => subscription.unsubscribe();
   }, [router, supabase.auth, updateAuthState]);
 
-  // Sign in function
+  // SIMPLIFIED Sign in function - NO predefined admin logic
   const signIn = async (email: string, password: string) => {
     setAuthState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Check if this is a predefined admin
+      console.log('Attempting login for:', email);
+      
+      // Direct Supabase authentication - no predefined admin check
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      const predefinedAdmin = await validatePredefinedAdmin(email, password);
-      if (predefinedAdmin) {
-        // Handle predefined admin login
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: predefinedAdmin.email,
-          password: predefinedAdmin.password,
-        });
+      console.log('Login result:', { data, error });
 
-        if (error) {
-          // If Supabase login fails, create the admin user
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: predefinedAdmin.email,
-            password: predefinedAdmin.password,
-            options: {
-              data: {
-                full_name: `${predefinedAdmin.firstName ?? ""} ${predefinedAdmin.lastName ?? ""}`,
-                role: predefinedAdmin.role,
-              },
-            },
-          });
-
-          if (signUpError) {
-            setAuthState((prev) => ({
-              ...prev,
-              loading: false,
-              error: signUpError.message,
-            }));
-            return { success: false, error: signUpError.message, isPredefinedAdmin: false };
-          }
-
-          await updateAuthState(signUpData.session);
-        } else {
-          await updateAuthState(data.session);
-        }
-
-        return { success: true, error: null, isPredefinedAdmin: true };
+      if (error) {
+        console.error('Login error:', error);
+        setAuthState((prev) => ({
+          ...prev,
+          loading: false,
+          error: error.message,
+        }));
+        return { success: false, error: error.message };
       }
 
-      // Regular Supabase authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Update auth state with the session
+      await updateAuthState(data.session);
+      console.log('Login successful, auth state updated');
+      
+      return { success: true, error: null };
+      
+    } catch (error) {
+      console.error('Login exception:', error);
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      setAuthState((prev) => ({
+        ...prev,
+        loading: false,
+        error: errorMessage,
+      }));
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // Sign up function
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata?: Record<string, unknown>
+  ) => {
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: metadata,
+        },
       });
 
       if (error) {
@@ -170,20 +172,18 @@ export function useDualAuth() {
           loading: false,
           error: error.message,
         }));
-        return { success: false, error: error.message, isPredefinedAdmin: false };
+        return { success: false, error: error.message };
       }
 
-      await updateAuthState(data.session);
-      return { success: true, error: null, isPredefinedAdmin: false };
+      return { success: true, error: null, user: data.user };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       setAuthState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
       }));
-      return { success: false, error: errorMessage, isPredefinedAdmin: false };
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -209,13 +209,11 @@ export function useDualAuth() {
         loading: false,
         error: null,
       });
-      setIsPredefinedAdmin(false);
 
       router.push("/login");
       return { success: true, error: null };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
       setAuthState((prev) => ({
         ...prev,
         loading: false,
@@ -225,43 +223,20 @@ export function useDualAuth() {
     }
   };
 
-  // Reset password function
-  const resetPassword = async (email: string) => {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, error: null };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  // Computed values
+  // Helper functions
   const isAuthenticated = !!authState.user;
   const hasProfile = !!authState.profile;
-  const isAdmin = authState.profile?.role === "admin" || isPredefinedAdmin;
+  const isAdmin = authState.profile?.role === "admin";
   const isSchoolStaff = authState.profile?.role === "school_staff";
 
   return {
-    user: authState.user,
-    profile: authState.profile,
-    loading: authState.loading,
-    error: authState.error,
+    ...authState,
     signIn,
+    signUp,
     signOut,
-    resetPassword,
     isAuthenticated,
     hasProfile,
     isAdmin,
     isSchoolStaff,
-    isPredefinedAdmin,
   };
 }
