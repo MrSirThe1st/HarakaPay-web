@@ -1,3 +1,10 @@
+export type PredefinedAdmin = {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+};
 // Client-side admin validation (uses API route for security)
 
 export interface AuthUser {
@@ -7,6 +14,7 @@ export interface AuthUser {
   role: "admin" | "school_staff";
   school_id?: string;
   isPredefined?: boolean;
+  
 }
 
 // Check if email/password matches predefined admin via API

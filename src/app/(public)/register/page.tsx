@@ -15,11 +15,11 @@ export default function RegisterPage() {
         </div>
 
         <div className="text-center">
-          <h2 className="page-title text-center">
-            {t('auth.welcome')}
+          <h2 className="page-title text-center text-3xl font-bold mb-2">
+            Register School
           </h2>
-          <p className="page-subtitle text-center">
-            Contact admin to register your school
+          <p className="page-subtitle text-center text-base text-gray-600 mb-4">
+            Contact admin to register your school on HarakaPay.
           </p>
         </div>
 
@@ -42,12 +42,12 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-4">
             <a
               href="/login"
               className="btn btn-secondary"
             >
-              Back to Login
+              Already have an account? Sign In
             </a>
           </div>
         </div>

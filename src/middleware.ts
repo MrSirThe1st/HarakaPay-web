@@ -1,21 +1,93 @@
-// In your src/middleware.ts file, temporarily comment out or replace the entire content with:
-
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(req: NextRequest) {
-  // DEVELOPMENT ONLY: Disable all middleware checks
-  // This allows access to all routes without authentication
-  
-  // Just add security headers and pass through
+// Define public routes that don't require authentication
+const publicRoutes = [
+  '/',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/api/auth',
+];
+
+// Define protected routes and their required roles
+const protectedRoutes = {
+  '/dashboard': [], // Any authenticated user
+  '/admin': ['admin'],
+  '/schools': ['admin'],
+  '/api/admin': ['admin'],
+};
+
+export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+
+  // Add security headers
   res.headers.set('X-Frame-Options', 'DENY');
   res.headers.set('X-Content-Type-Options', 'nosniff');
   res.headers.set('Referrer-Policy', 'origin-when-cross-origin');
-  
-  return res;
+  res.headers.set('X-XSS-Protection', '1; mode=block');
+
+  const { pathname } = req.nextUrl;
+
+  // Allow public routes
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
+    return res;
+  }
+
+  // Allow static files and Next.js internals
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.includes('.')
+  ) {
+    return res;
+  }
+
+  try {
+    // Get the session
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error('Auth error in middleware:', error);
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // If no session, redirect to login for protected routes
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // Check role-based access for protected routes
+    for (const [route, requiredRoles] of Object.entries(protectedRoutes)) {
+      if (pathname.startsWith(route) && requiredRoles.length > 0) {
+        // Get user profile to check role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        const userRole = profile?.role;
+        
+        // Check if user has required role
+        if (!userRole || !requiredRoles.includes(userRole)) {
+          return NextResponse.redirect(new URL('/unauthorized', req.url));
+        }
+      }
+    }
+
+    return res;
+  } catch (error) {
+    console.error('Middleware error:', error);
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };

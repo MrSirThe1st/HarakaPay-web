@@ -46,11 +46,11 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center">
-          <h2 className="page-title text-center">
-            {t('auth.welcome')}
+          <h2 className="page-title text-center text-3xl font-bold mb-2">
+            Sign In
           </h2>
-          <p className="page-subtitle text-center">
-            {t('auth.loginSubtitle')}
+          <p className="page-subtitle text-center text-base text-gray-600 mb-4">
+            Welcome back! Please log in to your account.
           </p>
         </div>
 
@@ -102,14 +102,14 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-4">
             <p className="text-sm color-text-secondary">
-              Need to register a school?{" "}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/register"
                 className="font-medium text-primary hover:text-primary-dark transition-colors"
               >
-                Contact admin
+                Register your school
               </Link>
             </p>
           </div>
