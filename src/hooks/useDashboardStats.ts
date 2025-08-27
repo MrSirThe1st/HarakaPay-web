@@ -57,11 +57,17 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null, pr
         await fetchSchoolStats();
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+      console.error('Error fetching dashboard stats:', errorMsg);
       setStats(prev => ({ 
         ...prev, 
         loading: false, 
-        error: error instanceof Error ? error.message : 'Failed to load dashboard statistics'
+        error: errorMsg || 'Failed to load dashboard statistics'
       }));
     }
   };
