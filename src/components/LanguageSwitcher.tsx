@@ -1,7 +1,7 @@
 import React from 'react';
-import { useClientTranslations } from '@/hooks/useClientTranslations';
+import { useClientTranslations } from '@/shared/hooks/useClientTranslations';
 import { getOppositeLocale } from '@/lib/i18n';
-import { Globe } from 'lucide-react';
+import { IoGlobe } from 'react-icons/io5';
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'compact' | 'dropdown';
@@ -36,7 +36,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         className={`flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors ${className}`}
         title={t('common.switchTo', { language: targetLang?.name || '' })}
       >
-        <Globe className="h-4 w-4" />
+        <IoGlobe className="h-4 w-4" />
         <span className="hidden sm:inline">{currentLang?.name}</span>
         <span className="sm:hidden">{currentLang?.flag}</span>
       </button>
@@ -70,7 +70,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         onClick={handleLanguageSwitch}
         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
       >
-        <Globe className="h-4 w-4" />
+        <IoGlobe className="h-4 w-4" />
         <span>{currentLang?.flag} {currentLang?.name}</span>
         <span className="text-gray-400">→</span>
         <span>{targetLang?.flag} {targetLang?.name}</span>

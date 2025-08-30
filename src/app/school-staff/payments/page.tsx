@@ -1,0 +1,16 @@
+// src/app/school-staff/payments/page.tsx
+"use client";
+
+import { useDualAuth } from "@/shared/hooks/useDualAuth";
+import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
+import { SchoolStaffPaymentsView } from "@/school-staff/components/SchoolStaffPaymentsView";
+
+export default function SchoolStaffPaymentsPage() {
+  const { isSchoolStaff } = useDualAuth();
+
+  return (
+    <RoleBasedRoute requiredRole="school_staff">
+      {isSchoolStaff && <SchoolStaffPaymentsView />}
+    </RoleBasedRoute>
+  );
+}

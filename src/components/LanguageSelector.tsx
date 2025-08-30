@@ -1,7 +1,7 @@
 import React from 'react';
-import { useClientTranslations } from '@/hooks/useClientTranslations';
-import { useLanguage } from '@/hooks/useLanguage';
-import { Globe } from 'lucide-react';
+import { useClientTranslations } from '@/shared/hooks/useClientTranslations';
+import { useLanguage } from '@/shared/hooks/useLanguage';
+import { IoGlobe } from 'react-icons/io5';
 
 interface LanguageSelectorProps {
   className?: string;
@@ -19,7 +19,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     <div className={`flex flex-col items-center space-y-3 ${className}`}>
       {showLabel && (
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Globe className="h-4 w-4" />
+          <IoGlobe className="h-4 w-4" />
           <span>{t('auth.selectLanguage')}</span>
         </div>
       )}

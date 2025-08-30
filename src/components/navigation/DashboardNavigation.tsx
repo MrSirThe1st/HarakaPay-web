@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useDualAuth } from "@/hooks/useDualAuth";
+import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { useEffect, useState } from "react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
