@@ -1,19 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabaseServerOnly";
+import { checkUserPermission } from "@/lib/authUtils";
+import { createServerAuthClient } from "@/lib/supabaseServerOnly";
 
 export async function POST(request: NextRequest) {
   try {
+    // Get current user from session
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Extract user ID from JWT (you'll need to implement this based on your auth setup)
+    const currentUserId = await getUserIdFromAuthHeader(authHeader);
+    
+    // Check if current user can create admin accounts
+    const { allowed, profile } = await checkUserPermission(currentUserId, 'create_admin_accounts');
+    
+    if (!allowed) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+    
     const adminData = await request.json();
-    // Use service role key for admin actions
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    
+    // Use admin client for all operations
+    const adminClient = createAdminClient();
 
-    // Generate random password if not provided
     const generateRandomPassword = () => {
-      const chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
       let password = "";
       for (let i = 0; i < 12; i++) {
         password += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -23,31 +37,47 @@ export async function POST(request: NextRequest) {
 
     const password = adminData.password || generateRandomPassword();
 
-    // Create the admin user account in Supabase
-    const { data: authData, error: authError } =
-      await supabase.auth.admin.createUser({
-        email: adminData.email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: adminData.firstName,
-          last_name: adminData.lastName,
-          role: "admin",
-        },
-      });
+    // Create the admin user account
+    const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
+      email: adminData.email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: adminData.firstName,
+        last_name: adminData.lastName,
+        role: adminData.role,
+      },
+    });
 
     if (authError) {
       console.error("Auth error:", authError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Failed to create admin account: ${authError.message}`,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: `Failed to create admin account: ${authError.message}`,
+      }, { status: 400 });
     }
 
-  // Profile will be created by the trigger; no manual update needed
+    // Create profile using admin client (bypasses RLS)
+    const { error: profileError } = await adminClient
+      .from('profiles')
+      .insert({
+        user_id: authData.user.id,
+        first_name: adminData.firstName,
+        last_name: adminData.lastName,
+        role: adminData.role,
+        admin_type: adminData.admin_type,
+        school_id: adminData.school_id || null,
+        is_active: true,
+        permissions: adminData.permissions || {}
+      });
+
+    if (profileError) {
+      console.error("Profile creation error:", profileError);
+      return NextResponse.json({
+        success: false,
+        error: `Failed to create profile: ${profileError.message}`,
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
@@ -56,13 +86,14 @@ export async function POST(request: NextRequest) {
         email: adminData.email,
         firstName: adminData.firstName,
         lastName: adminData.lastName,
-        role: "admin",
+        role: adminData.role,
       },
       credentials: {
         email: adminData.email,
         password,
       },
     });
+    
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
@@ -70,4 +101,20 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to extract user ID from auth header
+async function getUserIdFromAuthHeader(authHeader: string): Promise<string> {
+  // Remove 'Bearer ' prefix
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Use regular auth client to verify token
+  const authClient = createServerAuthClient();
+  const { data: { user }, error } = await authClient.auth.getUser(token);
+  
+  if (error || !user) {
+    throw new Error('Invalid token');
+  }
+  
+  return user.id;
 }
