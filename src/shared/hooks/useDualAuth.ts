@@ -1,14 +1,14 @@
-// src/hooks/useDualAuth.ts - SIMPLIFIED VERSION
+// src/hooks/useDualAuth.ts - UPDATED FOR NEW ROLE HIERARCHY (NO PARENTS)
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
-import type { UserProfile } from "@/types/user";
+import type { UserProfile, UserRole, AdminType, RolePermissions } from "@/types/user";
 import type { Session } from "@supabase/supabase-js";
 
 interface AuthState {
-  user: any | null; // Using any for now to avoid type issues
+  user: Record<string, unknown> | null; 
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
@@ -29,20 +29,57 @@ export function useDualAuth() {
   const fetchUserProfile = useCallback(
     async (userId: string): Promise<UserProfile | null> => {
       try {
+        console.log('=== PROFILE FETCH DEBUG ===');
+        console.log('Fetching profile for user:', userId);
+        console.log('User ID type:', typeof userId);
+        console.log('User ID length:', userId?.length);
+        console.log('Supabase client:', supabase);
+        
+        // Test the query step by step
+        console.log('1. Testing basic query...');
+        const { data: allProfiles, error: allError } = await supabase
+          .from("profiles")
+          .select("*");
+        console.log('All profiles query result:', { data: allProfiles, error: allError });
+        
+        console.log('2. Testing specific user query...');
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", userId)
           .single();
 
+        console.log('Specific user query result:', { data, error });
+        console.log('Error object keys:', error ? Object.keys(error) : 'No error');
+        console.log('Error object values:', error ? Object.values(error) : 'No error');
+        
+        // Test if it's an RLS issue by trying to get count
+        console.log('3. Testing count query...');
+        const { count, error: countError } = await supabase
+          .from("profiles")
+          .select("*", { count: 'exact', head: true });
+        console.log('Count query result:', { count, error: countError });
+
         if (error) {
           console.error("Error fetching profile:", error);
+          console.error("Error details:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          if (error.code === 'PGRST116') {
+            console.log('Profile not found - user needs to have a profile created');
+          }
           return null;
         }
 
+        console.log('Profile fetched successfully:', data);
+        console.log('Profile type check:', typeof data, data?.role, data?.admin_type);
+        console.log('=== END PROFILE FETCH DEBUG ===');
         return data as UserProfile;
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Exception fetching profile:", error);
         return null;
       }
     },
@@ -223,11 +260,42 @@ export function useDualAuth() {
     }
   };
 
-  // Helper functions
+  // Helper functions for new role system
   const isAuthenticated = !!authState.user;
   const hasProfile = !!authState.profile;
-  const isAdmin = authState.profile?.role === "admin";
+  
+  // Role checking functions
+  const isSuperAdmin = authState.profile?.role === "super_admin";
+  const isPlatformAdmin = authState.profile?.role === "platform_admin";
+  const isSupportAdmin = authState.profile?.role === "support_admin";
+  const isSchoolAdmin = authState.profile?.role === "school_admin";
   const isSchoolStaff = authState.profile?.role === "school_staff";
+  
+  // Legacy compatibility (for gradual migration)
+  const isAdmin = isSuperAdmin || isPlatformAdmin || isSupportAdmin;
+  
+  // Admin type checking
+  const isAdminType = authState.profile?.admin_type !== null;
+  const isSchoolLevel = isSchoolAdmin || isSchoolStaff;
+  
+  // Panel access checking
+  const canAccessAdminPanel = isSuperAdmin || isPlatformAdmin || isSupportAdmin;
+  const canAccessSchoolPanel = isSchoolAdmin || isSchoolStaff;
+  
+  // Permission checking
+  const hasRole = (role: UserRole) => authState.profile?.role === role;
+  const hasAnyRole = (roles: UserRole[]) => roles.includes(authState.profile?.role as UserRole);
+  const hasHigherRoleThan = (role: UserRole) => {
+    if (!authState.profile?.role) return false;
+    const roleHierarchy = {
+      super_admin: 5,
+      platform_admin: 4,
+      support_admin: 3,
+      school_admin: 2,
+      school_staff: 1,
+    };
+    return roleHierarchy[authState.profile.role] >= roleHierarchy[role];
+  };
 
   return {
     ...authState,
@@ -236,7 +304,28 @@ export function useDualAuth() {
     signOut,
     isAuthenticated,
     hasProfile,
-    isAdmin,
+    
+    // New role checking functions
+    isSuperAdmin,
+    isPlatformAdmin,
+    isSupportAdmin,
+    isSchoolAdmin,
     isSchoolStaff,
+    
+    // Legacy compatibility
+    isAdmin,
+    
+    // Admin type checking
+    isAdminType,
+    isSchoolLevel,
+    
+    // Panel access
+    canAccessAdminPanel,
+    canAccessSchoolPanel,
+    
+    // Permission checking
+    hasRole,
+    hasAnyRole,
+    hasHigherRoleThan,
   };
 }

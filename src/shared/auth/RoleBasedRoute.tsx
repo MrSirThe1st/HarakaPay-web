@@ -1,23 +1,40 @@
-// src/components/auth/RoleBasedRoute.tsx
+// src/components/auth/RoleBasedRoute.tsx - UPDATED FOR NEW ROLE HIERARCHY (NO PARENTS)
 "use client";
 
 import React from "react";
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import type { UserRole } from "@/types/user";
 
 interface RoleBasedRouteProps {
-  requiredRole: 'admin' | 'school_staff' | 'both' | ('admin' | 'school_staff')[];
+  requiredRole: UserRole | UserRole[] | 'admin_type' | 'school_level' | 'any';
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  minRole?: UserRole; // Minimum role level required
 }
 
 export function RoleBasedRoute({ 
   requiredRole, 
   children, 
-  fallback 
+  fallback,
+  minRole 
 }: RoleBasedRouteProps) {
-  const { isAdmin, isSchoolStaff, loading, isAuthenticated } = useDualAuth();
+  const { 
+    isSuperAdmin, 
+    isPlatformAdmin, 
+    isSupportAdmin, 
+    isSchoolAdmin, 
+    isSchoolStaff, 
+    canAccessAdminPanel,
+    canAccessSchoolPanel,
+    hasRole,
+    hasAnyRole,
+    hasHigherRoleThan,
+    loading, 
+    isAuthenticated 
+  } = useDualAuth();
+  
   const router = useRouter();
 
   useEffect(() => {
@@ -41,13 +58,24 @@ export function RoleBasedRoute({
   }
 
   // Check role-based access
-  const hasAccess = 
-    (requiredRole === 'admin' && isAdmin) ||
-    (requiredRole === 'school_staff' && isSchoolStaff) ||
-    (requiredRole === 'both' && (isAdmin || isSchoolStaff)) ||
-    (Array.isArray(requiredRole) && requiredRole.some(role => 
-      (role === 'admin' && isAdmin) || (role === 'school_staff' && isSchoolStaff)
-    ));
+  let hasAccess = false;
+
+  if (requiredRole === 'admin_type') {
+    hasAccess = canAccessAdminPanel;
+  } else if (requiredRole === 'school_level') {
+    hasAccess = canAccessSchoolPanel;
+  } else if (requiredRole === 'any') {
+    hasAccess = isAuthenticated;
+  } else if (Array.isArray(requiredRole)) {
+    hasAccess = hasAnyRole(requiredRole);
+  } else {
+    hasAccess = hasRole(requiredRole);
+  }
+
+  // Check minimum role level if specified
+  if (minRole && hasAccess) {
+    hasAccess = hasHigherRoleThan(minRole);
+  }
 
   if (!hasAccess) {
     if (fallback) {
