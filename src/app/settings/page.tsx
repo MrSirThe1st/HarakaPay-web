@@ -5,10 +5,10 @@ import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
 
 export default function SettingsPage() {
-  const { isAdmin, isSchoolStaff } = useDualAuth();
+  const { canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole={["admin", "school_staff"]}>
+    <RoleBasedRoute requiredRole="any">
       <div style={{ padding: "2rem 0" }}>
         <h1 style={{ 
           fontSize: "2rem", 
@@ -23,7 +23,7 @@ export default function SettingsPage() {
           color: "var(--cds-text-secondary)",
           margin: "0 0 2rem 0"
         }}>
-          {isAdmin ? "Platform settings and configuration" : "School settings and preferences"}
+          {canAccessAdminPanel ? "Platform settings and configuration" : "School settings and preferences"}
         </p>
         
         <div style={{
@@ -38,7 +38,7 @@ export default function SettingsPage() {
             margin: "0 0 1rem 0",
             color: "var(--cds-text-primary)"
           }}>
-            {isAdmin ? "Platform Settings" : "School Settings"}
+            {canAccessAdminPanel ? "Platform Settings" : "School Settings"}
           </h2>
           <p style={{ color: "var(--cds-text-secondary)" }}>
             Settings configuration coming soon...

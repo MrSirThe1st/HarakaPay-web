@@ -16,8 +16,8 @@ export function hasRoleLevel(userRole: UserRole, requiredRole: UserRole): boolea
   return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
 }
 
-// Check if user is any type of admin
-export function isAdmin(role: UserRole): boolean {
+// Check if user has at least school_staff level access
+export function hasSchoolLevelAccess(role: UserRole): boolean {
   return hasRoleLevel(role, 'school_staff');
 }
 

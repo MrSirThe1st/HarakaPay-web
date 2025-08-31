@@ -6,11 +6,11 @@ import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
 import { AdminStudentsView } from "@/admin/components/AdminStudentsView";
 
 export default function SchoolsPage() {
-  const { isAdmin } = useDualAuth();
+  const { canAccessAdminPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole="admin">
-      {isAdmin && <AdminStudentsView />}
+    <RoleBasedRoute requiredRole="admin_type">
+      {canAccessAdminPanel && <AdminStudentsView />}
     </RoleBasedRoute>
   );
 }

@@ -22,7 +22,7 @@ interface UserProfile {
 }
 
 interface AuthState {
-  user: unknown | null; 
+  user: { id: string; email?: string; name?: string } | null; 
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
@@ -42,8 +42,6 @@ export function useDualAuth() {
   // Fetch user profile using server-side API (no RLS issues)
   const fetchUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
-      console.log('Fetching profile for user:', userId);
-      
       // Use server-side API to get profile (bypasses RLS)
       const response = await fetch('/api/auth/profile', {
         method: 'POST',
@@ -52,7 +50,9 @@ export function useDualAuth() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+        const errorData = await response.json();
+        console.error('Profile API error:', errorData);
+        throw new Error(`Failed to fetch profile: ${errorData.error || response.statusText}`);
       }
       
       const { profile } = await response.json();
@@ -180,9 +180,6 @@ export function useDualAuth() {
   const isSchoolAdmin = authState.profile?.role === "school_admin";
   const isSchoolStaff = authState.profile?.role === "school_staff";
   
-  // Legacy compatibility
-  const isAdmin = isSuperAdmin || isPlatformAdmin || isSupportAdmin;
-  
   // Panel access checking
   const canAccessAdminPanel = isSuperAdmin || isPlatformAdmin || isSupportAdmin;
   const canAccessSchoolPanel = isSchoolAdmin || isSchoolStaff;
@@ -195,10 +192,16 @@ export function useDualAuth() {
     return hasRoleLevel(authState.profile.role, role);
   };
 
+  // Authentication status
+  const isAuthenticated = !!authState.user && !!authState.profile;
+
   return {
     ...authState,
     signIn,
     signOut,
+    
+    // Authentication status
+    isAuthenticated,
     
     // Role checking functions
     isSuperAdmin,
@@ -206,9 +209,6 @@ export function useDualAuth() {
     isSupportAdmin,
     isSchoolAdmin,
     isSchoolStaff,
-    
-    // Legacy compatibility
-    isAdmin,
     
     // Panel access
     canAccessAdminPanel,

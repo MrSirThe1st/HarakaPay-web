@@ -15,13 +15,14 @@ import {
   IoNotifications,
   IoPerson,
   IoLanguage,
-  IoLogOut
+  IoLogOut,
+  IoSettings
 } from "react-icons/io5";
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const TopBar = () => {
-  const { user, profile, signOut, isAdmin, isSchoolStaff } = useDualAuth();
+  const { user, profile, signOut, canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSignOut = async () => {
@@ -33,44 +34,47 @@ const TopBar = () => {
   };
 
   const getUserRole = () => {
-    if (isAdmin) return "Admin";
-    if (isSchoolStaff) return "School Staff";
+    if (canAccessAdminPanel) return "Admin";
+    if (canAccessSchoolPanel) return "School Staff";
     return "User";
+  };
+
+  const getRoleColor = () => {
+    if (canAccessAdminPanel) return "var(--cds-interactive-01)";
+    if (canAccessSchoolPanel) return "var(--cds-support-success)";
+    return "var(--cds-text-secondary)";
   };
 
   return (
     <>
       <SkipToContent />
-      <Header aria-label="HarakaPay Platform" style={{ zIndex: 8000 }}>
-        <HeaderName href="/dashboard" prefix="">
-          <span style={{ fontWeight: 600, color: "var(--cds-text-primary)" }}>
+      <Header aria-label="HarakaPay Platform" className="top-bar">
+        <HeaderName href="/dashboard" prefix="" className="brand-name">
+          <span className="brand-text">
             HarakaPay
           </span>
         </HeaderName>
         
-        <HeaderGlobalBar>
+        <HeaderGlobalBar className="header-actions">
           {/* Language Switcher */}
-          <div style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            marginRight: "1rem",
-            padding: "0 0.5rem"
-          }}>
+          <div className="language-switcher">
             <LanguageSwitcher variant="compact" />
           </div>
 
           {/* Notifications */}
           <HeaderGlobalAction 
             aria-label="Notifications"
+            className="action-button"
           >
             <IoNotifications size={20} />
           </HeaderGlobalAction>
 
           {/* User Profile Menu */}
-          <div style={{ position: "relative" }}>
+          <div className="user-menu-container">
             <HeaderGlobalAction 
               aria-label="User Profile"
               onClick={() => setShowUserMenu(!showUserMenu)}
+              className="action-button user-button"
             >
               <IoPerson size={20} />
             </HeaderGlobalAction>
@@ -78,85 +82,35 @@ const TopBar = () => {
             {/* User Dropdown Menu */}
             {showUserMenu && (
               <div
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  right: 0,
-                  background: "var(--cds-layer)",
-                  border: "1px solid var(--cds-border-subtle)",
-                  borderRadius: "4px",
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                  minWidth: "200px",
-                  zIndex: 9000,
-                }}
+                className="user-dropdown"
                 onMouseLeave={() => setShowUserMenu(false)}
               >
-                <div style={{ 
-                  padding: "12px 16px", 
-                  borderBottom: "1px solid var(--cds-border-subtle)",
-                  fontSize: "14px"
-                }}>
-                  <div style={{ fontWeight: 600, marginBottom: "4px" }}>
+                <div className="user-info">
+                  <div className="user-name">
                     {user?.name || user?.email}
                   </div>
-                  <div style={{ 
-                    color: "var(--cds-text-secondary)", 
-                    fontSize: "12px" 
-                  }}>
+                  <div className="user-role" style={{ color: getRoleColor() }}>
                     {getUserRole()}
                   </div>
                 </div>
 
-                <div style={{ padding: "8px 0" }}>
+                <div className="menu-actions">
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
-                      // Navigate to profile or settings
                       window.location.href = "/settings";
                     }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 16px",
-                      border: "none",
-                      background: "transparent",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      color: "var(--cds-text-primary)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--cds-layer-hover)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
+                    className="menu-item"
                   >
-                    Profile Settings
+                    <IoSettings size={16} />
+                    Settings
                   </button>
-
+                  
                   <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      handleSignOut();
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 16px",
-                      border: "none",
-                      background: "transparent",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      color: "var(--cds-text-primary)",
-                      borderTop: "1px solid var(--cds-border-subtle)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--cds-layer-hover)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
+                    onClick={handleSignOut}
+                    className="menu-item signout"
                   >
+                    <IoLogOut size={16} />
                     Sign Out
                   </button>
                 </div>
@@ -165,6 +119,137 @@ const TopBar = () => {
           </div>
         </HeaderGlobalBar>
       </Header>
+
+      <style jsx>{`
+        .top-bar {
+          background: linear-gradient(90deg, var(--cds-layer) 0%, var(--cds-layer-02) 100%) !important;
+          border-bottom: 1px solid var(--cds-border-subtle) !important;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+          z-index: 8000 !important;
+        }
+        
+        .brand-name {
+          padding: 0 1rem !important;
+        }
+        
+        .brand-text {
+          font-weight: 700 !important;
+          font-size: 1.25rem !important;
+          color: var(--cds-text-primary) !important;
+          letter-spacing: -0.025em !important;
+        }
+        
+        .header-actions {
+          display: flex !important;
+          align-items: center !important;
+          gap: 0.5rem !important;
+          padding-right: 1rem !important;
+        }
+        
+        .language-switcher {
+          display: flex;
+          align-items: center;
+          margin-right: 0.5rem;
+          padding: 0 0.5rem;
+        }
+        
+        .action-button {
+          background: transparent !important;
+          border: none !important;
+          color: var(--cds-text-primary) !important;
+          transition: all 0.2s ease !important;
+          border-radius: 4px !important;
+          padding: 0.5rem !important;
+        }
+        
+        .action-button:hover {
+          background-color: var(--cds-layer-hover) !important;
+          color: var(--cds-interactive-01) !important;
+          transform: translateY(-1px) !important;
+        }
+        
+        .user-button {
+          position: relative;
+        }
+        
+        .user-menu-container {
+          position: relative;
+        }
+        
+        .user-dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          background: var(--cds-layer);
+          border: 1px solid var(--cds-border-subtle);
+          border-radius: 8px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+          min-width: 220px;
+          z-index: 9000;
+          overflow: hidden;
+        }
+        
+        .user-info {
+          padding: 1rem;
+          border-bottom: 1px solid var(--cds-border-subtle);
+          background: var(--cds-layer-02);
+        }
+        
+        .user-name {
+          font-weight: 600;
+          margin-bottom: 0.25rem;
+          color: var(--cds-text-primary);
+          font-size: 0.875rem;
+        }
+        
+        .user-role {
+          font-size: 0.75rem;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        
+        .menu-actions {
+          padding: 0.5rem;
+        }
+        
+        .menu-item {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          background: transparent;
+          border: none;
+          border-radius: 4px;
+          color: var(--cds-text-primary);
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .menu-item:hover {
+          background-color: var(--cds-layer-hover);
+          color: var(--cds-interactive-01);
+        }
+        
+        .menu-item.signout:hover {
+          background-color: var(--cds-support-error);
+          color: white;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .brand-text {
+            font-size: 1rem !important;
+          }
+          
+          .header-actions {
+            gap: 0.25rem !important;
+            padding-right: 0.5rem !important;
+          }
+        }
+      `}</style>
     </>
   );
 };

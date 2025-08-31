@@ -78,15 +78,17 @@ const AdminSidebar = () => {
   return (
     <div
       ref={sidebarRef}
+      className="admin-sidebar"
       style={{
-        width: expanded ? 256 : 64,
-        transition: "width 0.2s ease-in-out",
+        width: expanded ? 280 : 80,
+        transition: "width 0.3s ease-in-out",
         position: "fixed",
         height: "100vh",
         zIndex: 100,
         top: 48,
         backgroundColor: "var(--cds-layer)",
         borderRight: "1px solid var(--cds-border-subtle)",
+        boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
       }}
     >
       <SideNav isRail={!expanded} expanded={expanded} aria-label="Admin navigation">
@@ -141,6 +143,71 @@ const AdminSidebar = () => {
           </SideNavLink>
         </SideNavItems>
       </SideNav>
+
+      {/* Custom CSS to make sidebar content bigger and clearer */}
+      <style jsx>{`
+        .admin-sidebar {
+          background: linear-gradient(180deg, var(--cds-layer) 0%, var(--cds-layer-02) 100%);
+        }
+        
+        :global(.cds--side-nav__item) {
+          margin-bottom: 0.5rem !important;
+        }
+        
+        :global(.cds--side-nav__link) {
+          padding: ${expanded ? '1rem' : '0.75rem'} !important;
+          min-height: ${expanded ? '3rem' : '2.5rem'} !important;
+          font-size: ${expanded ? '1rem' : '0.875rem'} !important;
+          border-radius: 6px !important;
+          margin: 0 0.5rem !important;
+          transition: all 0.2s ease !important;
+          color: var(--cds-text-primary) !important;
+        }
+        
+        :global(.cds--side-nav__link:hover) {
+          background-color: var(--cds-layer-hover) !important;
+          transform: translateX(4px) !important;
+          color: var(--cds-interactive-01) !important;
+        }
+        
+        :global(.cds--side-nav__link--current) {
+          background-color: var(--cds-layer-selected) !important;
+          border-left: 3px solid var(--cds-interactive-01) !important;
+          color: var(--cds-interactive-01) !important;
+        }
+        
+        :global(.cds--side-nav__icon) {
+          width: ${expanded ? '20px' : '18px'} !important;
+          height: ${expanded ? '20px' : '18px'} !important;
+          margin-right: ${expanded ? '0.75rem' : '0.5rem'} !important;
+          color: inherit !important;
+        }
+        
+        :global(.cds--side-nav__item--icon) {
+          margin: 0.25rem 0 !important;
+        }
+        
+        :global(.cds--side-nav__menu) {
+          background: transparent !important;
+        }
+        
+        :global(.cds--side-nav__menu-item) {
+          padding: 0.75rem 1rem !important;
+          margin: 0.25rem 0.5rem !important;
+          border-radius: 4px !important;
+          transition: all 0.2s ease !important;
+        }
+        
+        :global(.cds--side-nav__menu-item:hover) {
+          background-color: var(--cds-layer-hover) !important;
+          color: var(--cds-interactive-01) !important;
+        }
+        
+        :global(.cds--side-nav__menu-item--current) {
+          background-color: var(--cds-layer-selected) !important;
+          color: var(--cds-interactive-01) !important;
+        }
+      `}</style>
     </div>
   );
 };

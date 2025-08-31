@@ -37,7 +37,7 @@ import {
 } from "@carbon/icons-react";
 
 export function SchoolStaffPaymentsView() {
-  const { profile, isAdmin, isSchoolStaff, user } = useDualAuth();
+  const { profile, canAccessAdminPanel, canAccessSchoolPanel, user } = useDualAuth();
 
   // Mock data for demonstration - SCHOOL SPECIFIC
   const paymentStats = {

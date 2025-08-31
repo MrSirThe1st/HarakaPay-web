@@ -5,11 +5,11 @@ import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
 
 export default function SchoolStaffSettingsPage() {
-  const { isSchoolStaff } = useDualAuth();
+  const { canAccessSchoolPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole="school_staff">
-      {isSchoolStaff && (
+    <RoleBasedRoute requiredRole="school_level">
+      {canAccessSchoolPanel && (
         <div style={{ padding: "2rem 0" }}>
           <h1 style={{ 
             fontSize: "2rem", 

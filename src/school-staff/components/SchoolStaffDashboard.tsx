@@ -39,7 +39,7 @@ export function SchoolStaffDashboard() {
     loading,
     error,
     refreshStats
-  } = useDashboardStats(false, schoolId); // isAdmin = false, with schoolId
+  } = useDashboardStats(false, schoolId); // canAccessAdminPanel = false, with schoolId
 
   // Format currency for display
   const formatCurrency = (amount: number) => {

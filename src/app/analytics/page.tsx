@@ -5,11 +5,11 @@ import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
 
 export default function AnalyticsPage() {
-  const { isAdmin } = useDualAuth();
+  const { canAccessAdminPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole="admin">
-      {isAdmin && (
+    <RoleBasedRoute requiredRole="admin_type">
+      {canAccessAdminPanel && (
         <div style={{ padding: "2rem 0" }}>
           <h1 style={{ 
             fontSize: "2rem", 

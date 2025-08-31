@@ -7,7 +7,7 @@ import { SchoolStaffLayout } from "@/school-staff/layout/SchoolStaffLayout";
 import BaseLayout from "./BaseLayout";
 
 export default function LayoutFactory({ children }: { children: React.ReactNode }) {
-  const { isAdmin, isSchoolStaff, loading } = useDualAuth();
+  const { canAccessAdminPanel, canAccessSchoolPanel, loading } = useDualAuth();
 
   if (loading) {
     return (
@@ -23,7 +23,7 @@ export default function LayoutFactory({ children }: { children: React.ReactNode 
           alignItems: "center",
           justifyContent: "center"
         }}>
-          <div style={{ fontSize: "12px", color: "var(--cds-text-secondary)" }}>
+          <div style={{ fontSize: "12px", color: "var(--cds-border-subtle)" }}>
             Loading...
           </div>
         </div>
@@ -33,11 +33,11 @@ export default function LayoutFactory({ children }: { children: React.ReactNode 
     );
   }
 
-  if (isAdmin) {
+  if (canAccessAdminPanel) {
     return <AdminLayout>{children}</AdminLayout>;
   }
 
-  if (isSchoolStaff) {
+  if (canAccessSchoolPanel) {
     return <SchoolStaffLayout>{children}</SchoolStaffLayout>;
   }
 

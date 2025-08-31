@@ -6,11 +6,11 @@ import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
 import { SchoolStaffDashboard } from "@/school-staff/components/SchoolStaffDashboard";
 
 export default function SchoolStaffDashboardPage() {
-  const { isSchoolStaff } = useDualAuth();
+  const { canAccessSchoolPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole="school_staff">
-      {isSchoolStaff && <SchoolStaffDashboard />}
+    <RoleBasedRoute requiredRole="school_level">
+      {canAccessSchoolPanel && <SchoolStaffDashboard />}
     </RoleBasedRoute>
   );
 }

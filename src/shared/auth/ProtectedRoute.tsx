@@ -6,7 +6,7 @@ import { useDualAuth } from "@/shared/hooks/useDualAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: "admin" | "school_staff" | ("admin" | "school_staff")[];
+  requiredRole?: "admin_type" | "school_level" | ("admin_type" | "school_level")[];
   fallbackUrl?: string;
 }
 
@@ -15,22 +15,22 @@ export function ProtectedRoute({
   requiredRole,
   fallbackUrl = "/login",
 }: ProtectedRouteProps) {
-  const { isAuthenticated, loading, isAdmin, isSchoolStaff } = useDualAuth();
+  const { isAuthenticated, loading, canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
   const router = useRouter();
 
   const hasRequiredRole = useCallback(
     (
-      role?: "admin" | "school_staff" | ("admin" | "school_staff")[]
+      role?: "admin_type" | "school_level" | ("admin_type" | "school_level")[]
     ): boolean => {
       if (!role) return true;
 
       if (Array.isArray(role)) {
-        return role.some((r) => (r === "admin" ? isAdmin : isSchoolStaff));
+        return role.some((r) => (r === "admin_type" ? canAccessAdminPanel : canAccessSchoolPanel));
       }
 
-      return role === "admin" ? isAdmin : isSchoolStaff;
+      return role === "admin_type" ? canAccessAdminPanel : canAccessSchoolPanel;
     },
-    [isAdmin, isSchoolStaff]
+    [canAccessAdminPanel, canAccessSchoolPanel]
   );
 
   useEffect(() => {
@@ -49,8 +49,8 @@ export function ProtectedRoute({
     isAuthenticated,
     loading,
     requiredRole,
-    isAdmin,
-    isSchoolStaff,
+    canAccessAdminPanel,
+    canAccessSchoolPanel,
     router,
     fallbackUrl,
     hasRequiredRole,

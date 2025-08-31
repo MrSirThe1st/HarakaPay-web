@@ -8,7 +8,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function DashboardNavigation() {
   const pathname = usePathname();
-  const { user, isAdmin, isSchoolStaff, signOut } = useDualAuth();
+  const { user, canAccessAdminPanel, canAccessSchoolPanel, signOut } = useDualAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export function DashboardNavigation() {
         </svg>
       ),
     },
-    ...(isSchoolStaff
+    ...(canAccessSchoolPanel
       ? [
           {
             name: "Students",
@@ -97,7 +97,7 @@ export function DashboardNavigation() {
         </svg>
       ),
     },
-    ...(isAdmin
+    ...(canAccessAdminPanel
       ? [
           {
             name: "Reports",
@@ -147,7 +147,7 @@ export function DashboardNavigation() {
       : []),
   ];
 
-  const adminActions = isAdmin
+  const adminActions = canAccessAdminPanel
     ? [
         {
           name: "Create School",
@@ -225,7 +225,7 @@ export function DashboardNavigation() {
           </div>
           
           {/* Admin Actions Dropdown */}
-          {isAdmin && (
+          {canAccessAdminPanel && (
             <div className="relative">
               <button className="btn btn-secondary">
                 Admin Actions

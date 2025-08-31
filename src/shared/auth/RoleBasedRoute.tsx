@@ -32,7 +32,9 @@ export function RoleBasedRoute({
     hasAnyRole,
     hasHigherRoleThan,
     loading, 
-    isAuthenticated 
+    isAuthenticated,
+    profile,
+    user
   } = useDualAuth();
   
   const router = useRouter();

@@ -7,13 +7,13 @@ import { AdminPaymentsView } from "@/admin/components/AdminPaymentsView";
 import { SchoolStaffPaymentsView } from "@/school-staff/components/SchoolStaffPaymentsView";
 
 export default function PaymentsPage() {
-  const { isAdmin, isSchoolStaff } = useDualAuth();
+  const { canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole={["admin", "school_staff"]}>
-      {isAdmin ? (
+    <RoleBasedRoute requiredRole="any">
+      {canAccessAdminPanel ? (
         <AdminPaymentsView />
-      ) : isSchoolStaff ? (
+      ) : canAccessSchoolPanel ? (
         <SchoolStaffPaymentsView />
       ) : null}
     </RoleBasedRoute>

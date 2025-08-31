@@ -9,29 +9,51 @@ interface BaseLayoutProps {
 
 const BaseLayout = ({ children, sidebar }: BaseLayoutProps) => {
   return (
-    <div style={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      minHeight: "100vh",
-      background: "var(--cds-background)"
-    }}>
+    <div className="app-layout">
       <TopBar />
       
-      <div style={{ display: "flex", flex: 1 }}>
+      <div className="main-container">
         {sidebar}
         
-        <main style={{ 
-          marginLeft: 64, // Collapsed sidebar width
-          marginTop: 48,   // Top bar height
-          padding: "24px",
-          width: "calc(100% - 64px)",
-          minHeight: "calc(100vh - 48px)",
-          background: "var(--cds-background)",
-          transition: "margin-left 0.2s ease"
-        }}>
+        <main className="main-content">
           {children}
         </main>
       </div>
+
+      <style jsx>{`
+        .app-layout {
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+          background: var(--cds-background);
+        }
+        
+        .main-container {
+          display: flex;
+          flex: 1;
+          position: relative;
+        }
+        
+        .main-content {
+          margin-left: 64px; /* Collapsed sidebar width */
+          margin-top: 48px;  /* Top bar height */
+          padding: 24px;
+          width: calc(100% - 64px);
+          min-height: calc(100vh - 48px);
+          background: var(--cds-background);
+          transition: margin-left 0.2s ease;
+          overflow-x: auto;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .main-content {
+            margin-left: 0;
+            width: 100%;
+            padding: 16px;
+          }
+        }
+      `}</style>
     </div>
   );
 };

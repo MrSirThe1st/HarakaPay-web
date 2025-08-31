@@ -14,7 +14,7 @@ interface DashboardStats {
   error: string | null;
 }
 
-export function useDashboardStats(isAdmin: boolean, schoolId?: string | null, profileLoading?: boolean) {
+export function useDashboardStats(canAccessAdminPanel: boolean, schoolId?: string | null, profileLoading?: boolean) {
   const [stats, setStats] = useState<DashboardStats>({
     schools: 0,
     students: 0,
@@ -33,7 +33,7 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null, pr
     if (profileLoading) return;
     
     // For school staff, don't fetch if schoolId is not available yet
-    if (!isAdmin && !schoolId) {
+    if (!canAccessAdminPanel && !schoolId) {
       setStats(prev => ({ 
         ...prev, 
         loading: false, 
@@ -43,13 +43,13 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null, pr
     }
 
     fetchDashboardStats();
-  }, [isAdmin, schoolId, profileLoading]);
+  }, [canAccessAdminPanel, schoolId, profileLoading]);
 
   const fetchDashboardStats = async () => {
     try {
       setStats(prev => ({ ...prev, loading: true, error: null }));
 
-      if (isAdmin) {
+      if (canAccessAdminPanel) {
         // Admin stats - platform-wide data
         await fetchAdminStats();
       } else {
@@ -190,7 +190,7 @@ export function useDashboardStats(isAdmin: boolean, schoolId?: string | null, pr
 
   const refreshStats = () => {
     // Only refresh if we have the required data
-    if (!profileLoading && (isAdmin || schoolId)) {
+    if (!profileLoading && (canAccessAdminPanel || schoolId)) {
       fetchDashboardStats();
     }
   };
