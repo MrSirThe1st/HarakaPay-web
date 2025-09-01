@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDualAuth } from '@/shared/hooks/useDualAuth';
+import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
 
 export default function RootPage() {
   const { user, profile, loading, canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();

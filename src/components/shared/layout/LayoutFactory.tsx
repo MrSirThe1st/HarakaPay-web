@@ -1,7 +1,7 @@
 // src/shared/layout/LayoutFactory.tsx
 "use client";
 
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { AdminLayout } from "./AdminLayout";
 import { SchoolStaffLayout } from "./SchoolStaffLayout";
 import BaseLayout from "./BaseLayout";

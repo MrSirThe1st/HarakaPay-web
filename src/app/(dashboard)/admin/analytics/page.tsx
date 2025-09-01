@@ -1,8 +1,8 @@
 // src/app/analytics/page.tsx
 "use client";
 
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
-import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
+import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
 
 export default function AnalyticsPage() {
   const { canAccessAdminPanel } = useDualAuth();

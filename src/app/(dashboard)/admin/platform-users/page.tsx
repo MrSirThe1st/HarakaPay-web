@@ -1,9 +1,9 @@
 // src/app/(dashboard)/admin/platform-users/page.tsx
 "use client";
 
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
-import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
-import { AdminAdminView } from "./components/AdminAdminView";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
+import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
+import { PlatformUsersView } from "./components/PlatformUsersView";
 import { CreateSchoolView } from "./components/CreateSchoolView";
 
 export default function PlatformUsersPage() {
@@ -31,7 +31,7 @@ export default function PlatformUsersPage() {
             </p>
           </div>
           
-          <AdminAdminView />
+          <PlatformUsersView />
           <CreateSchoolView />
         </div>
       )}

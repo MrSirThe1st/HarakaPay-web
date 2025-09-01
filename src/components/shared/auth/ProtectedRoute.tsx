@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

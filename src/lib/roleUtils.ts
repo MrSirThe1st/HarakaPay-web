@@ -1,11 +1,10 @@
 // Role hierarchy and permission checking utilities
 export const ROLE_HIERARCHY = {
-  'super_admin': 6,
-  'platform_admin': 5, 
-  'support_admin': 4,
-  'school_admin': 3,
-  'school_staff': 2,
-  'parent': 1
+  'super_admin': 5,
+  'platform_admin': 4, 
+  'support_admin': 3,
+  'school_admin': 2,
+  'school_staff': 1
 } as const;
 
 export type UserRole = keyof typeof ROLE_HIERARCHY;

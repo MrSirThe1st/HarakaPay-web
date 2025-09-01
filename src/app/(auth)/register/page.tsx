@@ -1,18 +1,9 @@
 "use client";
 
-import { useClientTranslations } from "@/shared/hooks/useClientTranslations";
-import { LanguageSelector } from "@/components/LanguageSelector";
-
 export default function RegisterPage() {
-  const { t } = useClientTranslations();
 
   return (
     <>
-      {/* Language Selector */}
-      <div className="absolute top-4 right-4">
-        <LanguageSelector />
-      </div>
-
       <div className="text-center">
         <h2 className="page-title text-center text-3xl font-bold mb-2">
           Register School

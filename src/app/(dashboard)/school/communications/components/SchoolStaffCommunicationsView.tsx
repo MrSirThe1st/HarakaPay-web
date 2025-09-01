@@ -8,7 +8,6 @@ import {
   BellIcon, 
   PlusIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   CheckCircleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';

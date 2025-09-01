@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useDualAuth } from '@/shared/hooks/useDualAuth';
+import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
 import { UserIcon, EnvelopeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { UserRole } from '@/lib/roleUtils';
 
@@ -38,8 +38,7 @@ export default function ProfilePage() {
         return 'School Administrator';
       case 'school_staff':
         return 'School Staff';
-      case 'parent':
-        return 'Parent';
+
       default:
         return 'User';
     }

@@ -15,7 +15,7 @@ export interface Database {
           user_id: string;
           first_name: string | null;
           last_name: string | null;
-          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
+          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
           admin_type: "super_admin" | "platform_admin" | "support_admin" | null;
           school_id: string | null;
           phone: string | null;
@@ -30,7 +30,7 @@ export interface Database {
           user_id: string;
           first_name?: string | null;
           last_name?: string | null;
-          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
+          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
           admin_type?: "super_admin" | "platform_admin" | "support_admin" | null;
           school_id?: string | null;
           phone?: string | null;
@@ -45,7 +45,7 @@ export interface Database {
           user_id?: string;
           first_name?: string | null;
           last_name?: string | null;
-          role?: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
+          role?: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
           admin_type?: "super_admin" | "platform_admin" | "support_admin" | null;
           school_id?: string | null;
           phone?: string | null;
@@ -443,7 +443,7 @@ export interface Database {
       };
     };
     Enums: {
-      user_role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
+      user_role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
       admin_type: "super_admin" | "platform_admin" | "support_admin";
       school_status: "pending" | "pending_verification" | "approved" | "suspended";
       verification_status: "pending" | "verified" | "rejected";

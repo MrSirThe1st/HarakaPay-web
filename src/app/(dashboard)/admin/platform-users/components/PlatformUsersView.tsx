@@ -1,10 +1,10 @@
-// src/app/(dashboard)/admin/platform-users/components/AdminAdminView.tsx
+// src/app/(dashboard)/admin/platform-users/components/PlatformUsersView.tsx
 "use client";
 
 import React, { useState } from 'react';
-import { UserAdminIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { UserMinusIcon } from '@heroicons/react/24/outline';
 
-export function AdminAdminView() {
+export function PlatformUsersView() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<{
     email: string;
@@ -56,8 +56,8 @@ export function AdminAdminView() {
         alignItems: "center", 
         marginBottom: "2rem" 
       }}>
-        <UserAdminIcon 
-          size={32} 
+        <UserMinusIcon 
+          className="w-8 h-8"
           style={{ 
             marginRight: "1rem", 
             color: "var(--cds-icon-primary)" 

@@ -1,6 +1,6 @@
 // src/shared/layout/AdminLayout.tsx
-import { BaseLayout } from "./BaseLayout";
-import { AdminSidebar } from "./AdminSidebar";
+import BaseLayout from "@/components/shared/layout/BaseLayout";
+import AdminSidebar from "@/components/admin/layout/AdminSidebar";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (

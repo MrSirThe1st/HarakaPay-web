@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { I18nProvider } from "@/components/I18nProvider";
-import { translations } from "@/lib/loadTranslations";
 
 export const metadata: Metadata = {
   title: "HarakaPay - School Fee Management",
@@ -16,9 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased" suppressHydrationWarning={true}>
-        <I18nProvider translations={translations}>
-          {children}
-        </I18nProvider>
+        {children}
       </body>
     </html>
   );

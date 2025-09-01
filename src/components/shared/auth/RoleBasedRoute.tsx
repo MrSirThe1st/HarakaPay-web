@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { UserRole } from "@/types/user";
@@ -98,7 +98,7 @@ export function RoleBasedRoute({
           You don't have permission to access this page.
         </p>
         <button 
-          onClick={() => router.push('/dashboard')}
+          onClick={() => router.push('/')}
           style={{
             padding: "0.75rem 1.5rem",
             backgroundColor: "var(--cds-button-primary)",

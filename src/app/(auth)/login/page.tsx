@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useClientTranslations } from "@/shared/hooks/useClientTranslations";
-import { LanguageSelector } from "@/components/LanguageSelector";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +13,6 @@ export default function LoginPage() {
 
   const { signIn } = useDualAuth();
   const router = useRouter();
-  const { t } = useClientTranslations();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +23,12 @@ export default function LoginPage() {
       const result = await signIn(email, password);
 
       if (!result.success) {
-        setError(result.error || t('auth.invalidCredentials'));
+        setError(result.error || "Invalid credentials");
       } else {
-        router.push("/dashboard");
+        router.push("/");
       }
     } catch {
-      setError(t('messages.error'));
+      setError("An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -39,10 +36,6 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Language Selector */}
-      <div className="absolute top-4 right-4">
-        <LanguageSelector />
-      </div>
 
       <div className="text-center">
         <h2 className="page-title text-center text-3xl font-bold mb-2">
@@ -57,7 +50,7 @@ export default function LoginPage() {
         <div className="space-y-4">
           <div className="form-group">
             <label htmlFor="email" className="form-label">
-              {t('auth.email')}
+              Email
             </label>
             <input
               id="email"
@@ -65,14 +58,14 @@ export default function LoginPage() {
               type="email"
               required
               className="form-input"
-              placeholder={t('auth.email')}
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="form-group">
             <label htmlFor="password" className="form-label">
-              {t('auth.password')}
+              Password
             </label>
             <input
               id="password"
@@ -80,7 +73,7 @@ export default function LoginPage() {
               type="password"
               required
               className="form-input"
-              placeholder={t('auth.password')}
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -97,7 +90,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className="btn btn-primary w-full"
           >
-            {isLoading ? t('common.loading') : t('auth.signIn')}
+            {isLoading ? "Loading..." : "Sign In"}
           </button>
         </div>
 

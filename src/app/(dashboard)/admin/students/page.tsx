@@ -1,8 +1,8 @@
 // src/app/(dashboard)/admin/students/page.tsx
 "use client";
 
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
-import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
+import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
 import { AdminStudentsView } from "./components/AdminStudentsView";
 
 export default function AdminStudentsPage() {

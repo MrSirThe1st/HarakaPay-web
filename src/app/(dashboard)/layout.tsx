@@ -1,6 +1,5 @@
 import React from 'react';
-import { DashboardLayout } from '@/navigation';
-import { NavigationProvider } from '@/navigation';
+import { DashboardLayout, NavigationProvider } from '@/components/navigation/navigation';
 
 export default function DashboardGroupLayout({
   children,

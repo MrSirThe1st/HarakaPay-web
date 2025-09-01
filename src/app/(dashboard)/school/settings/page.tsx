@@ -1,8 +1,8 @@
 // src/app/school-staff/settings/page.tsx
 "use client";
 
-import { useDualAuth } from "@/shared/hooks/useDualAuth";
-import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
+import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
 
 export default function SchoolStaffSettingsPage() {
   const { canAccessSchoolPanel } = useDualAuth();

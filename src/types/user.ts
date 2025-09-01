@@ -62,10 +62,7 @@ export const ROLE_HIERARCHY = {
   school_staff: 1,
 } as const;
 
-// Helper function to check if a role has higher privileges than another
-export function hasHigherRole(userRole: UserRole, requiredRole: UserRole): boolean {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
-}
+// Note: Role hierarchy checking is handled by hasRoleLevel() in src/lib/roleUtils.ts
 
 // Helper function to check if user is an admin type
 export function isAdminType(role: UserRole): role is AdminType {

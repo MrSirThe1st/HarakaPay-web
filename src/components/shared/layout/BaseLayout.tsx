@@ -1,6 +1,8 @@
 // src/components/layout/BaseLayout.tsx
 import React from "react";
-import TopBar from "./TopBar";
+import AdminTopbar from "@/components/admin/layout/AdminTopbar";
+import SchoolTopbar from "@/components/school/layout/SchoolTopbar";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 
 interface BaseLayoutProps {
   children: React.ReactNode;
@@ -8,9 +10,20 @@ interface BaseLayoutProps {
 }
 
 const BaseLayout = ({ children, sidebar }: BaseLayoutProps) => {
+  const { canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
+  
+  const renderTopbar = () => {
+    if (canAccessAdminPanel) {
+      return <AdminTopbar />;
+    } else if (canAccessSchoolPanel) {
+      return <SchoolTopbar />;
+    }
+    return null;
+  };
+  
   return (
     <div className="app-layout">
-      <TopBar />
+      {renderTopbar()}
       
       <div className="main-container">
         {sidebar}

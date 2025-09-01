@@ -1,16 +1,16 @@
-// src/app/school-staff/payments/page.tsx
+// src/app/school-staff/communications/page.tsx
 "use client";
 
 import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
-import { SchoolStaffPaymentsView } from "./components/SchoolStaffPaymentsView";
+import { SchoolStaffCommunicationsView } from "./components/SchoolStaffCommunicationsView";
 
-export default function SchoolStaffPaymentsPage() {
+export default function SchoolStaffCommunicationsPage() {
   const { canAccessSchoolPanel } = useDualAuth();
 
   return (
     <RoleBasedRoute requiredRole="school_level">
-      {canAccessSchoolPanel && <SchoolStaffPaymentsView />}
+      {canAccessSchoolPanel && <SchoolStaffCommunicationsView />}
     </RoleBasedRoute>
   );
 }
