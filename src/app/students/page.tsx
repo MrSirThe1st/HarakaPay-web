@@ -1,3 +1,6 @@
+// DEPRECATED: This students page has been replaced with separate admin/school students pages
+// See: src/app/(dashboard)/admin/students/page.tsx and src/app/(dashboard)/school/students/page.tsx
+
 // src/app/students/page.tsx
 "use client";
 

@@ -1,3 +1,6 @@
+// DEPRECATED: This mixed role settings page has been replaced with separate admin/school settings pages
+// See: src/app/(dashboard)/admin/settings/page.tsx and src/app/(dashboard)/school/settings/page.tsx
+
 // src/app/settings/page.tsx
 "use client";
 

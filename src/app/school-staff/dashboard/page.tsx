@@ -1,3 +1,5 @@
+// DEPRECATED: This page has been moved to src/app/(dashboard)/school/dashboard/page.tsx
+
 // src/app/school-staff/dashboard/page.tsx
 "use client";
 

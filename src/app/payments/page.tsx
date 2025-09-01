@@ -1,3 +1,6 @@
+// DEPRECATED: This mixed role payments page has been replaced with separate admin/school payments pages
+// See: src/app/(dashboard)/admin/payments/page.tsx and src/app/(dashboard)/school/payments/page.tsx
+
 // src/app/payments/page.tsx
 "use client";
 
