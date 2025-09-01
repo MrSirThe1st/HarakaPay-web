@@ -6,13 +6,13 @@ const PREDEFINED_ADMINS = [
     email: process.env.ADMIN_EMAIL_1!,
     password: process.env.ADMIN_PASSWORD_1!,
     name: "HarakaPay Admin",
-    role: "admin" as const,
+    role: "super_admin" as const,
   },
   {
     email: process.env.ADMIN_EMAIL_2!,
     password: process.env.ADMIN_PASSWORD_2!,
     name: "Marci Admin",
-    role: "admin" as const,
+    role: "super_admin" as const,
   },
 ];
 

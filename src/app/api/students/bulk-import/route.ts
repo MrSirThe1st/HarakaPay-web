@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     // Determine which school to use
     let targetSchoolId = school_id;
     // If user is school staff, they can only import to their own school
-    if (profile.role === 'school_staff') {
+    if (['school_admin', 'school_staff'].includes(profile.role)) {
       if (!profile.school_id) {
         return NextResponse.json(
           { success: false, error: 'School staff must be associated with a school' }, 
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
         );
       }
       targetSchoolId = profile.school_id;
-    } else if (profile.role === 'admin' && !school_id) {
+    } else if (['super_admin', 'platform_admin', 'support_admin'].includes(profile.role) && !school_id) {
       return NextResponse.json(
         { success: false, error: 'Admins must specify a school_id' }, 
         { status: 400 }

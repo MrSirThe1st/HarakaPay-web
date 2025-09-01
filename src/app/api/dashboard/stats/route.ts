@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
 
     let stats;
     
-    if (profile.role === 'admin') {
+    if (['super_admin', 'platform_admin', 'support_admin'].includes(profile.role)) {
       // Admin gets platform-wide stats
       stats = await dashboardService.getAdminDashboardStats();
-    } else if (profile.role === 'school_staff' && profile.school_id) {
+    } else if (['school_admin', 'school_staff'].includes(profile.role) && profile.school_id) {
       // School staff gets their school's stats
       stats = await dashboardService.getSchoolDashboardStats(profile.school_id);
     } else {

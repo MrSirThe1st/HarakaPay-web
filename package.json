@@ -13,6 +13,7 @@
     "@carbon/react": "^1.89.0",
     "@carbon/styles": "^1.88.0",
     "@headlessui/react": "^2.2.7",
+    "@heroicons/react": "^2.2.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.55.0",
     "dotenv": "^17.2.1",

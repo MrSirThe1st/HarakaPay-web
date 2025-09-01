@@ -6,18 +6,15 @@ import type { NextRequest } from 'next/server';
 const publicRoutes = [
   '/',
   '/login',
-  '/signup',
-  '/forgot-password',
-  '/reset-password',
+  '/register',
   '/api/auth',
 ];
 
 // Define protected routes and their required roles
 const protectedRoutes = {
-  '/dashboard': [], // Any authenticated user
-  '/admin': ['admin'],
-  '/schools': ['admin'],
-  '/api/admin': ['admin'],
+  '/admin': ['super_admin', 'platform_admin', 'support_admin'],
+  '/school': ['school_admin', 'school_staff'],
+  '/api/admin': ['super_admin', 'platform_admin', 'support_admin'],
 };
 
 export async function middleware(req: NextRequest) {
@@ -32,10 +29,10 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // Allow public routes
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
-    return res;
-  }
+      // Allow public routes
+    if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+      return res;
+    }
 
   // Allow static files and Next.js internals
   if (

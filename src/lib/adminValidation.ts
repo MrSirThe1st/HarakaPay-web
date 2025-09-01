@@ -11,7 +11,7 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: "admin" | "school_staff";
+  role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
   school_id?: string;
   isPredefined?: boolean;
   
