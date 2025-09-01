@@ -3,7 +3,7 @@
 
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
-import { SchoolStaffStudentsView } from "@/school-staff/components/SchoolStaffStudentsView";
+import { SchoolStaffStudentsView } from "./components/SchoolStaffStudentsView";
 
 export default function SchoolStaffStudentsPage() {
   const { canAccessSchoolPanel } = useDualAuth();

@@ -3,7 +3,7 @@
 
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
-import { AdminStudentsView } from "@/admin/components/AdminStudentsView";
+import { AdminStudentsView } from "./components/AdminStudentsView";
 
 export default function AdminStudentsPage() {
   const { canAccessAdminPanel } = useDualAuth();

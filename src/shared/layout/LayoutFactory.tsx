@@ -2,8 +2,8 @@
 "use client";
 
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
-import { AdminLayout } from "@/admin/layout/AdminLayout";
-import { SchoolStaffLayout } from "@/school-staff/layout/SchoolStaffLayout";
+import { AdminLayout } from "./AdminLayout";
+import { SchoolStaffLayout } from "./SchoolStaffLayout";
 import BaseLayout from "./BaseLayout";
 
 export default function LayoutFactory({ children }: { children: React.ReactNode }) {

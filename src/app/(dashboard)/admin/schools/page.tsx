@@ -3,14 +3,14 @@
 
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
-import { AdminStudentsView } from "@/admin/components/AdminStudentsView";
+import { AdminSchoolsView } from "./components/AdminSchoolsView";
 
 export default function SchoolsPage() {
   const { canAccessAdminPanel } = useDualAuth();
 
   return (
     <RoleBasedRoute requiredRole="admin_type">
-      {canAccessAdminPanel && <AdminStudentsView />}
+      {canAccessAdminPanel && <AdminSchoolsView />}
     </RoleBasedRoute>
   );
 }

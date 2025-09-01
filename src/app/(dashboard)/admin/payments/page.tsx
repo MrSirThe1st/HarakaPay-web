@@ -3,7 +3,7 @@
 
 import { useDualAuth } from "@/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/shared/auth/RoleBasedRoute";
-import { AdminPaymentsView } from "@/admin/components/AdminPaymentsView";
+import { AdminPaymentsView } from "./components/AdminPaymentsView";
 
 export default function AdminPaymentsPage() {
   const { canAccessAdminPanel } = useDualAuth();

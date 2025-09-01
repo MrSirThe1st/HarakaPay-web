@@ -3,8 +3,8 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useDualAuth } from '@/shared/hooks/useDualAuth';
-import { AdminSidebar } from '@/components/admin/layout';
-import { SchoolSidebar } from '@/components/school/layout';
+import AdminSidebar from '@/components/admin/layout/AdminSidebar';
+import SchoolSidebar from '@/components/school/layout/SchoolSidebar';
 import { TopBar } from '@/components/shared/ui';
 
 interface DashboardLayoutProps {
