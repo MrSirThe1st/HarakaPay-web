@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -35,92 +39,88 @@ export default function LoginPage() {
   };
 
   return (
-    <>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold">Sign In</CardTitle>
+          <CardDescription>
+            Welcome back! Please log in to your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
 
-      <div className="text-center">
-        <h2 className="page-title text-center text-3xl font-bold mb-2">
-          Sign In
-        </h2>
-        <p className="page-subtitle text-center text-base text-gray-600 mb-4">
-          Welcome back! Please log in to your account.
-        </p>
-      </div>
+            {error && (
+              <div className="text-center text-red-600 text-sm">{error}</div>
+            )}
 
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <div className="space-y-4">
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="form-input"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="form-input"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {error && (
-          <div className="error-message text-center">{error}</div>
-        )}
-
-        <div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="btn btn-primary w-full"
-          >
-            {isLoading ? "Loading..." : "Sign In"}
-          </button>
-        </div>
-
-        <div className="text-center mt-4">
-          <p className="text-sm color-text-secondary">
-            Don&apos;t have an account?{' '}
-            <Link
-              href="/register"
-              className="font-medium text-primary hover:text-primary-dark transition-colors"
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full"
             >
-              Register your school
-            </Link>
-          </p>
-        </div>
-      </form>
+              {isLoading ? "Loading..." : "Sign In"}
+            </Button>
 
-      <div className="enterprise-card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <h3 className="text-sm font-medium text-blue-800 mb-2">
-          Demo Credentials:
-        </h3>
-        <div className="text-xs text-blue-700 space-y-1">
-          <p>
-            <strong>Admin:</strong> admin@harakapay.com / HarakaPay2025!Admin
-          </p>
-          <p>
-            <strong>Marci Admin:</strong> marci@harakapay.com /
-            HarakaPay2025!Marci
-          </p>
-        </div>
-      </div>
-    </>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Don&apos;t have an account?{' '}
+                <Link
+                  href="/register"
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Register your school
+                </Link>
+              </p>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium text-blue-800">
+            Demo Credentials:
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-xs text-blue-700 space-y-1">
+            <p>
+              <strong>Admin:</strong> admin@harakapay.com / HarakaPay2025!Admin
+            </p>
+            <p>
+              <strong>Marci Admin:</strong> marci@harakapay.com /
+              HarakaPay2025!Marci
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
