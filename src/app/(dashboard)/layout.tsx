@@ -1,5 +1,5 @@
 import React from 'react';
-import { DashboardLayout, NavigationProvider } from '@/components/navigation/navigation';
+import { DashboardLayout } from '@/components/navigation/navigation';
 
 export default function DashboardGroupLayout({
   children,
@@ -7,10 +7,8 @@ export default function DashboardGroupLayout({
   children: React.ReactNode;
 }) {
   return (
-    <NavigationProvider>
-      <DashboardLayout>
-        {children}
-      </DashboardLayout>
-    </NavigationProvider>
+    <DashboardLayout>
+      {children}
+    </DashboardLayout>
   );
 }

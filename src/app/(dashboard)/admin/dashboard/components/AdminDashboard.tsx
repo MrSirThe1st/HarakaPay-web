@@ -71,8 +71,8 @@ export function AdminDashboard() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
               <div>
-                <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white">
-                  <BuildingOfficeIcon className="h-6 w-6" />
+                <span className="rounded-lg inline-flex p-2 bg-blue-50 text-blue-700 ring-2 ring-white">
+                  <BuildingOfficeIcon className="h-5 w-5" />
                 </span>
               </div>
               <div className="mt-8">
@@ -88,8 +88,8 @@ export function AdminDashboard() {
 
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
               <div>
-                <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
-                  <UsersIcon className="h-6 w-6" />
+                <span className="rounded-lg inline-flex p-2 bg-green-50 text-green-700 ring-2 ring-white">
+                  <UsersIcon className="h-5 w-5" />
                 </span>
               </div>
               <div className="mt-8">
@@ -105,8 +105,8 @@ export function AdminDashboard() {
 
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
               <div>
-                <span className="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
-                  <ChartBarIcon className="h-6 w-6" />
+                <span className="rounded-lg inline-flex p-2 bg-purple-50 text-purple-700 ring-2 ring-white">
+                  <ChartBarIcon className="h-5 w-5" />
                 </span>
               </div>
               <div className="mt-8">

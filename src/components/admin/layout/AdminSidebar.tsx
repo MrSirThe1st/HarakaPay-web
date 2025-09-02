@@ -4,64 +4,80 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  HomeIcon, 
-  BuildingOfficeIcon, 
-  UsersIcon, 
-  ChartBarIcon, 
-  Cog6ToothIcon 
-} from '@heroicons/react/24/outline';
+  Home, 
+  Building2, 
+  Users, 
+  BarChart3, 
+  Settings 
+} from 'lucide-react';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'Schools', href: '/admin/schools', icon: BuildingOfficeIcon },
-  { name: 'Platform Users', href: '/admin/platform-users', icon: UsersIcon },
-  { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
-  { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
+  { name: 'Schools', href: '/admin/schools', icon: Building2 },
+  { name: 'Platform Users', href: '/admin/platform-users', icon: Users },
+  { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Logo/Brand */}
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">HarakaPay Admin</h1>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                isActive
-                  ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User Info */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">A</span>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-gray-900">Admin User</p>
-            <p className="text-xs text-gray-500">Administrator</p>
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center justify-center h-16 px-4">
+          <h1 className="text-xl font-bold">HarakaPay Admin</h1>
+        </div>
+      </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      
+      <SidebarFooter>
+        <div className="p-4">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">A</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">Admin User</p>
+              <p className="text-xs text-muted-foreground">Administrator</p>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
