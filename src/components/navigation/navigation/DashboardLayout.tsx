@@ -30,23 +30,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return null;
   }
 
-  const renderSidebar = () => {
-    if (canAccessAdminPanel) {
-      return <AdminSidebar />;
-    } else if (canAccessSchoolPanel) {
-      return <SchoolSidebar />;
-    }
-    return null;
-  };
 
-  const renderTopbar = () => {
-    if (canAccessAdminPanel) {
-      return <AdminTopbar />;
-    } else if (canAccessSchoolPanel) {
-      return <SchoolTopbar />;
-    }
-    return null;
-  };
 
   if (canAccessAdminPanel) {
     return (
@@ -64,23 +48,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     );
   }
 
-  // School panel - use custom sidebar
-  return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        {renderSidebar()}
-      </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        {renderTopbar()}
+  if (canAccessSchoolPanel) {
+    // School panel - use custom sidebar
+    return (
+      <div className="flex h-screen bg-gray-100">
+        {/* Sidebar */}
+        <div className="w-64 bg-white shadow-lg">
+          <SchoolSidebar />
+        </div>
         
-        {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-          {children}
-        </main>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Bar */}
+          <SchoolTopbar />
+          
+          {/* Page Content */}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback - should not reach here with proper auth
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
+        <p className="text-gray-600">You don&apos;t have permission to access this area.</p>
       </div>
     </div>
   );
