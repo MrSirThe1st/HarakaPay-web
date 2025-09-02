@@ -7,7 +7,7 @@ import AdminSidebar from '@/components/admin/layout/AdminSidebar';
 import SchoolSidebar from '@/components/school/layout/SchoolSidebar';
 import AdminTopbar from '@/components/admin/layout/AdminTopbar';
 import SchoolTopbar from '@/components/school/layout/SchoolTopbar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,17 +34,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (canAccessAdminPanel) {
     return (
-      <SidebarProvider>
+      <div className="flex h-screen bg-gray-100">
+        {/* Sidebar */}
         <AdminSidebar />
-        <SidebarInset>
-          <div className="flex flex-col h-screen">
-            <AdminTopbar />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-              {children}
-            </main>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+        
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Bar */}
+          <AdminTopbar />
+          
+          {/* Page Content */}
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            {children}
+          </main>
+        </div>
+      </div>
     );
   }
 
