@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { UserPlusIcon } from '@heroicons/react/24/outline';
 
 export function CreateSchoolView() {
   const [loading, setLoading] = useState(false);
@@ -10,19 +10,17 @@ export function CreateSchoolView() {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    schoolName: "",
-    address: "",
-    city: "",
-    country: "",
-    contactEmail: "",
-    contactPhone: "",
-    adminEmail: "",
-    adminPassword: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    role: "platform_admin",
+    phone: "",
   });
 
   const generatePassword = () => {
-    const password = "School" + Math.random().toString(36).slice(-6) + "!";
-    setFormData((prev) => ({ ...prev, adminPassword: password }));
+    const password = "Admin" + Math.random().toString(36).slice(-6) + "!";
+    setFormData((prev) => ({ ...prev, password: password }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,21 +29,36 @@ export function CreateSchoolView() {
     setError(null);
     setSuccess(null);
 
-    // Simulate API call for now
-    setTimeout(() => {
-      setSuccess(`School "${formData.schoolName}" created successfully!`);
-      setFormData({
-        schoolName: "",
-        address: "",
-        city: "",
-        country: "",
-        contactEmail: "",
-        contactPhone: "",
-        adminEmail: "",
-        adminPassword: "",
+    try {
+      const response = await fetch('/api/admin/create-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData),
       });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create admin');
+      }
+
+      setSuccess(`Admin "${formData.firstName} ${formData.lastName}" created successfully!`);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        role: "platform_admin",
+        phone: "",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -55,8 +68,8 @@ export function CreateSchoolView() {
         alignItems: "center", 
         marginBottom: "2rem" 
       }}>
-        <BuildingOfficeIcon 
-          size={32} 
+        <UserPlusIcon 
+          className="h-8 w-8"
           style={{ 
             marginRight: "1rem", 
             color: "var(--cds-icon-primary)" 
@@ -69,14 +82,14 @@ export function CreateSchoolView() {
             margin: 0,
             color: "var(--cds-text-primary)"
           }}>
-            Create New School
+            Create New Admin
           </h2>
           <p style={{ 
             fontSize: "1.125rem", 
             color: "var(--cds-text-secondary)",
             margin: "0.5rem 0 0 0"
           }}>
-            Register a new school on the platform
+            Register a new admin user on the platform
           </p>
         </div>
       </div>
@@ -107,7 +120,7 @@ export function CreateSchoolView() {
         </div>
       )}
 
-      {/* Create School Form */}
+      {/* Create Admin Form */}
       <div style={{
         padding: "2rem",
         border: "1px solid var(--cds-border-subtle)",
@@ -123,13 +136,13 @@ export function CreateSchoolView() {
                 fontWeight: 500,
                 color: "var(--cds-text-primary)"
               }}>
-                School Name *
+                First Name *
               </label>
               <input
                 type="text"
                 required
-                value={formData.schoolName}
-                onChange={(e) => setFormData(prev => ({ ...prev, schoolName: e.target.value }))}
+                value={formData.firstName}
+                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                 style={{
                   width: "100%",
                   padding: "0.75rem",
@@ -137,7 +150,7 @@ export function CreateSchoolView() {
                   borderRadius: "4px",
                   fontSize: "1rem"
                 }}
-                placeholder="Enter school name"
+                placeholder="Enter first name"
               />
             </div>
 
@@ -148,13 +161,38 @@ export function CreateSchoolView() {
                 fontWeight: 500,
                 color: "var(--cds-text-primary)"
               }}>
-                Contact Email *
+                Last Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  border: "1px solid var(--cds-border-subtle)",
+                  borderRadius: "4px",
+                  fontSize: "1rem"
+                }}
+                placeholder="Enter last name"
+              />
+            </div>
+
+            <div>
+              <label style={{ 
+                display: "block", 
+                marginBottom: "0.5rem",
+                fontWeight: 500,
+                color: "var(--cds-text-primary)"
+              }}>
+                Email *
               </label>
               <input
                 type="email"
                 required
-                value={formData.contactEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 style={{
                   width: "100%",
                   padding: "0.75rem",
@@ -162,7 +200,7 @@ export function CreateSchoolView() {
                   borderRadius: "4px",
                   fontSize: "1rem"
                 }}
-                placeholder="Enter contact email"
+                placeholder="Enter email address"
               />
             </div>
 
@@ -173,84 +211,12 @@ export function CreateSchoolView() {
                 fontWeight: 500,
                 color: "var(--cds-text-primary)"
               }}>
-                Address
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--cds-border-subtle)",
-                  borderRadius: "4px",
-                  fontSize: "1rem"
-                }}
-                placeholder="Enter school address"
-              />
-            </div>
-
-            <div>
-              <label style={{ 
-                display: "block", 
-                marginBottom: "0.5rem",
-                fontWeight: 500,
-                color: "var(--cds-text-primary)"
-              }}>
-                City
-              </label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--cds-border-subtle)",
-                  borderRadius: "4px",
-                  fontSize: "1rem"
-                }}
-                placeholder="Enter city"
-              />
-            </div>
-
-            <div>
-              <label style={{ 
-                display: "block", 
-                marginBottom: "0.5rem",
-                fontWeight: 500,
-                color: "var(--cds-text-primary)"
-              }}>
-                Country
-              </label>
-              <input
-                type="text"
-                value={formData.country}
-                onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--cds-border-subtle)",
-                  borderRadius: "4px",
-                  fontSize: "1rem"
-                }}
-                placeholder="Enter country"
-              />
-            </div>
-
-            <div>
-              <label style={{ 
-                display: "block", 
-                marginBottom: "0.5rem",
-                fontWeight: 500,
-                color: "var(--cds-text-primary)"
-              }}>
-                Contact Phone
+                Phone
               </label>
               <input
                 type="tel"
-                value={formData.contactPhone}
-                onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 style={{
                   width: "100%",
                   padding: "0.75rem",
@@ -269,13 +235,12 @@ export function CreateSchoolView() {
                 fontWeight: 500,
                 color: "var(--cds-text-primary)"
               }}>
-                Admin Email *
+                Role *
               </label>
-              <input
-                type="email"
+              <select
                 required
-                value={formData.adminEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, adminEmail: e.target.value }))}
+                value={formData.role}
+                onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
                 style={{
                   width: "100%",
                   padding: "0.75rem",
@@ -283,8 +248,11 @@ export function CreateSchoolView() {
                   borderRadius: "4px",
                   fontSize: "1rem"
                 }}
-                placeholder="Enter admin email"
-              />
+              >
+                <option value="platform_admin">Platform Admin</option>
+                <option value="support_admin">Support Admin</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
             </div>
 
             <div>
@@ -294,14 +262,14 @@ export function CreateSchoolView() {
                 fontWeight: 500,
                 color: "var(--cds-text-primary)"
               }}>
-                Admin Password *
+                Password *
               </label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <input
                   type="text"
                   required
-                  value={formData.adminPassword}
-                  onChange={(e) => setFormData(prev => ({ ...prev, adminPassword: e.target.value }))}
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                   style={{
                     flex: 1,
                     padding: "0.75rem",
@@ -309,7 +277,7 @@ export function CreateSchoolView() {
                     borderRadius: "4px",
                     fontSize: "1rem"
                   }}
-                  placeholder="Enter admin password"
+                  placeholder="Enter password"
                 />
                 <button
                   type="button"
@@ -343,7 +311,7 @@ export function CreateSchoolView() {
                 cursor: loading ? "not-allowed" : "pointer"
               }}
             >
-              {loading ? "Creating School..." : "Create School"}
+              {loading ? "Creating Admin..." : "Create Admin"}
             </button>
           </div>
         </form>

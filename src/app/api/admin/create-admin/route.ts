@@ -1,27 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { createAdminClient } from "@/lib/supabaseServerOnly";
-import { checkUserPermission } from "@/lib/authUtils";
-import { createServerAuthClient } from "@/lib/supabaseServerOnly";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get current user from session
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    console.log('Create admin API called'); // Debug log
+    
+    const supabase = createRouteHandlerClient({ cookies });
+    
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.log('Auth error:', authError); // Debug log
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Extract user ID from JWT (you'll need to implement this based on your auth setup)
-    const currentUserId = await getUserIdFromAuthHeader(authHeader);
-    
-    // Check if current user can create admin accounts
-    const { allowed, profile } = await checkUserPermission(currentUserId, 'create_admin_accounts');
-    
-    if (!allowed) {
+
+    console.log('User authenticated:', user.id); // Debug log
+
+    // Get user profile to check permissions
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profile || !['super_admin', 'platform_admin'].includes(profile.role)) {
+      console.log('Permission denied for role:', profile?.role); // Debug log
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
     
     const adminData = await request.json();
+    console.log('Admin data received:', adminData); // Debug log
     
     // Use admin client for all operations
     const adminClient = createAdminClient();
@@ -37,6 +47,7 @@ export async function POST(request: NextRequest) {
 
     const password = adminData.password || generateRandomPassword();
 
+    console.log('Creating auth user with email:', adminData.email); // Debug log
     // Create the admin user account
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email: adminData.email,
@@ -57,7 +68,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    console.log('Auth user created successfully:', authData.user.id); // Debug log
+
     // Create profile using admin client (bypasses RLS)
+    console.log('Creating profile...'); // Debug log
     const { error: profileError } = await adminClient
       .from('profiles')
       .insert({
@@ -65,20 +79,20 @@ export async function POST(request: NextRequest) {
         first_name: adminData.firstName,
         last_name: adminData.lastName,
         role: adminData.role,
-        admin_type: adminData.admin_type,
-        school_id: adminData.school_id || null,
         is_active: true,
-        permissions: adminData.permissions || {}
       });
 
     if (profileError) {
       console.error("Profile creation error:", profileError);
+      // Clean up the auth user if profile creation failed
+      await adminClient.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json({
         success: false,
         error: `Failed to create profile: ${profileError.message}`,
       }, { status: 500 });
     }
 
+    console.log('Admin creation completed successfully'); // Debug log
     return NextResponse.json({
       success: true,
       admin: {
@@ -103,18 +117,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to extract user ID from auth header
-async function getUserIdFromAuthHeader(authHeader: string): Promise<string> {
-  // Remove 'Bearer ' prefix
-  const token = authHeader.replace('Bearer ', '');
-  
-  // Use regular auth client to verify token
-  const authClient = createServerAuthClient();
-  const { data: { user }, error } = await authClient.auth.getUser(token);
-  
-  if (error || !user) {
-    throw new Error('Invalid token');
-  }
-  
-  return user.id;
-}
+
