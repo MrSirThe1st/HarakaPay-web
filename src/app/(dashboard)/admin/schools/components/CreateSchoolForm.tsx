@@ -75,15 +75,20 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted!'); // Debug log
     
     if (!validateForm()) {
+      console.log('Form validation failed'); // Debug log
       return;
     }
 
+    console.log('Form validation passed, starting submission...'); // Debug log
     setIsSubmitting(true);
     setError(null);
 
     try {
+      console.log('Submitting school data:', formData); // Debug log
+      
       const response = await fetch('/api/admin/create-school', {
         method: 'POST',
         headers: {
@@ -93,7 +98,10 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
         body: JSON.stringify(formData),
       });
 
+      console.log('Response status:', response.status); // Debug log
+      
       const result = await response.json();
+      console.log('Response result:', result); // Debug log
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to create school');
@@ -107,6 +115,7 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
         throw new Error(result.error || 'Failed to create school');
       }
     } catch (err) {
+      console.error('School creation error:', err); // Debug log
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
@@ -115,7 +124,7 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
 
   if (success) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -168,7 +177,7 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-lg flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">

@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { createServerClient } from "@/lib/supabaseServerOnly";
+import { createAdminClient } from "@/lib/supabaseServerOnly";
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Create school API called'); // Debug log
+    
     const supabase = createRouteHandlerClient({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.log('Auth error:', authError); // Debug log
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    console.log('User authenticated:', user.id); // Debug log
 
     // Get user profile to check permissions
     const { data: profile } = await supabase
@@ -21,11 +26,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!profile || !['super_admin', 'platform_admin'].includes(profile.role)) {
+      console.log('Permission denied for role:', profile?.role); // Debug log
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     const schoolData = await request.json();
-    const adminSupabase = createServerClient();
+    console.log('School data received:', schoolData); // Debug log
+    
+    const adminSupabase = createAdminClient();
 
     // Generate random credentials
     const generateRandomPassword = () => {
@@ -46,17 +54,18 @@ export async function POST(request: NextRequest) {
     const password = generateRandomPassword();
 
     // Create the school user account in Supabase
-      const { data: authData, error: authError } =
-        await adminSupabase.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: {
-            first_name: schoolData.contactFirstName,
-            last_name: schoolData.contactLastName,
-            role: "school_staff",
-          },
-        });
+    console.log('Creating auth user with email:', email); // Debug log
+    const { data: authData, error: authError } =
+      await adminSupabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: schoolData.contactFirstName,
+          last_name: schoolData.contactLastName,
+          role: "school_staff",
+        },
+      });
 
     if (authError) {
       console.error("Auth error:", authError);
@@ -69,7 +78,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Auth user created successfully:', authData.user.id); // Debug log
+
     // Create the school record
+    console.log('Creating school record...'); // Debug log
     const { data: school, error: schoolError } = await adminSupabase
       .from("schools")
       .insert({
@@ -96,6 +108,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('School record created successfully:', school.id); // Debug log
+
     // Update the user profile with school_id
     const { error: profileError } = await adminSupabase
       .from("profiles")
@@ -117,6 +131,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('School creation completed successfully'); // Debug log
     return NextResponse.json({
       success: true,
       school,
