@@ -1,10 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { createServerClient } from "@/lib/supabaseServerOnly";
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createRouteHandlerClient({ cookies });
+    
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user profile to check permissions
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profile || !['super_admin', 'platform_admin'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const schoolData = await request.json();
-    const supabase = createServerClient();
+    const adminSupabase = createServerClient();
 
     // Generate random credentials
     const generateRandomPassword = () => {
@@ -26,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Create the school user account in Supabase
       const { data: authData, error: authError } =
-        await supabase.auth.admin.createUser({
+        await adminSupabase.auth.admin.createUser({
           email,
           password,
           email_confirm: true,
@@ -49,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the school record
-    const { data: school, error: schoolError } = await supabase
+    const { data: school, error: schoolError } = await adminSupabase
       .from("schools")
       .insert({
         name: schoolData.name,
@@ -65,7 +86,7 @@ export async function POST(request: NextRequest) {
     if (schoolError) {
       console.error("School creation error:", schoolError);
       // Clean up the auth user if school creation failed
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await adminSupabase.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         {
           success: false,
@@ -76,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the user profile with school_id
-    const { error: profileError } = await supabase
+    const { error: profileError } = await adminSupabase
       .from("profiles")
       .update({
         school_id: school.id,
