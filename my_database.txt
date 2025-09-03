@@ -1,0 +1,415 @@
+# HarakaPay Hybrid Authentication & Authorization Architecture
+
+## Overview
+
+HarakaPay implements a **hybrid authentication and authorization approach** that combines application-level permission checks with database-level Row Level Security (RLS) policies. This architecture provides multiple layers of security while avoiding common pitfalls like RLS recursion and performance issues.
+
+## Table of Contents
+- [Core Concepts](#core-concepts)
+- [Architecture Components](#architecture-components)
+- [Supabase Client Strategy](#supabase-client-strategy)
+- [Permission System](#permission-system)
+- [RLS Policies](#rls-policies)
+- [Implementation Examples](#implementation-examples)
+- [Security Benefits](#security-benefits)
+- [Common Pitfalls Avoided](#common-pitfalls-avoided)
+- [Best Practices](#best-practices)
+
+## Core Concepts
+
+### Defense in Depth
+Our security model implements multiple layers:
+1. **Middleware Authentication** - Verifies user sessions
+2. **Application-Level Permissions** - Business logic checks in API routes
+3. **Database-Level RLS** - Fallback protection for all data access
+
+### Hybrid Client Strategy
+We use different Supabase clients for different contexts:
+- **Admin Client (Service Role)** - Server-side operations that bypass RLS
+- **User Client (Anon Key)** - Client-side operations that respect RLS
+
+## Architecture Components
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENT REQUEST                           │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                   MIDDLEWARE                                │
+│  • Session validation                                       │
+│  • Role-based route protection                              │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                  API ROUTE                                  │
+│  • Token verification                                       │
+│  • Application-level permission checks                     │
+│  • Uses Admin Client (bypasses RLS)                        │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                  DATABASE                                   │
+│  • RLS policies (fallback protection)                      │
+│  • Simple policies without helper functions                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Supabase Client Strategy
+
+### Admin Client (Server-Side Only)
+```typescript
+// src/lib/supabaseServerOnly.ts
+export const createAdminClient = () => {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+};
+```
+
+**Characteristics:**
+- Uses service role key
+- Bypasses ALL RLS policies
+- Server-side only (never expose service key to client)
+- Used for admin operations where we control permissions in code
+
+### User Client (Client & Server Auth)
+```typescript
+export const createServerAuthClient = () => {
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  
+  return createClient(supabaseUrl, anonKey);
+};
+```
+
+**Characteristics:**
+- Uses anonymous key
+- Respects RLS policies
+- Used for authentication and user-facing queries
+- Safe for client-side use
+
+## Permission System
+
+### Role Hierarchy
+```typescript
+// src/lib/roleUtils.ts
+export const ROLE_HIERARCHY = {
+  'super_admin': 5,
+  'platform_admin': 4, 
+  'support_admin': 3,
+  'school_admin': 2,
+  'school_staff': 1
+} as const;
+```
+
+### Application-Level Permission Checks
+```typescript
+// src/lib/authUtils.ts
+export async function checkUserPermission(
+  userId: string, 
+  operation: string,
+  resourceId?: string
+): Promise<{ allowed: boolean; profile: any; reason?: string }> {
+  
+  // Use admin client to get profile (bypasses RLS)
+  const adminClient = createAdminClient();
+  const profile = await getUserProfile(userId);
+  
+  if (!profile?.is_active) {
+    return { allowed: false, profile, reason: 'Account inactive' };
+  }
+  
+  // Handle different operations
+  switch (operation) {
+    case 'create_schools':
+      return { 
+        allowed: hasRoleLevel(profile.role, 'platform_admin'), 
+        profile 
+      };
+    // ... other operations
+  }
+}
+```
+
+## RLS Policies
+
+Our RLS policies are intentionally **simple and direct** to avoid recursion issues.
+
+### Key Principles:
+1. **No Helper Functions** - Direct queries only
+2. **Avoid Reserved Keywords** - Use descriptive aliases
+3. **Simple EXISTS Clauses** - Clear, readable conditions
+4. **Table Aliases** - Prevent naming conflicts
+
+### Example Policy
+```sql
+-- Simple, direct policy without helper functions
+CREATE POLICY "schools_select_policy" ON schools FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE user_id = auth.uid() 
+    AND is_active = true
+    AND (
+      role IN ('super_admin', 'platform_admin', 'support_admin') OR
+      (role IN ('school_admin', 'school_staff') AND school_id = schools.id)
+    )
+  )
+);
+```
+
+## Implementation Examples
+
+### API Route Pattern
+```typescript
+// Standard pattern for all admin API routes
+export async function POST(request: NextRequest) {
+  try {
+    // 1. Extract and verify auth token
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // 2. Verify token with user client
+    const token = authHeader.replace('Bearer ', '');
+    const authClient = createServerAuthClient();
+    const { data: { user }, error } = await authClient.auth.getUser(token);
+    
+    if (error || !user) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // 3. Check permissions with admin client
+    const permission = await checkUserPermission(user.id, 'create_schools');
+    if (!permission.allowed) {
+      return NextResponse.json({ error: permission.reason }, { status: 403 });
+    }
+
+    // 4. Perform operations with admin client
+    const adminClient = createAdminClient();
+    const result = await adminClient
+      .from('schools')
+      .insert(data)
+      .select()
+      .single();
+
+    return NextResponse.json({ success: true, data: result });
+    
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+```
+
+### Frontend Client Usage
+```typescript
+// Frontend uses regular client with RLS protection
+const supabase = createClient();
+
+// This query is automatically protected by RLS
+const { data: schools } = await supabase
+  .from('schools')
+  .select('*');
+```
+
+## Security Benefits
+
+### Multiple Protection Layers
+1. **Middleware**: Prevents unauthorized route access
+2. **Application Logic**: Business rules and permissions
+3. **RLS Policies**: Database-level fallback protection
+
+### Clear Separation of Concerns
+- **Server Operations**: Admin client + application permissions
+- **Client Operations**: User client + RLS policies
+- **Authentication**: Centralized token validation
+
+### Audit Trail
+```typescript
+// Automatic logging of admin actions
+await adminClient.from("audit_logs").insert({
+  user_id: user.id,
+  action: "CREATE_SCHOOL",
+  entity_type: "school",
+  entity_id: school.id,
+  details: { school_name, created_by_role }
+});
+```
+
+## Common Pitfalls Avoided
+
+### ❌ RLS Recursion
+**Problem**: Helper functions in RLS policies can cause infinite loops
+```sql
+-- DON'T DO THIS
+CREATE FUNCTION is_admin() RETURNS BOOLEAN AS $$
+  SELECT role FROM profiles WHERE user_id = auth.uid(); -- Triggers profiles RLS
+$$;
+
+CREATE POLICY "profiles_policy" ON profiles 
+USING (is_admin()); -- Recursion!
+```
+
+**Our Solution**: Direct queries, no helper functions
+
+### ❌ Complex RLS Logic
+**Problem**: Complex business logic in database policies
+**Our Solution**: Keep RLS simple, handle complexity in application code
+
+### ❌ Performance Issues
+**Problem**: Heavy operations in RLS policies slow down queries
+**Our Solution**: Admin client bypasses RLS for server operations
+
+### ❌ Reserved Keyword Conflicts
+**Problem**: Using PostgreSQL reserved words as aliases
+```sql
+-- DON'T DO THIS
+SELECT 1 FROM profiles AS current_user -- 'current_user' is reserved
+```
+
+**Our Solution**: Use descriptive, non-reserved aliases
+
+## Best Practices
+
+### 1. Client Selection
+```typescript
+// ✅ Server-side admin operations
+const adminClient = createAdminClient();
+
+// ✅ Client-side user operations  
+const userClient = createClient();
+
+// ✅ Server-side authentication
+const authClient = createServerAuthClient();
+```
+
+### 2. Error Handling
+```typescript
+// Always include proper error handling and cleanup
+try {
+  const result = await performOperation();
+  return { success: true, data: result };
+} catch (error) {
+  // Cleanup any partial operations
+  await cleanup();
+  return { success: false, error: error.message };
+}
+```
+
+### 3. Permission Checks
+```typescript
+// Always check permissions before performing operations
+const permission = await checkUserPermission(userId, operation, resourceId);
+if (!permission.allowed) {
+  return { error: permission.reason, status: 403 };
+}
+```
+
+### 4. Audit Logging
+```typescript
+// Log all significant admin actions
+await adminClient.from("audit_logs").insert({
+  user_id: user.id,
+  action: "ACTION_NAME",
+  entity_type: "entity_type",
+  entity_id: entity.id,
+  details: { relevant_details }
+});
+```
+
+### 5. Environment Variables
+```bash
+# Required environment variables
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Server-side only!
+```
+
+## Testing Strategy
+
+### Unit Tests
+```typescript
+// Test permission logic independently
+describe('Permission Checks', () => {
+  it('should allow super_admin to create schools', async () => {
+    const result = await checkUserPermission(superAdminId, 'create_schools');
+    expect(result.allowed).toBe(true);
+  });
+});
+```
+
+### Integration Tests
+```typescript
+// Test full API routes with different user roles
+describe('Create School API', () => {
+  it('should create school with platform_admin token', async () => {
+    const response = await fetch('/api/admin/create-school', {
+      headers: { Authorization: `Bearer ${platformAdminToken}` },
+      // ...
+    });
+    expect(response.status).toBe(200);
+  });
+});
+```
+
+## Monitoring and Debugging
+
+### Logging Strategy
+```typescript
+// Comprehensive logging for debugging
+console.log('Authenticated user:', user.id);
+console.log('Permission check result:', permission);
+console.log('Operation completed successfully');
+```
+
+### Error Tracking
+- Monitor authentication failures
+- Track permission denials
+- Log RLS policy violations
+- Monitor performance of database queries
+
+## Migration Guide
+
+### From Simple RLS to Hybrid Approach
+1. Identify server-side operations that need admin privileges
+2. Replace user client with admin client in API routes
+3. Add application-level permission checks
+4. Simplify RLS policies to remove helper functions
+5. Test thoroughly with different user roles
+
+### Database Schema Updates
+```sql
+-- Add required columns for the permission system
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{}';
+
+-- Create audit logs table
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id UUID,
+  details JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+---
+
+## Conclusion
+
+This hybrid approach provides the security benefits of RLS while maintaining the flexibility and performance of application-level permission checks. By avoiding complex helper functions and using the appropriate Supabase client for each context, we prevent common issues like recursion while maintaining a robust, scalable authorization system.
+
+The key is understanding when to use which client:
+- **Admin client** for server-side operations where you control the permissions
+- **User client** for authentication and client-side operations where RLS provides protection
+
+This documentation should be updated as the system evolves, and all developers should be familiar with these patterns before working with the authentication system.
