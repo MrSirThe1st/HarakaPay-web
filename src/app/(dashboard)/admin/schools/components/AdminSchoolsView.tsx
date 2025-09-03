@@ -1,8 +1,8 @@
 // src/app/(dashboard)/admin/schools/components/AdminSchoolsView.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { BuildingOfficeIcon, MapPinIcon, UsersIcon, PlusIcon } from '@heroicons/react/24/outline';
+import React, { useState, useCallback } from 'react';
+import { BuildingOfficeIcon, MapPinIcon, UsersIcon, PlusIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { CreateSchoolForm } from './CreateSchoolForm';
 import { SchoolsList } from './SchoolsList';
 import { useSchoolStats } from '@/hooks/useSchoolStats';
@@ -12,17 +12,22 @@ type School = Database['public']['Tables']['schools']['Row'];
 
 export function AdminSchoolsView() {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { stats, loading: statsLoading, refetch: refetchStats } = useSchoolStats();
 
-  const handleSchoolCreated = (school: School) => {
+  const handleSchoolCreated = useCallback((school: School) => {
     setShowCreateForm(false);
-    refetchStats(); // Refresh stats after creating a school
-    console.log('School created:', school.name); // Use the school parameter
-  };
+    // Trigger both stats and schools list refresh
+    refetchStats();
+    setRefreshTrigger(prev => prev + 1);
+    console.log('School created:', school.name);
+  }, [refetchStats]);
 
-  const handleRefreshSchools = () => {
-    refetchStats(); // This will also refresh the schools list
-  };
+  const handleManualRefresh = useCallback(() => {
+    // Manual refresh for both components
+    refetchStats();
+    setRefreshTrigger(prev => prev + 1);
+  }, [refetchStats]);
 
   return (
     <div className="space-y-6">
@@ -31,13 +36,21 @@ export function AdminSchoolsView() {
           <h1 className="text-2xl font-bold text-gray-900">Platform Schools</h1>
           <p className="text-gray-600">Manage and monitor all registered schools</p>
         </div>
-        <button 
-          onClick={() => setShowCreateForm(true)} 
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add School
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleManualRefresh}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Refresh
+          </button>
+          <button 
+            onClick={() => setShowCreateForm(true)} 
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add School
+          </button>
+        </div>
       </div>
 
       {/* Overview Stats */}
@@ -54,7 +67,11 @@ export function AdminSchoolsView() {
                     Total Schools
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {statsLoading ? '...' : stats.totalSchools}
+                    {statsLoading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                    ) : (
+                      stats.totalSchools
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -66,7 +83,7 @@ export function AdminSchoolsView() {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <UsersIcon className="h-6 w-6 text-green-400" />
+                <CheckCircleIcon className="h-6 w-6 text-green-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -74,7 +91,11 @@ export function AdminSchoolsView() {
                     Active Schools
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {statsLoading ? '...' : stats.activeSchools}
+                    {statsLoading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                    ) : (
+                      stats.activeSchools
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -86,15 +107,19 @@ export function AdminSchoolsView() {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <MapPinIcon className="h-6 w-6 text-purple-400" />
+                <ClockIcon className="h-6 w-6 text-yellow-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Countries
+                    Pending Approval
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {statsLoading ? '...' : stats.countries}
+                    {statsLoading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                    ) : (
+                      stats.pendingSchools
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -106,7 +131,7 @@ export function AdminSchoolsView() {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <BuildingOfficeIcon className="h-6 w-6 text-orange-400" />
+                <UsersIcon className="h-6 w-6 text-purple-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -114,7 +139,11 @@ export function AdminSchoolsView() {
                     New This Month
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {statsLoading ? '...' : stats.newThisMonth}
+                    {statsLoading ? (
+                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                    ) : (
+                      stats.newThisMonth
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -123,88 +152,20 @@ export function AdminSchoolsView() {
         </div>
       </div>
 
-      {/* School List */}
+      {/* Schools List */}
       <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Registered Schools
-            </h3>
-            <button 
-              onClick={handleRefreshSchools}
-              disabled={statsLoading}
-              className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              Refresh
-            </button>
-          </div>
-          <SchoolsList onRefresh={handleRefreshSchools} />
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-medium text-gray-900">All Schools</h2>
+        </div>
+        <div className="p-6">
+          <SchoolsList 
+            refreshTrigger={refreshTrigger}
+            onRefresh={undefined} // Don't pass automatic callback to prevent loop
+          />
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Quick Actions
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <button 
-              onClick={() => setShowCreateForm(true)}
-              className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-            >
-              <div>
-                <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white">
-                  <BuildingOfficeIcon className="h-6 w-6" />
-                </span>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-medium">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  Add New School
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Register a new school on the platform
-                </p>
-              </div>
-            </button>
 
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-              <div>
-                <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
-                  <UsersIcon className="h-6 w-6" />
-                </span>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-medium">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  Manage Users
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  View and manage school users
-                </p>
-              </div>
-            </button>
-
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-              <div>
-                <span className="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
-                  <MapPinIcon className="h-6 w-6" />
-                </span>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-medium">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  Geographic View
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  View schools by location
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Create School Modal */}
       {showCreateForm && (

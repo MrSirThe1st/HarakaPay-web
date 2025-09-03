@@ -1,4 +1,6 @@
+// src/middleware.ts
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -29,10 +31,10 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-      // Allow public routes
-    if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
-      return res;
-    }
+  // Allow public routes
+  if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    return res;
+  }
 
   // Allow static files and Next.js internals
   if (
@@ -44,7 +46,7 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    // Get the session
+    // Get the session using middleware client
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error) {
@@ -60,23 +62,47 @@ export async function middleware(req: NextRequest) {
     // Check role-based access for protected routes
     for (const [route, requiredRoles] of Object.entries(protectedRoutes)) {
       if (pathname.startsWith(route) && requiredRoles.length > 0) {
-        // Get user profile to check role
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single();
-
-        const userRole = profile?.role;
         
-        // Check if user has required role
-        if (!userRole || !requiredRoles.includes(userRole)) {
-          return NextResponse.redirect(new URL('/unauthorized', req.url));
+        try {
+          // Use admin client to get profile (bypasses RLS) - THIS IS THE FIX
+          const adminClient = createAdminClient();
+          const { data: profile, error: profileError } = await adminClient
+            .from('profiles')
+            .select('role, is_active')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error('Profile fetch error in middleware:', profileError);
+            return NextResponse.redirect(new URL('/login', req.url));
+          }
+
+          const userRole = profile?.role;
+          
+          // Check if user is active
+          if (!profile?.is_active) {
+            console.log('User account is inactive:', session.user.id);
+            return NextResponse.redirect(new URL('/login', req.url));
+          }
+          
+          // Check if user has required role
+          if (!userRole || !requiredRoles.includes(userRole)) {
+            console.log(`Access denied: User role '${userRole}' not in required roles [${requiredRoles.join(', ')}]`);
+            return NextResponse.redirect(new URL('/unauthorized', req.url));
+          }
+
+          // Log successful access for debugging
+          console.log(`Access granted: User ${session.user.id} with role '${userRole}' accessing ${pathname}`);
+          
+        } catch (profileError) {
+          console.error('Unexpected error fetching profile in middleware:', profileError);
+          return NextResponse.redirect(new URL('/login', req.url));
         }
       }
     }
 
     return res;
+    
   } catch (error) {
     console.error('Middleware error:', error);
     return NextResponse.redirect(new URL('/login', req.url));
