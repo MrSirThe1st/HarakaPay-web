@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
           first_name: schoolData.contactFirstName,
           last_name: schoolData.contactLastName,
           role: "school_admin", // Make them admin of their school
-          admin_type: null,
+          admin_type: null, // School admins are not platform-level admins
           school_id: school.id,
           phone: schoolData.contactPhone || null,
           avatar_url: null,

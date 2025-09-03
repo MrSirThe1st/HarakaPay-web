@@ -4,7 +4,7 @@
 import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
 import { PlatformUsersView } from "./components/PlatformUsersView";
-import { CreateSchoolView } from "./components/CreateSchoolView";
+import { AdminManagement } from "./components/AdminManagement";
 
 export default function PlatformUsersPage() {
   const { canAccessAdminPanel } = useDualAuth();
@@ -32,7 +32,7 @@ export default function PlatformUsersPage() {
           </div>
           
           <PlatformUsersView />
-          <CreateSchoolView />
+          <AdminManagement />
         </div>
       )}
     </RoleBasedRoute>

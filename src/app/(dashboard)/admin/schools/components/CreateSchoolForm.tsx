@@ -27,10 +27,7 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [createdCredentials, setCreatedCredentials] = useState<{
-    email: string;
-    password: string;
-  } | null>(null);
+
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -109,7 +106,6 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
 
       if (result.success) {
         setSuccess(true);
-        setCreatedCredentials(result.credentials);
         onSuccess(result.school);
       } else {
         throw new Error(result.error || 'Failed to create school');
@@ -153,22 +149,12 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
               The school has been successfully created and a school admin account has been generated.
             </p>
             
-            {createdCredentials && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">School Admin Credentials</h4>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium">Email:</span> {createdCredentials.email}
-                  </div>
-                  <div>
-                    <span className="font-medium">Password:</span> {createdCredentials.password}
-                  </div>
-                </div>
-                <p className="text-xs text-blue-700 mt-2">
-                  Please save these credentials securely. The school admin can use them to log in.
-                </p>
-              </div>
-            )}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h4 className="font-medium text-blue-900 mb-2">Next Steps</h4>
+              <p className="text-sm text-blue-800">
+                To set up the school admin's login credentials, go to the schools list and use the "Reset Password" feature to create a secure password for the admin.
+              </p>
+            </div>
 
             <div className="flex gap-2 pt-4">
               <button
