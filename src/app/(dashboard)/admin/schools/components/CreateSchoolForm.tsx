@@ -1,107 +1,107 @@
+// src/app/(dashboard)/admin/schools/components/CreateSchoolForm.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { BuildingOfficeIcon, XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { Database } from '@/types/supabase';
-
-type School = Database['public']['Tables']['schools']['Row'];
-
-interface SchoolFormData {
-  name: string;
-  address: string;
-  contactEmail: string;
-  contactPhone: string;
-  registrationNumber: string;
-  contactFirstName: string;
-  contactLastName: string;
-}
+import { useState } from "react";
+import { BuildingOfficeIcon, XMarkIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
+import { createClient } from "@/lib/supabaseClientOnly";
 
 interface CreateSchoolFormProps {
   onClose: () => void;
-  onSuccess: (school: School) => void;
+  onSuccess: (school: any) => void;
 }
 
-export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) {
-  const [formData, setFormData] = useState<SchoolFormData>({
-    name: '',
-    address: '',
-    contactEmail: '',
-    contactPhone: '',
-    registrationNumber: '',
-    contactFirstName: '',
-    contactLastName: '',
+export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) {
+  const { user, profile } = useDualAuth();
+  const [formData, setFormData] = useState({
+    name: "",
+    address: "",
+    contactPhone: "",
+    contactEmail: "",
+    registrationNumber: "",
+    contactFirstName: "",
+    contactLastName: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
 
-  const validateForm = (): boolean => {
     if (!formData.name.trim()) {
-      setError('School name is required');
-      return false;
+      newErrors.name = "School name is required";
     }
-    if (!formData.address.trim()) {
-      setError('School address is required');
-      return false;
-    }
+
     if (!formData.contactFirstName.trim()) {
-      setError('Contact first name is required');
-      return false;
+      newErrors.contactFirstName = "Contact first name is required";
     }
+
     if (!formData.contactLastName.trim()) {
-      setError('Contact last name is required');
-      return false;
+      newErrors.contactLastName = "Contact last name is required";
     }
-    if (!formData.contactPhone.trim()) {
-      setError('Contact phone is required');
-      return false;
+
+    if (formData.contactPhone && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.contactPhone)) {
+      newErrors.contactPhone = "Please enter a valid phone number";
     }
-    if (!formData.registrationNumber.trim()) {
-      setError('Registration number is required');
-      return false;
+
+    if (formData.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)) {
+      newErrors.contactEmail = "Please enter a valid email address";
     }
-    return true;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted!'); // Debug log
+    console.log('Form submitted with data:', formData);
     
     if (!validateForm()) {
-      console.log('Form validation failed'); // Debug log
+      console.log('Form validation failed');
       return;
     }
 
-    console.log('Form validation passed, starting submission...'); // Debug log
+    if (!user || !profile) {
+      setError("Authentication required. Please log in again.");
+      return;
+    }
+
+    console.log('Form validation passed, starting submission...');
     setIsSubmitting(true);
     setError(null);
 
     try {
-      console.log('Submitting school data:', formData); // Debug log
+      // Get the current session token
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('No authentication token available');
+      }
+
+      console.log('Submitting school data:', formData);
       
       const response = await fetch('/api/admin/create-school', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`, // Add auth header
         },
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
-      console.log('Response status:', response.status); // Debug log
+      console.log('Response status:', response.status);
       
       const result = await response.json();
-      console.log('Response result:', result); // Debug log
+      console.log('Response result:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to create school');
@@ -115,10 +115,18 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
         throw new Error(result.error || 'Failed to create school');
       }
     } catch (err) {
-      console.error('School creation error:', err); // Debug log
+      console.error('School creation error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -142,12 +150,12 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
           </div>
           <div className="px-6 py-4 space-y-4">
             <p className="text-sm text-gray-600">
-              The school has been successfully created and a school staff account has been generated.
+              The school has been successfully created and a school admin account has been generated.
             </p>
             
             {createdCredentials && (
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">School Staff Credentials</h4>
+                <h4 className="font-medium text-blue-900 mb-2">School Admin Credentials</h4>
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="font-medium">Email:</span> {createdCredentials.email}
@@ -157,7 +165,7 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
                   </div>
                 </div>
                 <p className="text-xs text-blue-700 mt-2">
-                  Please save these credentials securely. The school staff can use them to log in.
+                  Please save these credentials securely. The school admin can use them to log in.
                 </p>
               </div>
             )}
@@ -188,11 +196,13 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              disabled={isSubmitting}
             >
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
         </div>
+        
         <div className="px-6 py-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -206,144 +216,161 @@ export function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) 
               <h3 className="text-lg font-medium text-gray-900">School Information</h3>
               
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     School Name *
                   </label>
                   <input
                     id="name"
-                    name="name"
                     type="text"
+                    required
                     value={formData.name}
-                    onChange={handleInputChange}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.name ? 'border-red-300' : 'border-gray-300'
+                    }`}
                     placeholder="Enter school name"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isSubmitting}
+                  />
+                  {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+                </div>
+
+                <div className="space-y-2 sm:col-span-2">
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                    Address
+                  </label>
+                  <textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter school address"
+                    disabled={isSubmitting}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="registrationNumber" className="block text-sm font-medium text-gray-700">
-                    Registration Number *
+                  <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700">
+                    Contact Phone
                   </label>
                   <input
-                    id="registrationNumber"
-                    name="registrationNumber"
-                    type="text"
-                    value={formData.registrationNumber}
-                    onChange={handleInputChange}
-                    placeholder="Enter registration number"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    id="contactPhone"
+                    type="tel"
+                    value={formData.contactPhone}
+                    onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.contactPhone ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="+243 XXX XXX XXX"
+                    disabled={isSubmitting}
                   />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                  Address *
-                </label>
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="Enter school address"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">Contact Information</h3>
-              
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label htmlFor="contactFirstName" className="block text-sm font-medium text-gray-700">
-                    Contact First Name *
-                  </label>
-                  <input
-                    id="contactFirstName"
-                    name="contactFirstName"
-                    type="text"
-                    value={formData.contactFirstName}
-                    onChange={handleInputChange}
-                    placeholder="Enter first name"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  {errors.contactPhone && <p className="text-sm text-red-600">{errors.contactPhone}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="contactLastName" className="block text-sm font-medium text-gray-700">
-                    Contact Last Name *
-                  </label>
-                  <input
-                    id="contactLastName"
-                    name="contactLastName"
-                    type="text"
-                    value={formData.contactLastName}
-                    onChange={handleInputChange}
-                    placeholder="Enter last name"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700">
                     Contact Email
                   </label>
                   <input
                     id="contactEmail"
-                    name="contactEmail"
                     type="email"
                     value={formData.contactEmail}
-                    onChange={handleInputChange}
-                    placeholder="Enter contact email (optional)"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.contactEmail ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="contact@school.com"
+                    disabled={isSubmitting}
                   />
+                  {errors.contactEmail && <p className="text-sm text-red-600">{errors.contactEmail}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700">
-                    Contact Phone *
+                  <label htmlFor="registrationNumber" className="block text-sm font-medium text-gray-700">
+                    Registration Number
                   </label>
                   <input
-                    id="contactPhone"
-                    name="contactPhone"
-                    type="tel"
-                    value={formData.contactPhone}
-                    onChange={handleInputChange}
-                    placeholder="Enter contact phone"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    id="registrationNumber"
+                    type="text"
+                    value={formData.registrationNumber}
+                    onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter registration number"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Form Actions */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+            {/* Contact Person Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Primary Contact Person</h3>
+              
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="contactFirstName" className="block text-sm font-medium text-gray-700">
+                    First Name *
+                  </label>
+                  <input
+                    id="contactFirstName"
+                    type="text"
+                    required
+                    value={formData.contactFirstName}
+                    onChange={(e) => handleInputChange('contactFirstName', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.contactFirstName ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter first name"
+                    disabled={isSubmitting}
+                  />
+                  {errors.contactFirstName && <p className="text-sm text-red-600">{errors.contactFirstName}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="contactLastName" className="block text-sm font-medium text-gray-700">
+                    Last Name *
+                  </label>
+                  <input
+                    id="contactLastName"
+                    type="text"
+                    required
+                    value={formData.contactLastName}
+                    onChange={(e) => handleInputChange('contactLastName', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.contactLastName ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter last name"
+                    disabled={isSubmitting}
+                  />
+                  {errors.contactLastName && <p className="text-sm text-red-600">{errors.contactLastName}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Buttons */}
+            <div className="flex gap-2 pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 disabled={isSubmitting}
+                className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 disabled={isSubmitting}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {isSubmitting ? 'Creating...' : 'Create School'}
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Creating...
+                  </>
+                ) : (
+                  'Create School'
+                )}
               </button>
             </div>
           </form>

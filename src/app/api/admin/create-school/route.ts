@@ -1,35 +1,30 @@
 // src/app/api/admin/create-school/route.ts
-// Simplified approach - handle permissions in application logic, use admin client for DB operations
+// Made consistent with your existing /api/schools route pattern
 
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient, createServerAuthClient } from "@/lib/supabaseServerOnly";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { createAdminClient } from "@/lib/supabaseServerOnly";
 
 export async function POST(request: NextRequest) {
   try {
-    // Step 1: Authenticate the request
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Step 1: Use the same auth pattern as /api/schools
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    
+    // Check authentication using cookies (same as other routes)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error in create-school:', authError);
       return NextResponse.json(
         { success: false, error: "Authentication required" },
         { status: 401 }
       );
     }
 
-    // Step 2: Verify token and get user
-    const token = authHeader.replace('Bearer ', '');
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: "Invalid authentication token" },
-        { status: 401 }
-      );
-    }
-
     console.log('Authenticated user:', user.id);
 
-    // Step 3: Check permissions using admin client (bypasses RLS)
+    // Step 2: Check permissions using admin client (bypasses RLS)
     const adminClient = createAdminClient();
     const { data: profile, error: profileError } = await adminClient
       .from('profiles')
@@ -38,13 +33,21 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError || !profile) {
+      console.error('Profile fetch error:', profileError);
       return NextResponse.json(
         { success: false, error: "User profile not found" },
         { status: 403 }
       );
     }
 
-    // Step 4: Check if user can create schools (application-level check)
+    if (!profile.is_active) {
+      return NextResponse.json(
+        { success: false, error: "Account inactive" },
+        { status: 403 }
+      );
+    }
+
+    // Step 3: Check if user can create schools (application-level check)
     const canCreateSchools = profile.role === 'super_admin' || profile.role === 'platform_admin';
     if (!canCreateSchools) {
       return NextResponse.json(
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Permission check passed for user role:', profile.role);
 
-    // Step 5: Parse and validate request
+    // Step 4: Parse and validate request
     const schoolData = await request.json();
     console.log('Received school data:', schoolData);
 
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 6: Generate credentials
+    // Step 5: Generate credentials
     const generateSchoolEmail = (schoolName: string) => {
       const cleanName = schoolName
         .toLowerCase()
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
     const email = generateSchoolEmail(schoolData.name);
     const password = generatePassword();
 
-    // Step 7: Check for existing email using admin client
+    // Step 6: Check for existing email using admin client
     const { data: existingUsers } = await adminClient.auth.admin.listUsers();
     const emailExists = existingUsers.users.some(u => u.email === email);
     
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating auth user with email:', email);
 
-    // Step 8: Create auth user using admin client
+    // Step 7: Create auth user using admin client
     const { data: authData, error: createAuthError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -129,7 +132,7 @@ export async function POST(request: NextRequest) {
     console.log('Auth user created:', authData.user.id);
 
     try {
-      // Step 9: Create school record using admin client (bypasses RLS)
+      // Step 8: Create school record using admin client (bypasses RLS)
       const { data: school, error: schoolError } = await adminClient
         .from("schools")
         .insert({
@@ -155,7 +158,7 @@ export async function POST(request: NextRequest) {
 
       console.log('School created:', school.id);
 
-      // Step 10: Create profile using admin client (bypasses RLS)
+      // Step 9: Create profile using admin client (bypasses RLS)
       const { error: profileInsertError } = await adminClient
         .from("profiles")
         .insert({
@@ -183,7 +186,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Step 11: Log the action for audit trail
+      console.log('Profile created successfully');
+
+      // Step 10: Log the action for audit trail
       await adminClient.from("audit_logs").insert({
         user_id: user.id,
         action: "CREATE_SCHOOL",
@@ -214,7 +219,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected error in create-school:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
