@@ -2,13 +2,13 @@
 "use client";
 
 import { useState } from "react";
-import { BuildingOfficeIcon, XMarkIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { BuildingOfficeIcon, XMarkIcon, CheckCircleIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { createClient } from "@/lib/supabaseClientOnly";
 
 interface CreateSchoolFormProps {
   onClose: () => void;
-  onSuccess: (school: any) => void;
+  onSuccess: (school: { id: string; name: string }) => void;
 }
 
 export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFormProps) {
@@ -27,6 +27,8 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
 
   const validateForm = () => {
@@ -105,7 +107,9 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
       }
 
       if (result.success) {
+        console.log('School creation successful, credentials:', result.credentials);
         setSuccess(true);
+        setCreatedCredentials(result.credentials);
         onSuccess(result.school);
       } else {
         throw new Error(result.error || 'Failed to create school');
@@ -123,6 +127,16 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
@@ -144,21 +158,73 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
               </button>
             </div>
           </div>
-          <div className="px-6 py-4 space-y-4">
+                      <div className="px-6 py-4 space-y-4">
             <p className="text-sm text-gray-600">
               The school has been successfully created and a school admin account has been generated.
             </p>
             
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-900 mb-2">Next Steps</h4>
-              <p className="text-sm text-blue-800">
-                To set up the school admin's login credentials, go to the schools list and use the "Reset Password" feature to create a secure password for the admin.
-              </p>
-            </div>
+            {createdCredentials ? (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="font-medium text-green-900 mb-3">School Admin Login Credentials</h4>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="font-medium text-green-800">Email:</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-green-700 font-mono bg-white p-2 rounded border flex-1">{createdCredentials.email}</p>
+                      <button
+                        onClick={() => copyToClipboard(createdCredentials.email, 'email')}
+                        className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 rounded transition-colors"
+                        title="Copy email"
+                      >
+                        {copiedField === 'email' ? (
+                          <CheckCircleIcon className="h-4 w-4" />
+                        ) : (
+                          <ClipboardDocumentIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-green-800">Password:</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-green-700 font-mono bg-white p-2 rounded border flex-1">{createdCredentials.password}</p>
+                      <button
+                        onClick={() => copyToClipboard(createdCredentials.password, 'password')}
+                        className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 rounded transition-colors"
+                        title="Copy password"
+                      >
+                        {copiedField === 'password' ? (
+                          <CheckCircleIcon className="h-4 w-4" />
+                        ) : (
+                          <ClipboardDocumentIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-yellow-50 p-3 rounded border border-yellow-200 mt-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Important:</strong> Please save these credentials securely. The school admin will need these to log in to their dashboard.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <h4 className="font-medium text-yellow-900 mb-2">Credentials Not Available</h4>
+                <p className="text-sm text-yellow-800">
+                  The school was created successfully, but credentials could not be retrieved. 
+                  Please use the &quot;Reset Password&quot; feature in the schools list to set up login credentials.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-4">
               <button
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  setSuccess(false);
+                  setCreatedCredentials(null);
+                }}
                 className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 Close

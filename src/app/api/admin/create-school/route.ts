@@ -93,7 +93,19 @@ export async function POST(request: NextRequest) {
       ).join('');
     };
 
-    const email = generateSchoolEmail(schoolData.name);
+    // Use the provided contact email if available, otherwise generate one
+    let email = schoolData.contactEmail?.trim();
+    
+    // Validate email format if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid email format provided" },
+        { status: 400 }
+      );
+    }
+    
+    // Use provided email or generate one
+    email = email || generateSchoolEmail(schoolData.name);
     const password = generatePassword();
 
     // Step 6: Check for existing email using admin client
@@ -102,7 +114,7 @@ export async function POST(request: NextRequest) {
     
     if (emailExists) {
       return NextResponse.json(
-        { success: false, error: "A school with this name already exists" },
+        { success: false, error: "A school admin with this email already exists" },
         { status: 400 }
       );
     }

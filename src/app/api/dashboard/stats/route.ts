@@ -128,18 +128,6 @@ async function getAdminDashboardStats(adminClient: ReturnType<typeof createAdmin
 
     const lastMonthRevenue = lastMonthPayments?.reduce((sum: number, payment: { amount: number }) => sum + payment.amount, 0) || 0;
 
-    // Calculate growth rate (overall platform growth based on new users)
-    const currentMonthStart = new Date(currentYear, currentMonth, 1);
-    const { count: currentMonthNewUsers } = await adminClient
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', currentMonthStart.toISOString());
-
-    const { count: lastMonthNewUsers } = await adminClient
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', lastMonthStart.toISOString())
-      .lte('created_at', lastMonthEnd.toISOString());
 
     // Calculate percentage changes
     const schoolsChange = lastMonthSchools && lastMonthSchools > 0 
@@ -154,23 +142,14 @@ async function getAdminDashboardStats(adminClient: ReturnType<typeof createAdmin
       ? (totalRevenue - lastMonthRevenue) / lastMonthRevenue * 100 
       : 0;
 
-    const growthRate = lastMonthNewUsers && lastMonthNewUsers > 0 
-      ? ((currentMonthNewUsers || 0) - lastMonthNewUsers) / lastMonthNewUsers * 100 
-      : 0;
-
-    const growthChange = lastMonthNewUsers && lastMonthNewUsers > 0 
-      ? ((currentMonthNewUsers || 0) - lastMonthNewUsers) / lastMonthNewUsers * 100 
-      : 0;
 
     return {
       totalSchools: totalSchools || 0,
       activeUsers: activeUsers || 0,
       totalRevenue,
-      growthRate,
       schoolsChange,
       usersChange,
-      revenueChange,
-      growthChange
+      revenueChange
     };
   } catch (error) {
     console.error('Error fetching admin dashboard stats:', error);

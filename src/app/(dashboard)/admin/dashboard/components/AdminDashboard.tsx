@@ -5,19 +5,17 @@ import React, { useState, useEffect } from 'react';
 import { 
   BuildingOfficeIcon, 
   UsersIcon, 
-  CreditCardIcon, 
-  ChartBarIcon 
+  CreditCardIcon,
+  DocumentChartBarIcon
 } from '@heroicons/react/24/outline';
 
 interface DashboardStats {
   totalSchools: number;
   activeUsers: number;
   totalRevenue: number;
-  growthRate: number;
   schoolsChange: number;
   usersChange: number;
   revenueChange: number;
-  growthChange: number;
 }
 
 export function AdminDashboard() {
@@ -73,8 +71,8 @@ export function AdminDashboard() {
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600">Welcome to the HarakaPay administration panel</p>
         </div>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-white overflow-hidden shadow rounded-lg animate-pulse">
               <div className="p-5">
                 <div className="flex items-center">
@@ -165,13 +163,6 @@ export function AdminDashboard() {
       change: formatPercentage(stats.revenueChange), 
       changeType: getChangeType(stats.revenueChange) 
     },
-    { 
-      name: 'Growth Rate', 
-      value: `${stats.growthRate.toFixed(1)}%`, 
-      icon: ChartBarIcon, 
-      change: formatPercentage(stats.growthChange), 
-      changeType: getChangeType(stats.growthChange) 
-    },
   ];
   return (
     <div className="space-y-6">
@@ -181,7 +172,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {statsData.map((item) => (
           <div
             key={item.name}
@@ -262,7 +253,7 @@ export function AdminDashboard() {
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
               <div>
                 <span className="rounded-lg inline-flex p-2 bg-purple-50 text-purple-700 ring-2 ring-white">
-                  <ChartBarIcon className="h-5 w-5" />
+                  <DocumentChartBarIcon className="h-5 w-5" />
                 </span>
               </div>
               <div className="mt-8">

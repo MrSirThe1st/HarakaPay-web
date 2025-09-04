@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 type StudentImport = {
   student_id: string;
@@ -17,7 +18,9 @@ type StudentImport = {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -28,9 +31,10 @@ export async function POST(req: Request) {
     }
 
     // Get user profile to check role and school
-    const { data: profile, error: profileError } = await supabase
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
-      .select('role, school_id')
+      .select('role, school_id, is_active')
       .eq('user_id', user.id)
       .single();
 
@@ -38,6 +42,13 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' }, 
         { status: 404 }
+      );
+    }
+
+    if (!profile.is_active) {
+      return NextResponse.json(
+        { success: false, error: 'Account inactive' }, 
+        { status: 403 }
       );
     }
 
@@ -70,7 +81,7 @@ export async function POST(req: Request) {
     }
 
     // Validate that the school exists
-    const { data: school, error: schoolError } = await supabase
+    const { data: school, error: schoolError } = await adminClient
       .from('schools')
       .select('id')
       .eq('id', targetSchoolId)
@@ -94,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     // Check for existing student IDs in the database
-    const { data: existingStudents, error: existingError } = await supabase
+    const { data: existingStudents, error: existingError } = await adminClient
       .from('students')
       .select('student_id')
       .eq('school_id', targetSchoolId)
@@ -137,7 +148,7 @@ export async function POST(req: Request) {
 
     for (let i = 0; i < studentsForDb.length; i += batchSize) {
       const batch = studentsForDb.slice(i, i + batchSize);
-      const { data: insertedStudents, error: insertError } = await supabase
+      const { data: insertedStudents, error: insertError } = await adminClient
         .from('students')
         .insert(batch)
         .select('student_id');

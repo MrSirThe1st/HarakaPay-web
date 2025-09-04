@@ -148,21 +148,60 @@ Our RLS policies are intentionally **simple and direct** to avoid recursion issu
 3. **Simple EXISTS Clauses** - Clear, readable conditions
 4. **Table Aliases** - Prevent naming conflicts
 
-### Example Policy
+### Complete RLS Coverage
+
+All sensitive tables are protected with RLS policies:
+
+#### Core System Tables:
+- **`profiles`** - User profile and role management
+- **`schools`** - School information and settings  
+- **`audit_logs`** - System activity tracking
+
+#### Operational Data Tables:
+- **`students`** - Student records with school-based isolation
+- **`notifications`** - User-specific messaging system
+- **`payment_settings`** - Critical security boundary (Platform admins blocked)
+- **`approval_workflows`** - Multi-level approval processes
+
+### Example Policy Structure
 ```sql
 -- Simple, direct policy without helper functions
-CREATE POLICY "schools_select_policy" ON schools FOR SELECT USING (
+CREATE POLICY "students_select_policy" ON students FOR SELECT USING (
   EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE user_id = auth.uid() 
-    AND is_active = true
+    SELECT 1 FROM profiles AS user_profile
+    WHERE user_profile.user_id = auth.uid() 
+    AND user_profile.is_active = true
     AND (
-      role IN ('super_admin', 'platform_admin', 'support_admin') OR
-      (role IN ('school_admin', 'school_staff') AND school_id = schools.id)
+      user_profile.role = 'super_admin' OR
+      (user_profile.role = 'school_admin' AND user_profile.school_id = students.school_id)
     )
   )
 );
 ```
+
+### Critical Security Boundaries
+
+#### Payment Settings Protection
+```typescript
+// Platform admins CANNOT access payment_settings table
+// This is enforced at the database level through RLS
+CREATE POLICY "payment_settings_select_policy" ON payment_settings FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM profiles AS user_profile
+    WHERE user_profile.user_id = auth.uid() 
+    AND (
+      user_profile.role = 'super_admin' OR
+      (user_profile.role IN ('school_admin', 'school_staff') 
+       AND user_profile.school_id = payment_settings.school_id)
+    )
+  )
+);
+```
+
+#### School Data Isolation
+- Students from different schools cannot see each other's data
+- School staff limited to their assigned school only
+- Parent access controlled through relationship tables
 
 ## Implementation Examples
 

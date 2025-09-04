@@ -8,16 +8,47 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon 
 } from '@heroicons/react/24/outline';
+import { BulkImportModal } from './BulkImportModal';
+import { StudentImportData } from '@/lib/csvParser';
 
 export function SchoolStaffStudentsView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGrade, setFilterGrade] = useState('all');
+  const [showBulkImport, setShowBulkImport] = useState(false);
+
+  const handleBulkImport = async (students: StudentImportData[]) => {
+    try {
+      const response = await fetch('/api/students/bulk-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ students }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Import failed');
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Import failed');
+      }
+
+      // Refresh the page or update the student list
+      window.location.reload();
+    } catch (error) {
+      console.error('Bulk import error:', error);
+      throw error;
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Student Management</h1>
-        <p className="text-gray-600">Manage your school's student records and information</p>
+        <p className="text-gray-600">Manage your school&apos;s student records and information</p>
       </div>
 
       {/* Quick Stats */}
@@ -191,7 +222,10 @@ export function SchoolStaffStudentsView() {
               </div>
             </button>
 
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
+            <button 
+              onClick={() => setShowBulkImport(true)}
+              className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-green-300"
+            >
               <div>
                 <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
                   <FunnelIcon className="h-6 w-6" />
@@ -227,6 +261,13 @@ export function SchoolStaffStudentsView() {
           </div>
         </div>
       </div>
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onImport={handleBulkImport}
+      />
     </div>
   );
 }
