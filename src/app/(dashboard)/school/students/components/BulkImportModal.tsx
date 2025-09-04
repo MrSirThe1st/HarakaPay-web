@@ -47,9 +47,8 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
       const result = parseCSV(content, selectedFile.name);
       setParseResult(result);
       
-      if (result.errors.length === 0) {
-        setStep('preview');
-      }
+      // Always move to preview step, even with errors
+      setStep('preview');
     };
     reader.readAsText(selectedFile);
   };
@@ -304,7 +303,7 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
                   </button>
                   <button
                     onClick={handleImport}
-                    disabled={parseResult.errors.length > 0 || isImporting}
+                    disabled={parseResult.data.length === 0 || isImporting}
                     className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isImporting ? 'Importing...' : `Import ${parseResult.data.length} Students`}

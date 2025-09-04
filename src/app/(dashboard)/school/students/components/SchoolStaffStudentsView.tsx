@@ -1,20 +1,36 @@
 // src/app/(dashboard)/school/students/components/SchoolStaffStudentsView.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   AcademicCapIcon, 
   PlusIcon, 
   MagnifyingGlassIcon,
-  FunnelIcon 
+  FunnelIcon,
+  PencilIcon,
+  TrashIcon,
+  EyeIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { BulkImportModal } from './BulkImportModal';
 import { StudentImportData } from '@/lib/csvParser';
+import { useStudents, Student } from '@/hooks/useStudents';
 
 export function SchoolStaffStudentsView() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterGrade, setFilterGrade] = useState('all');
   const [showBulkImport, setShowBulkImport] = useState(false);
+
+  // Use the students hook for data management
+  const {
+    students,
+    stats,
+    pagination,
+    loading,
+    error,
+    filters,
+    updateFilters,
+    refreshStudents
+  } = useStudents();
 
   const handleBulkImport = async (students: StudentImportData[]) => {
     try {
@@ -36,13 +52,77 @@ export function SchoolStaffStudentsView() {
         throw new Error(result.error || 'Import failed');
       }
 
-      // Refresh the page or update the student list
-      window.location.reload();
+      // Refresh the student list
+      refreshStudents();
     } catch (error) {
       console.error('Bulk import error:', error);
       throw error;
     }
   };
+
+  const handleSearch = (search: string) => {
+    updateFilters({ search });
+  };
+
+  const handleGradeFilter = (grade: string) => {
+    updateFilters({ grade });
+  };
+
+  const handleStatusFilter = (status: string) => {
+    updateFilters({ status });
+  };
+
+  const handlePageChange = (page: number) => {
+    updateFilters({ page });
+  };
+
+  const handleViewStudent = (student: Student) => {
+    // TODO: Implement student view modal
+    console.log('View student:', student);
+  };
+
+  const handleEditStudent = (student: Student) => {
+    // TODO: Implement student edit modal
+    console.log('Edit student:', student);
+  };
+
+  const handleDeleteStudent = async (student: Student) => {
+    if (!confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/students/${student.id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Delete failed');
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
+      }
+
+      // Refresh the student list
+      refreshStudents();
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Failed to delete student. Please try again.');
+    }
+  };
+
+  // Generate grade options dynamically
+  const gradeOptions = useMemo(() => {
+    const grades = ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 
+                   'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
+    return grades.map(grade => ({
+      value: grade,
+      label: grade
+    }));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -65,7 +145,7 @@ export function SchoolStaffStudentsView() {
                     Total Students
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    847
+                    {loading ? '...' : stats.total}
                   </dd>
                 </dl>
               </div>
@@ -85,7 +165,7 @@ export function SchoolStaffStudentsView() {
                     Active Students
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    823
+                    {loading ? '...' : stats.active}
                   </dd>
                 </dl>
               </div>
@@ -105,7 +185,7 @@ export function SchoolStaffStudentsView() {
                     New This Month
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    24
+                    {loading ? '...' : stats.newThisMonth}
                   </dd>
                 </dl>
               </div>
@@ -124,8 +204,8 @@ export function SchoolStaffStudentsView() {
                   <dt className="text-sm font-medium text-gray-500 truncate">
                     Graduating
                   </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                    89
+                  <dd className="text-lg font-medium text-gray-900">
+                    {loading ? '...' : stats.graduating}
                   </dd>
                 </dl>
               </div>
@@ -144,10 +224,10 @@ export function SchoolStaffStudentsView() {
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search students by name, ID, or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Search students by name, ID..."
+                  value={filters.search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                 />
               </div>
             </div>
@@ -155,29 +235,35 @@ export function SchoolStaffStudentsView() {
             {/* Grade Filter */}
             <div className="sm:w-48">
               <select
-                value={filterGrade}
-                onChange={(e) => setFilterGrade(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                value={filters.grade}
+                onChange={(e) => handleGradeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
               >
                 <option value="all">All Grades</option>
-                <option value="k">Kindergarten</option>
-                <option value="1">Grade 1</option>
-                <option value="2">Grade 2</option>
-                <option value="3">Grade 3</option>
-                <option value="4">Grade 4</option>
-                <option value="5">Grade 5</option>
-                <option value="6">Grade 6</option>
-                <option value="7">Grade 7</option>
-                <option value="8">Grade 8</option>
-                <option value="9">Grade 9</option>
-                <option value="10">Grade 10</option>
-                <option value="11">Grade 11</option>
-                <option value="12">Grade 12</option>
+                {gradeOptions.map(grade => (
+                  <option key={grade.value} value={grade.value}>
+                    {grade.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="sm:w-32">
+              <select
+                value={filters.status}
+                onChange={(e) => handleStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="graduated">Graduated</option>
               </select>
             </div>
 
             {/* Add Student Button */}
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Student
             </button>
@@ -185,16 +271,207 @@ export function SchoolStaffStudentsView() {
         </div>
       </div>
 
-      {/* Student List Placeholder */}
+      {/* Student List */}
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <div className="text-center py-12">
-            <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Student Management</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Student listing, search, and management interface coming soon...
-            </p>
-          </div>
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-500">Loading students...</p>
+            </div>
+          ) : students.length === 0 ? (
+            <div className="text-center py-12">
+              <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {filters.search || filters.grade !== 'all' || filters.status !== 'all' 
+                  ? 'Try adjusting your search or filters'
+                  : 'Get started by adding your first student'
+                }
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Student Table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Student ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Grade
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Enrollment Date
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {students.map((student) => (
+                      <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <span className="text-sm font-medium text-green-800">
+                                  {student.first_name.charAt(0)}{student.last_name.charAt(0)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {student.first_name} {student.last_name}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {student.student_id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {student.grade_level || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            student.status === 'active' 
+                              ? 'bg-green-100 text-green-800'
+                              : student.status === 'inactive'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(student.enrollment_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => handleViewStudent(student)}
+                              className="text-green-600 hover:text-green-900"
+                              title="View student"
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEditStudent(student)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Edit student"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudent(student)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete student"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {pagination.pages > 1 && (
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page <= 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page >= pagination.pages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Showing{' '}
+                        <span className="font-medium">
+                          {((pagination.page - 1) * pagination.limit) + 1}
+                        </span>{' '}
+                        to{' '}
+                        <span className="font-medium">
+                          {Math.min(pagination.page * pagination.limit, pagination.total)}
+                        </span>{' '}
+                        of{' '}
+                        <span className="font-medium">{pagination.total}</span>{' '}
+                        results
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        <button
+                          onClick={() => handlePageChange(pagination.page - 1)}
+                          disabled={pagination.page <= 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeftIcon className="h-5 w-5" />
+                        </button>
+                        
+                        {/* Page numbers */}
+                        {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                          const pageNum = Math.max(1, pagination.page - 2) + i;
+                          if (pageNum > pagination.pages) return null;
+                          
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => handlePageChange(pageNum)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                pageNum === pagination.page
+                                  ? 'z-10 bg-green-50 border-green-500 text-green-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        
+                        <button
+                          onClick={() => handlePageChange(pagination.page + 1)}
+                          disabled={pagination.page >= pagination.pages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRightIcon className="h-5 w-5" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -205,9 +482,9 @@ export function SchoolStaffStudentsView() {
             Quick Actions
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
+            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-green-300">
               <div>
-                <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white">
+                <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
                   <PlusIcon className="h-6 w-6" />
                 </span>
               </div>
@@ -242,7 +519,7 @@ export function SchoolStaffStudentsView() {
               </div>
             </button>
 
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
+            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-green-300">
               <div>
                 <span className="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
                   <AcademicCapIcon className="h-6 w-6" />

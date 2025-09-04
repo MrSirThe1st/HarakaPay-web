@@ -7,9 +7,18 @@ export interface StudentImportData {
   grade_level?: string;
   enrollment_date?: string;
   status?: "active" | "inactive" | "graduated";
+  // Parent information is optional and will be linked later via mobile app
   parent_name?: string;
   parent_phone?: string;
   parent_email?: string;
+}
+
+export interface ParentImportData {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  address?: string;
 }
 
 export interface CSVParseResult {
@@ -59,7 +68,7 @@ const COLUMN_MAPPINGS = {
   }
 };
 
-export function parseCSV(csvContent: string, filename: string): CSVParseResult {
+export function parseCSV(csvContent: string, _filename: string): CSVParseResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   
@@ -230,7 +239,7 @@ function mapRowToStudentData(values: string[], columnMap: Record<string, number>
   };
 }
 
-function getValue(values: string[], columnMap: Record<string, number>, field: string, rowNumber: number): string | undefined {
+function getValue(values: string[], columnMap: Record<string, number>, field: string, _rowNumber: number): string | undefined {
   const index = columnMap[field];
   if (index === undefined || index >= values.length) {
     return undefined;

@@ -18,7 +18,7 @@ type StudentImport = {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
     // Check authentication
@@ -127,7 +127,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Prepare students for database insertion
+    // Prepare students for database insertion (without parent info)
+    // Note: Parent information will be linked later when parents create accounts via mobile app
     const studentsForDb = students.map((student: StudentImport) => ({
       school_id: targetSchoolId,
       student_id: student.student_id.trim(),
@@ -136,9 +137,6 @@ export async function POST(req: Request) {
       grade_level: student.grade_level?.trim() || null,
       enrollment_date: student.enrollment_date || new Date().toISOString().split('T')[0],
       status: student.status || 'active',
-      parent_name: student.parent_name?.trim() || null,
-      parent_phone: student.parent_phone?.trim() || null,
-      parent_email: student.parent_email?.trim() || null,
     }));
 
     // Insert students in batches to avoid hitting limits
