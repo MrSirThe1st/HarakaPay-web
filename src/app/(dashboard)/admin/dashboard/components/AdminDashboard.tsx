@@ -1,7 +1,7 @@
 // src/app/(dashboard)/admin/dashboard/components/AdminDashboard.tsx
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BuildingOfficeIcon, 
   UsersIcon, 
@@ -9,14 +9,170 @@ import {
   ChartBarIcon 
 } from '@heroicons/react/24/outline';
 
-const stats = [
-  { name: 'Total Schools', value: '24', icon: BuildingOfficeIcon, change: '+12%', changeType: 'positive' },
-  { name: 'Active Users', value: '1,234', icon: UsersIcon, change: '+8%', changeType: 'positive' },
-  { name: 'Total Revenue', value: '$45,231', icon: CreditCardIcon, change: '+23%', changeType: 'positive' },
-  { name: 'Growth Rate', value: '12.5%', icon: ChartBarIcon, change: '+2.1%', changeType: 'positive' },
-];
+interface DashboardStats {
+  totalSchools: number;
+  activeUsers: number;
+  totalRevenue: number;
+  growthRate: number;
+  schoolsChange: number;
+  usersChange: number;
+  revenueChange: number;
+  growthChange: number;
+}
 
 export function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard/stats');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard stats');
+        }
+        
+        const data = await response.json();
+        setStats(data.stats);
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatPercentage = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}%`;
+  };
+
+  const getChangeType = (value: number) => {
+    return value >= 0 ? 'positive' : 'negative';
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Welcome to the HarakaPay administration panel</p>
+        </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white overflow-hidden shadow rounded-lg animate-pulse">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="h-6 w-6 bg-gray-300 rounded"></div>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-6 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-5 py-3">
+                <div className="h-4 bg-gray-300 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Welcome to the HarakaPay administration panel</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Error loading dashboard
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Welcome to the HarakaPay administration panel</p>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                No data available
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>Unable to load dashboard statistics.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const statsData = [
+    { 
+      name: 'Total Schools', 
+      value: stats.totalSchools.toLocaleString(), 
+      icon: BuildingOfficeIcon, 
+      change: formatPercentage(stats.schoolsChange), 
+      changeType: getChangeType(stats.schoolsChange) 
+    },
+    { 
+      name: 'Active Users', 
+      value: stats.activeUsers.toLocaleString(), 
+      icon: UsersIcon, 
+      change: formatPercentage(stats.usersChange), 
+      changeType: getChangeType(stats.usersChange) 
+    },
+    { 
+      name: 'Total Revenue', 
+      value: formatCurrency(stats.totalRevenue), 
+      icon: CreditCardIcon, 
+      change: formatPercentage(stats.revenueChange), 
+      changeType: getChangeType(stats.revenueChange) 
+    },
+    { 
+      name: 'Growth Rate', 
+      value: `${stats.growthRate.toFixed(1)}%`, 
+      icon: ChartBarIcon, 
+      change: formatPercentage(stats.growthChange), 
+      changeType: getChangeType(stats.growthChange) 
+    },
+  ];
   return (
     <div className="space-y-6">
       <div>
@@ -26,7 +182,7 @@ export function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((item) => (
+        {statsData.map((item) => (
           <div
             key={item.name}
             className="bg-white overflow-hidden shadow rounded-lg"
