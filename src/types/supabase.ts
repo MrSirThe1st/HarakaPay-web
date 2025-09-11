@@ -15,7 +15,7 @@ export interface Database {
           user_id: string;
           first_name: string | null;
           last_name: string | null;
-          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
+          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
           admin_type: "super_admin" | "platform_admin" | "support_admin" | null;
           school_id: string | null;
           phone: string | null;
@@ -30,7 +30,7 @@ export interface Database {
           user_id: string;
           first_name?: string | null;
           last_name?: string | null;
-          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
+          role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
           admin_type?: "super_admin" | "platform_admin" | "support_admin" | null;
           school_id?: string | null;
           phone?: string | null;
@@ -151,6 +151,9 @@ export interface Database {
           grade_level: string | null;
           enrollment_date: string;
           status: "active" | "inactive" | "graduated";
+          parent_name: string | null;
+          parent_phone: string | null;
+          parent_email: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -163,6 +166,9 @@ export interface Database {
           grade_level?: string | null;
           enrollment_date?: string;
           status?: "active" | "inactive" | "graduated";
+          parent_name?: string | null;
+          parent_phone?: string | null;
+          parent_email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -175,6 +181,9 @@ export interface Database {
           grade_level?: string | null;
           enrollment_date?: string;
           status?: "active" | "inactive" | "graduated";
+          parent_name?: string | null;
+          parent_phone?: string | null;
+          parent_email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -443,7 +452,7 @@ export interface Database {
       };
     };
     Enums: {
-      user_role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff";
+      user_role: "super_admin" | "platform_admin" | "support_admin" | "school_admin" | "school_staff" | "parent";
       admin_type: "super_admin" | "platform_admin" | "support_admin";
       school_status: "pending" | "pending_verification" | "approved" | "suspended";
       verification_status: "pending" | "verified" | "rejected";

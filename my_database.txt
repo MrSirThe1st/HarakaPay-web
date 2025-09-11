@@ -1,454 +1,1760 @@
-# HarakaPay Hybrid Authentication & Authorization Architecture
-
-## Overview
-
-HarakaPay implements a **hybrid authentication and authorization approach** that combines application-level permission checks with database-level Row Level Security (RLS) policies. This architecture provides multiple layers of security while avoiding common pitfalls like RLS recursion and performance issues.
-
-## Table of Contents
-- [Core Concepts](#core-concepts)
-- [Architecture Components](#architecture-components)
-- [Supabase Client Strategy](#supabase-client-strategy)
-- [Permission System](#permission-system)
-- [RLS Policies](#rls-policies)
-- [Implementation Examples](#implementation-examples)
-- [Security Benefits](#security-benefits)
-- [Common Pitfalls Avoided](#common-pitfalls-avoided)
-- [Best Practices](#best-practices)
-
-## Core Concepts
-
-### Defense in Depth
-Our security model implements multiple layers:
-1. **Middleware Authentication** - Verifies user sessions
-2. **Application-Level Permissions** - Business logic checks in API routes
-3. **Database-Level RLS** - Fallback protection for all data access
-
-### Hybrid Client Strategy
-We use different Supabase clients for different contexts:
-- **Admin Client (Service Role)** - Server-side operations that bypass RLS
-- **User Client (Anon Key)** - Client-side operations that respect RLS
-
-## Architecture Components
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    CLIENT REQUEST                           │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│                   MIDDLEWARE                                │
-│  • Session validation                                       │
-│  • Role-based route protection                              │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│                  API ROUTE                                  │
-│  • Token verification                                       │
-│  • Application-level permission checks                     │
-│  • Uses Admin Client (bypasses RLS)                        │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│                  DATABASE                                   │
-│  • RLS policies (fallback protection)                      │
-│  • Simple policies without helper functions                │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Supabase Client Strategy
-
-### Admin Client (Server-Side Only)
-```typescript
-// src/lib/supabaseServerOnly.ts
-export const createAdminClient = () => {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-};
-```
-
-**Characteristics:**
-- Uses service role key
-- Bypasses ALL RLS policies
-- Server-side only (never expose service key to client)
-- Used for admin operations where we control permissions in code
-
-### User Client (Client & Server Auth)
-```typescript
-export const createServerAuthClient = () => {
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  
-  return createClient(supabaseUrl, anonKey);
-};
-```
-
-**Characteristics:**
-- Uses anonymous key
-- Respects RLS policies
-- Used for authentication and user-facing queries
-- Safe for client-side use
-
-## Permission System
-
-### Role Hierarchy
-```typescript
-// src/lib/roleUtils.ts
-export const ROLE_HIERARCHY = {
-  'super_admin': 5,
-  'platform_admin': 4, 
-  'support_admin': 3,
-  'school_admin': 2,
-  'school_staff': 1
-} as const;
-```
-
-### Application-Level Permission Checks
-```typescript
-// src/lib/authUtils.ts
-export async function checkUserPermission(
-  userId: string, 
-  operation: string,
-  resourceId?: string
-): Promise<{ allowed: boolean; profile: any; reason?: string }> {
-  
-  // Use admin client to get profile (bypasses RLS)
-  const adminClient = createAdminClient();
-  const profile = await getUserProfile(userId);
-  
-  if (!profile?.is_active) {
-    return { allowed: false, profile, reason: 'Account inactive' };
+[
+  {
+    "table_name": "approval_workflows",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "audit_logs",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "notifications",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "parent_students",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "parents",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "payment_settings",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "payments",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "profiles",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "schools",
+    "table_type": "BASE TABLE"
+  },
+  {
+    "table_name": "students",
+    "table_type": "BASE TABLE"
   }
-  
-  // Handle different operations
-  switch (operation) {
-    case 'create_schools':
-      return { 
-        allowed: hasRoleLevel(profile.role, 'platform_admin'), 
-        profile 
-      };
-    // ... other operations
+]
+
+
+
+[
+  {
+    "table_name": "approval_workflows",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "requester_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "entity_type",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "entity_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "change_type",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "change_details",
+    "data_type": "jsonb",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'pending'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "required_approvals",
+    "data_type": "jsonb",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "received_approvals",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": "'[]'::jsonb",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "expires_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "approval_workflows",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "action",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "entity_type",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "entity_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "details",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "ip_address",
+    "data_type": "inet",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "user_agent",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "message",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "type",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'info'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "is_read",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "false",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "action_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "parent_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "student_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "relationship",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'parent'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "is_primary",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "false",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "first_name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "last_name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "phone",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "email",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "address",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "is_active",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "true",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "parents",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "school_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "gateway_provider",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "api_key",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "secret_key",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "webhook_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "is_active",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "true",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "student_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "amount",
+    "data_type": "numeric",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": 10,
+    "numeric_scale": 2
+  },
+  {
+    "table_name": "payments",
+    "column_name": "payment_date",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "payment_method",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'pending'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "receipt_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "created_by",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "updated_by",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "payments",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "first_name",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "last_name",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "role",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": "'school_staff'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "admin_type",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "school_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "phone",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "avatar_url",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "permissions",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": "'{}'::jsonb",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "is_active",
+    "data_type": "boolean",
+    "is_nullable": "YES",
+    "column_default": "true",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "address",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "contact_email",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "contact_phone",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "registration_number",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'pending'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "verification_status",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": "'pending'::text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "verification_date",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "verified_by",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "payment_transparency",
+    "data_type": "jsonb",
+    "is_nullable": "YES",
+    "column_default": "'{\"support_admin_access\": false, \"platform_admin_access\": false}'::jsonb",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "schools",
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone",
+    "is_nullable": "YES",
+    "column_default": "now()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO",
+    "column_default": "gen_random_uuid()",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "school_id",
+    "data_type": "uuid",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "student_id",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "first_name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "last_name",
+    "data_type": "text",
+    "is_nullable": "NO",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "grade_level",
+    "data_type": "text",
+    "is_nullable": "YES",
+    "column_default": null,
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
+  },
+  {
+    "table_name": "students",
+    "column_name": "enrollment_date",
+    "data_type": "date",
+    "is_nullable": "YES",
+    "column_default": "CURRENT_DATE",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null
   }
-}
-```
+]
 
-## RLS Policies
 
-Our RLS policies are intentionally **simple and direct** to avoid recursion issues.
-
-### Key Principles:
-1. **No Helper Functions** - Direct queries only
-2. **Avoid Reserved Keywords** - Use descriptive aliases
-3. **Simple EXISTS Clauses** - Clear, readable conditions
-4. **Table Aliases** - Prevent naming conflicts
-
-### Complete RLS Coverage
-
-All sensitive tables are protected with RLS policies:
-
-#### Core System Tables:
-- **`profiles`** - User profile and role management
-- **`schools`** - School information and settings  
-- **`audit_logs`** - System activity tracking
-
-#### Operational Data Tables:
-- **`students`** - Student records with school-based isolation
-- **`notifications`** - User-specific messaging system
-- **`payment_settings`** - Critical security boundary (Platform admins blocked)
-- **`approval_workflows`** - Multi-level approval processes
-
-### Example Policy Structure
-```sql
--- Simple, direct policy without helper functions
-CREATE POLICY "students_select_policy" ON students FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM profiles AS user_profile
-    WHERE user_profile.user_id = auth.uid() 
-    AND user_profile.is_active = true
-    AND (
-      user_profile.role = 'super_admin' OR
-      (user_profile.role = 'school_admin' AND user_profile.school_id = students.school_id)
-    )
-  )
-);
-```
-
-### Critical Security Boundaries
-
-#### Payment Settings Protection
-```typescript
-// Platform admins CANNOT access payment_settings table
-// This is enforced at the database level through RLS
-CREATE POLICY "payment_settings_select_policy" ON payment_settings FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM profiles AS user_profile
-    WHERE user_profile.user_id = auth.uid() 
-    AND (
-      user_profile.role = 'super_admin' OR
-      (user_profile.role IN ('school_admin', 'school_staff') 
-       AND user_profile.school_id = payment_settings.school_id)
-    )
-  )
-);
-```
-
-#### School Data Isolation
-- Students from different schools cannot see each other's data
-- School staff limited to their assigned school only
-- Parent access controlled through relationship tables
-
-## Implementation Examples
-
-### API Route Pattern
-```typescript
-// Standard pattern for all admin API routes
-export async function POST(request: NextRequest) {
-  try {
-    // 1. Extract and verify auth token
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-
-    // 2. Verify token with user client
-    const token = authHeader.replace('Bearer ', '');
-    const authClient = createServerAuthClient();
-    const { data: { user }, error } = await authClient.auth.getUser(token);
-    
-    if (error || !user) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    // 3. Check permissions with admin client
-    const permission = await checkUserPermission(user.id, 'create_schools');
-    if (!permission.allowed) {
-      return NextResponse.json({ error: permission.reason }, { status: 403 });
-    }
-
-    // 4. Perform operations with admin client
-    const adminClient = createAdminClient();
-    const result = await adminClient
-      .from('schools')
-      .insert(data)
-      .select()
-      .single();
-
-    return NextResponse.json({ success: true, data: result });
-    
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+[
+  {
+    "table_name": "approval_workflows",
+    "column_name": "requester_id",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "constraint_name": "approval_workflows_requester_id_fkey"
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "parent_id",
+    "foreign_table_name": "parents",
+    "foreign_column_name": "id",
+    "constraint_name": "parent_students_parent_id_fkey"
+  },
+  {
+    "table_name": "parent_students",
+    "column_name": "student_id",
+    "foreign_table_name": "students",
+    "foreign_column_name": "id",
+    "constraint_name": "parent_students_student_id_fkey"
+  },
+  {
+    "table_name": "payment_settings",
+    "column_name": "school_id",
+    "foreign_table_name": "schools",
+    "foreign_column_name": "id",
+    "constraint_name": "payment_settings_school_id_fkey"
+  },
+  {
+    "table_name": "payments",
+    "column_name": "created_by",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "constraint_name": "payments_created_by_fkey"
+  },
+  {
+    "table_name": "payments",
+    "column_name": "student_id",
+    "foreign_table_name": "students",
+    "foreign_column_name": "id",
+    "constraint_name": "payments_student_id_fkey"
+  },
+  {
+    "table_name": "payments",
+    "column_name": "updated_by",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "constraint_name": "payments_updated_by_fkey"
+  },
+  {
+    "table_name": "schools",
+    "column_name": "verified_by",
+    "foreign_table_name": "profiles",
+    "foreign_column_name": "id",
+    "constraint_name": "schools_verified_by_fkey"
+  },
+  {
+    "table_name": "students",
+    "column_name": "school_id",
+    "foreign_table_name": "schools",
+    "foreign_column_name": "id",
+    "constraint_name": "students_school_id_fkey"
   }
-}
-```
+]
 
-### Frontend Client Usage
-```typescript
-// Frontend uses regular client with RLS protection
-const supabase = createClient();
 
-// This query is automatically protected by RLS
-const { data: schools } = await supabase
-  .from('schools')
-  .select('*');
-```
+[
+  {
+    "schemaname": "public",
+    "tablename": "approval_workflows",
+    "policyname": "approval_workflows_delete_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND (user_profile.role = 'super_admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "approval_workflows",
+    "policyname": "approval_workflows_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR (user_profile.role = 'school_admin'::text)))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "approval_workflows",
+    "policyname": "approval_workflows_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR (user_profile.role = 'platform_admin'::text) OR (user_profile.role = 'school_admin'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "approval_workflows",
+    "policyname": "approval_workflows_update_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR (user_profile.role = 'platform_admin'::text) OR (user_profile.role = 'school_admin'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "policyname": "audit_logs_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "policyname": "audit_logs_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.user_id = auth.uid()) AND (profiles.is_active = true) AND (profiles.role = ANY (ARRAY['super_admin'::text, 'platform_admin'::text, 'support_admin'::text]))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications_delete_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND (user_profile.role = 'super_admin'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR (user_profile.role = 'platform_admin'::text) OR (user_profile.role = 'school_admin'::text)))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (EXISTS ( SELECT 1\n           FROM profiles notification_recipient\n          WHERE ((notification_recipient.user_id = notifications.user_id) AND (notification_recipient.school_id = user_profile.school_id))))))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "notifications_update_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND (user_profile.role = 'super_admin'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "parent_students",
+    "policyname": "parent_students_own_relationships",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(parent_id IN ( SELECT parents.id\n   FROM parents\n  WHERE (parents.user_id = auth.uid())))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "parents",
+    "policyname": "parents_insert_own_profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() = user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "parents",
+    "policyname": "parents_select_own_profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "parents",
+    "policyname": "parents_update_own_profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": "(auth.uid() = user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "payment_settings",
+    "policyname": "payment_settings_delete_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND (user_profile.role = 'super_admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "payment_settings",
+    "policyname": "payment_settings_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (user_profile.school_id = payment_settings.school_id))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "payment_settings",
+    "policyname": "payment_settings_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (user_profile.school_id = payment_settings.school_id)) OR ((user_profile.role = 'school_staff'::text) AND (user_profile.school_id = payment_settings.school_id))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "payment_settings",
+    "policyname": "payment_settings_update_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (user_profile.school_id = payment_settings.school_id))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "payments",
+    "policyname": "payments_parent_access",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.role = 'parent'::text) AND (p.is_active = true) AND (payments.student_id IN ( SELECT ps.student_id\n           FROM (parent_students ps\n             JOIN parents par ON ((ps.parent_id = par.id)))\n          WHERE (par.user_id = p.user_id))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "profiles_delete_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND (((user_profile.role = 'super_admin'::text) AND (profiles.role <> 'super_admin'::text)) OR ((user_profile.role = 'platform_admin'::text) AND (profiles.role = ANY (ARRAY['school_admin'::text, 'school_staff'::text]))) OR ((user_profile.role = 'school_admin'::text) AND (profiles.school_id = user_profile.school_id) AND (profiles.role = 'school_staff'::text))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "profiles_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'platform_admin'::text) AND (profiles.role = ANY (ARRAY['school_admin'::text, 'school_staff'::text]))) OR ((user_profile.role = 'school_admin'::text) AND (profiles.role = 'school_staff'::text) AND (profiles.school_id = user_profile.school_id)))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "profiles_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((user_id = auth.uid()) OR (get_user_role(auth.uid()) = ANY (ARRAY['super_admin'::text, 'platform_admin'::text, 'support_admin'::text, 'school_admin'::text, 'school_staff'::text, 'parent'::text])))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "profiles_update_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "((user_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'platform_admin'::text) AND (profiles.role = ANY (ARRAY['school_admin'::text, 'school_staff'::text]))) OR ((user_profile.role = 'school_admin'::text) AND (profiles.school_id = user_profile.school_id)))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "schools",
+    "policyname": "schools_anonymous_select",
+    "permissive": "PERMISSIVE",
+    "roles": "{anon}",
+    "cmd": "SELECT",
+    "qual": "(status = 'approved'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "schools",
+    "policyname": "schools_delete_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.user_id = auth.uid()) AND (profiles.is_active = true) AND (profiles.role = 'super_admin'::text))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "schools",
+    "policyname": "schools_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.user_id = auth.uid()) AND (profiles.is_active = true) AND (profiles.role = ANY (ARRAY['super_admin'::text, 'platform_admin'::text])))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "schools",
+    "policyname": "schools_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(((auth.uid() IS NULL) AND (status = 'approved'::text)) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.user_id = auth.uid()) AND (profiles.is_active = true) AND ((profiles.role = ANY (ARRAY['super_admin'::text, 'platform_admin'::text, 'support_admin'::text])) OR ((profiles.role = ANY (ARRAY['school_admin'::text, 'school_staff'::text])) AND (profiles.school_id = schools.id)) OR (profiles.role = 'parent'::text))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "schools",
+    "policyname": "schools_update_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.user_id = auth.uid()) AND (profiles.is_active = true) AND ((profiles.role = ANY (ARRAY['super_admin'::text, 'platform_admin'::text])) OR ((profiles.role = ANY (ARRAY['school_admin'::text, 'school_staff'::text])) AND (profiles.school_id = schools.id))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "students",
+    "policyname": "students_delete_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (user_profile.school_id = students.school_id))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "students",
+    "policyname": "students_insert_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR (user_profile.role = 'platform_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (user_profile.school_id = students.school_id)) OR ((user_profile.role = 'school_staff'::text) AND (user_profile.school_id = students.school_id))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "students",
+    "policyname": "students_select_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.user_id = auth.uid()) AND (profiles.is_active = true) AND ((profiles.role = ANY (ARRAY['super_admin'::text, 'platform_admin'::text, 'support_admin'::text])) OR ((profiles.role = ANY (ARRAY['school_admin'::text, 'school_staff'::text])) AND (profiles.school_id = students.school_id)))))) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.role = 'parent'::text) AND (p.is_active = true) AND (students.id IN ( SELECT ps.student_id\n           FROM (parent_students ps\n             JOIN parents par ON ((ps.parent_id = par.id)))\n          WHERE (par.user_id = p.user_id)))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "students",
+    "policyname": "students_update_policy",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles user_profile\n  WHERE ((user_profile.user_id = auth.uid()) AND (user_profile.is_active = true) AND ((user_profile.role = 'super_admin'::text) OR (user_profile.role = 'platform_admin'::text) OR ((user_profile.role = 'school_admin'::text) AND (user_profile.school_id = students.school_id)) OR ((user_profile.role = 'school_staff'::text) AND (user_profile.school_id = students.school_id))))))",
+    "with_check": null
+  }
+]
 
-## Security Benefits
+[
+  {
+    "schema_name": "public",
+    "function_name": "debug_user_context",
+    "return_type": "TABLE(current_user_id uuid, user_role text, school_id uuid, is_parent boolean)",
+    "arguments": "",
+    "volatility": "VOLATILE"
+  },
+  {
+    "schema_name": "public",
+    "function_name": "get_user_role",
+    "return_type": "text",
+    "arguments": "user_uuid uuid",
+    "volatility": "VOLATILE"
+  },
+  {
+    "schema_name": "public",
+    "function_name": "get_user_school",
+    "return_type": "uuid",
+    "arguments": "user_id uuid",
+    "volatility": "VOLATILE"
+  }
+]
 
-### Multiple Protection Layers
-1. **Middleware**: Prevents unauthorized route access
-2. **Application Logic**: Business rules and permissions
-3. **RLS Policies**: Database-level fallback protection
 
-### Clear Separation of Concerns
-- **Server Operations**: Admin client + application permissions
-- **Client Operations**: User client + RLS policies
-- **Authentication**: Centralized token validation
-
-### Audit Trail
-```typescript
-// Automatic logging of admin actions
-await adminClient.from("audit_logs").insert({
-  user_id: user.id,
-  action: "CREATE_SCHOOL",
-  entity_type: "school",
-  entity_id: school.id,
-  details: { school_name, created_by_role }
-});
-```
-
-## Common Pitfalls Avoided
-
-### ❌ RLS Recursion
-**Problem**: Helper functions in RLS policies can cause infinite loops
-```sql
--- DON'T DO THIS
-CREATE FUNCTION is_admin() RETURNS BOOLEAN AS $$
-  SELECT role FROM profiles WHERE user_id = auth.uid(); -- Triggers profiles RLS
-$$;
-
-CREATE POLICY "profiles_policy" ON profiles 
-USING (is_admin()); -- Recursion!
-```
-
-**Our Solution**: Direct queries, no helper functions
-
-### ❌ Complex RLS Logic
-**Problem**: Complex business logic in database policies
-**Our Solution**: Keep RLS simple, handle complexity in application code
-
-### ❌ Performance Issues
-**Problem**: Heavy operations in RLS policies slow down queries
-**Our Solution**: Admin client bypasses RLS for server operations
-
-### ❌ Reserved Keyword Conflicts
-**Problem**: Using PostgreSQL reserved words as aliases
-```sql
--- DON'T DO THIS
-SELECT 1 FROM profiles AS current_user -- 'current_user' is reserved
-```
-
-**Our Solution**: Use descriptive, non-reserved aliases
-
-## Best Practices
-
-### 1. Client Selection
-```typescript
-// ✅ Server-side admin operations
-const adminClient = createAdminClient();
-
-// ✅ Client-side user operations  
-const userClient = createClient();
-
-// ✅ Server-side authentication
-const authClient = createServerAuthClient();
-```
-
-### 2. Error Handling
-```typescript
-// Always include proper error handling and cleanup
-try {
-  const result = await performOperation();
-  return { success: true, data: result };
-} catch (error) {
-  // Cleanup any partial operations
-  await cleanup();
-  return { success: false, error: error.message };
-}
-```
-
-### 3. Permission Checks
-```typescript
-// Always check permissions before performing operations
-const permission = await checkUserPermission(userId, operation, resourceId);
-if (!permission.allowed) {
-  return { error: permission.reason, status: 403 };
-}
-```
-
-### 4. Audit Logging
-```typescript
-// Log all significant admin actions
-await adminClient.from("audit_logs").insert({
-  user_id: user.id,
-  action: "ACTION_NAME",
-  entity_type: "entity_type",
-  entity_id: entity.id,
-  details: { relevant_details }
-});
-```
-
-### 5. Environment Variables
-```bash
-# Required environment variables
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Server-side only!
-```
-
-## Testing Strategy
-
-### Unit Tests
-```typescript
-// Test permission logic independently
-describe('Permission Checks', () => {
-  it('should allow super_admin to create schools', async () => {
-    const result = await checkUserPermission(superAdminId, 'create_schools');
-    expect(result.allowed).toBe(true);
-  });
-});
-```
-
-### Integration Tests
-```typescript
-// Test full API routes with different user roles
-describe('Create School API', () => {
-  it('should create school with platform_admin token', async () => {
-    const response = await fetch('/api/admin/create-school', {
-      headers: { Authorization: `Bearer ${platformAdminToken}` },
-      // ...
-    });
-    expect(response.status).toBe(200);
-  });
-});
-```
-
-## Monitoring and Debugging
-
-### Logging Strategy
-```typescript
-// Comprehensive logging for debugging
-console.log('Authenticated user:', user.id);
-console.log('Permission check result:', permission);
-console.log('Operation completed successfully');
-```
-
-### Error Tracking
-- Monitor authentication failures
-- Track permission denials
-- Log RLS policy violations
-- Monitor performance of database queries
-
-## Migration Guide
-
-### From Simple RLS to Hybrid Approach
-1. Identify server-side operations that need admin privileges
-2. Replace user client with admin client in API routes
-3. Add application-level permission checks
-4. Simplify RLS policies to remove helper functions
-5. Test thoroughly with different user roles
-
-### Database Schema Updates
-```sql
--- Add required columns for the permission system
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '{}';
-
--- Create audit logs table
-CREATE TABLE IF NOT EXISTS audit_logs (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  action TEXT NOT NULL,
-  entity_type TEXT NOT NULL,
-  entity_id UUID,
-  details JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
----
-
-## Conclusion
-
-This hybrid approach provides the security benefits of RLS while maintaining the flexibility and performance of application-level permission checks. By avoiding complex helper functions and using the appropriate Supabase client for each context, we prevent common issues like recursion while maintaining a robust, scalable authorization system.
-
-The key is understanding when to use which client:
-- **Admin client** for server-side operations where you control the permissions
-- **User client** for authentication and client-side operations where RLS provides protection
-
-This documentation should be updated as the system evolves, and all developers should be familiar with these patterns before working with the authentication system.
+[
+  {
+    "index_name": "approval_workflows_pkey",
+    "table_name": "approval_workflows",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "idx_approval_workflows_requester_id",
+    "table_name": "approval_workflows",
+    "column_name": "requester_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_approval_workflows_status",
+    "table_name": "approval_workflows",
+    "column_name": "status",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "audit_logs_pkey",
+    "table_name": "audit_logs",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "idx_audit_logs_created_at",
+    "table_name": "audit_logs",
+    "column_name": "created_at",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_audit_logs_entity_type",
+    "table_name": "audit_logs",
+    "column_name": "entity_type",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_audit_logs_user_id",
+    "table_name": "audit_logs",
+    "column_name": "user_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_notifications_is_read",
+    "table_name": "notifications",
+    "column_name": "is_read",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_notifications_user_id",
+    "table_name": "notifications",
+    "column_name": "user_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "notifications_pkey",
+    "table_name": "notifications",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "idx_parent_students_parent_id",
+    "table_name": "parent_students",
+    "column_name": "parent_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_parent_students_student_id",
+    "table_name": "parent_students",
+    "column_name": "student_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "parent_students_parent_id_student_id_key",
+    "table_name": "parent_students",
+    "column_name": "student_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "parent_students_parent_id_student_id_key",
+    "table_name": "parent_students",
+    "column_name": "parent_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "parent_students_pkey",
+    "table_name": "parent_students",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "idx_parents_user_id",
+    "table_name": "parents",
+    "column_name": "user_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "parents_pkey",
+    "table_name": "parents",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "parents_user_id_key",
+    "table_name": "parents",
+    "column_name": "user_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "payment_settings_pkey",
+    "table_name": "payment_settings",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "payment_settings_school_id_key",
+    "table_name": "payment_settings",
+    "column_name": "school_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_payments_payment_date",
+    "table_name": "payments",
+    "column_name": "payment_date",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_payments_status",
+    "table_name": "payments",
+    "column_name": "status",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_payments_student_id",
+    "table_name": "payments",
+    "column_name": "student_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "payments_pkey",
+    "table_name": "payments",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "idx_profiles_admin_type",
+    "table_name": "profiles",
+    "column_name": "admin_type",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_profiles_role",
+    "table_name": "profiles",
+    "column_name": "role",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_profiles_school_id",
+    "table_name": "profiles",
+    "column_name": "school_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_profiles_user_id",
+    "table_name": "profiles",
+    "column_name": "user_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "profiles_pkey",
+    "table_name": "profiles",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "profiles_user_id_key",
+    "table_name": "profiles",
+    "column_name": "user_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_schools_status",
+    "table_name": "schools",
+    "column_name": "status",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_schools_verification_status",
+    "table_name": "schools",
+    "column_name": "verification_status",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "schools_pkey",
+    "table_name": "schools",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "schools_registration_number_key",
+    "table_name": "schools",
+    "column_name": "registration_number",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_students_parent_email",
+    "table_name": "students",
+    "column_name": "parent_email",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_students_parent_phone",
+    "table_name": "students",
+    "column_name": "parent_phone",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_students_school_id",
+    "table_name": "students",
+    "column_name": "school_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_students_status",
+    "table_name": "students",
+    "column_name": "status",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "idx_students_student_id",
+    "table_name": "students",
+    "column_name": "student_id",
+    "is_unique": false,
+    "is_primary": false
+  },
+  {
+    "index_name": "students_pkey",
+    "table_name": "students",
+    "column_name": "id",
+    "is_unique": true,
+    "is_primary": true
+  },
+  {
+    "index_name": "students_school_id_student_id_key",
+    "table_name": "students",
+    "column_name": "student_id",
+    "is_unique": true,
+    "is_primary": false
+  },
+  {
+    "index_name": "students_school_id_student_id_key",
+    "table_name": "students",
+    "column_name": "school_id",
+    "is_unique": true,
+    "is_primary": false
+  }
+]

@@ -111,6 +111,27 @@ export async function checkUserPermission(
         reason: hasRoleLevel(profile.role, 'school_staff') ? undefined : 'School panel requires school staff role'
       };
       
+    case 'access_parent_panel':
+      return {
+        allowed: profile.role === 'parent',
+        profile,
+        reason: profile.role === 'parent' ? undefined : 'Parent panel requires parent role'
+      };
+      
+    case 'view_own_children':
+      return {
+        allowed: profile.role === 'parent',
+        profile,
+        reason: profile.role === 'parent' ? undefined : 'Only parents can view their children'
+      };
+      
+    case 'make_payments':
+      return {
+        allowed: profile.role === 'parent',
+        profile,
+        reason: profile.role === 'parent' ? undefined : 'Only parents can make payments'
+      };
+      
     default:
       return { allowed: false, profile, reason: 'Unknown operation' };
   }

@@ -10,6 +10,8 @@ const publicRoutes = [
   '/login',
   '/register',
   '/api/auth',
+  '/api/parent',
+  '/api/test',
 ];
 
 // Define protected routes and their required roles

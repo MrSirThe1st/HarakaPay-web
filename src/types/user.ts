@@ -12,7 +12,8 @@ export type UserRole =
   | "platform_admin" 
   | "support_admin" 
   | "school_admin" 
-  | "school_staff";
+  | "school_staff"
+  | "parent";
 
 export type AdminType = 
   | "super_admin" 

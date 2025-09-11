@@ -4,7 +4,8 @@ export const ROLE_HIERARCHY = {
   'platform_admin': 4, 
   'support_admin': 3,
   'school_admin': 2,
-  'school_staff': 1
+  'school_staff': 1,
+  'parent': 0
 } as const;
 
 export type UserRole = keyof typeof ROLE_HIERARCHY;
@@ -18,6 +19,11 @@ export function hasRoleLevel(userRole: UserRole, requiredRole: UserRole): boolea
 // Check if user has at least school_staff level access
 export function hasSchoolLevelAccess(role: UserRole): boolean {
   return hasRoleLevel(role, 'school_staff');
+}
+
+// Check if user is a parent
+export function isParent(role: UserRole): boolean {
+  return role === 'parent';
 }
 
 // Check if user is platform-level admin or higher  
@@ -43,6 +49,12 @@ export function canPerformOperation(userRole: UserRole, operation: string): bool
       return hasRoleLevel(userRole, 'support_admin');
     case 'manage_school_staff':
       return hasRoleLevel(userRole, 'school_admin');
+    case 'view_schools':
+      return hasRoleLevel(userRole, 'parent');
+    case 'view_students':
+      return hasRoleLevel(userRole, 'parent');
+    case 'view_payments':
+      return hasRoleLevel(userRole, 'parent');
     default:
       return false;
   }
