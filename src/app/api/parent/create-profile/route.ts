@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         user_id: profileData.user_id,
         first_name: profileData.first_name,
         last_name: profileData.last_name,
-        phone: profileData.phone || '',
+        phone: profileData.phone || 'Not provided',
         email: profileData.email,
         address: profileData.address || null,
         is_active: true

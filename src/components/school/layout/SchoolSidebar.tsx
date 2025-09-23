@@ -8,12 +8,14 @@ import {
   UserGroupIcon, 
   CreditCardIcon, 
   ChatBubbleLeftRightIcon, 
-  Cog6ToothIcon 
+  Cog6ToothIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Dashboard', href: '/school/dashboard', icon: HomeIcon },
   { name: 'Students', href: '/school/students', icon: UserGroupIcon },
+  { name: 'Staff', href: '/school/staff', icon: UsersIcon },
   { name: 'Payments', href: '/school/payments', icon: CreditCardIcon },
   { name: 'Communications', href: '/school/communications', icon: ChatBubbleLeftRightIcon },
   { name: 'Settings', href: '/school/settings', icon: Cog6ToothIcon },

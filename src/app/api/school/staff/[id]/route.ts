@@ -4,102 +4,6 @@ import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    const studentId = params.id;
-
-    // First, get the student to check permissions
-    const { data: student, error: studentError } = await adminClient
-      .from('students')
-      .select('id, school_id, first_name, last_name')
-      .eq('id', studentId)
-      .single();
-
-    if (studentError || !student) {
-      return NextResponse.json(
-        { success: false, error: 'Student not found' }, 
-        { status: 404 }
-      );
-    }
-
-    // Check if user has permission to delete this student
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
-      if (!profile.school_id || profile.school_id !== student.school_id) {
-        return NextResponse.json(
-          { success: false, error: 'You can only delete students from your own school' }, 
-          { status: 403 }
-        );
-      }
-    }
-
-    // Delete the student
-    const { error: deleteError } = await adminClient
-      .from('students')
-      .delete()
-      .eq('id', studentId);
-
-    if (deleteError) {
-      console.error('Error deleting student:', deleteError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to delete student' }, 
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Student ${student.first_name} ${student.last_name} deleted successfully`
-    });
-
-  } catch (error) {
-    console.error('Delete student error:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      }, 
-      { status: 500 }
-    );
-  }
-}
-
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
@@ -139,39 +43,39 @@ export async function GET(
       );
     }
 
-    const studentId = params.id;
+    // Only school admins can view staff details
+    if (profile.role !== 'school_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only school admins can view staff details' }, 
+        { status: 403 }
+      );
+    }
 
-    // Get the student
-    const { data: student, error: studentError } = await adminClient
-      .from('students')
+    const staffId = params.id;
+
+    // Get the staff member
+    const { data: staff, error: staffError } = await adminClient
+      .from('profiles')
       .select('*')
-      .eq('id', studentId)
+      .eq('id', staffId)
+      .eq('school_id', profile.school_id)
+      .eq('role', 'school_staff')
       .single();
 
-    if (studentError || !student) {
+    if (staffError || !staff) {
       return NextResponse.json(
-        { success: false, error: 'Student not found' }, 
+        { success: false, error: 'Staff member not found' }, 
         { status: 404 }
       );
     }
 
-    // Check if user has permission to view this student
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
-      if (!profile.school_id || profile.school_id !== student.school_id) {
-        return NextResponse.json(
-          { success: false, error: 'You can only view students from your own school' }, 
-          { status: 403 }
-        );
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      data: student
+      data: staff
     });
 
   } catch (error) {
-    console.error('Get student error:', error);
+    console.error('Get staff error:', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -221,104 +125,78 @@ export async function PUT(
       );
     }
 
-    const studentId = params.id;
+    // Only school admins can update staff
+    if (profile.role !== 'school_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only school admins can update staff' }, 
+        { status: 403 }
+      );
+    }
+
+    const staffId = params.id;
     const body = await req.json();
     const { 
-      student_id, 
       first_name, 
       last_name, 
-      grade_level, 
-      enrollment_date, 
-      status,
-      parent_name,
-      parent_phone,
-      parent_email
+      is_active,
+      permissions
     } = body;
 
     // Validate required fields
-    if (!student_id || !first_name || !last_name) {
+    if (!first_name || !last_name) {
       return NextResponse.json(
-        { success: false, error: 'Student ID, first name, and last name are required' }, 
+        { success: false, error: 'First name and last name are required' }, 
         { status: 400 }
       );
     }
 
-    // First, get the student to check permissions
-    const { data: existingStudent, error: studentError } = await adminClient
-      .from('students')
-      .select('id, school_id, first_name, last_name, enrollment_date, status')
-      .eq('id', studentId)
+    // First, get the staff member to check permissions
+    const { data: existingStaff, error: staffError } = await adminClient
+      .from('profiles')
+      .select('id, school_id, user_id')
+      .eq('id', staffId)
+      .eq('school_id', profile.school_id)
+      .eq('role', 'school_staff')
       .single();
 
-    if (studentError || !existingStudent) {
+    if (staffError || !existingStaff) {
       return NextResponse.json(
-        { success: false, error: 'Student not found' }, 
+        { success: false, error: 'Staff member not found' }, 
         { status: 404 }
       );
     }
 
-    // Check if user has permission to update this student
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
-      if (!profile.school_id || profile.school_id !== existingStudent.school_id) {
-        return NextResponse.json(
-          { success: false, error: 'You can only update students from your own school' }, 
-          { status: 403 }
-        );
-      }
-    }
-
-    // Check if student ID already exists in this school (excluding current student)
-    const { data: duplicateStudent, error: checkError } = await adminClient
-      .from('students')
-      .select('id')
-      .eq('school_id', existingStudent.school_id)
-      .eq('student_id', student_id.trim())
-      .neq('id', studentId)
-      .single();
-
-    if (duplicateStudent) {
-      return NextResponse.json(
-        { success: false, error: 'Student ID already exists in this school' }, 
-        { status: 409 }
-      );
-    }
-
-    // Update the student
+    // Update the staff member
     const updateData = {
-      student_id: student_id.trim(),
       first_name: first_name.trim(),
       last_name: last_name.trim(),
-      grade_level: grade_level?.trim() || null,
-      enrollment_date: enrollment_date || existingStudent.enrollment_date,
-      status: status || existingStudent.status,
-      parent_name: parent_name?.trim() || null,
-      parent_phone: parent_phone?.trim() || null,
-      parent_email: parent_email?.trim() || null,
+      is_active: is_active !== undefined ? is_active : existingStaff.is_active,
+      permissions: permissions || existingStaff.permissions,
     };
 
-    const { data: updatedStudent, error: updateError } = await adminClient
-      .from('students')
+    const { data: updatedStaff, error: updateError } = await adminClient
+      .from('profiles')
       .update(updateData)
-      .eq('id', studentId)
+      .eq('id', staffId)
       .select('*')
       .single();
 
     if (updateError) {
-      console.error('Error updating student:', updateError);
+      console.error('Error updating staff:', updateError);
       return NextResponse.json(
-        { success: false, error: 'Failed to update student' }, 
+        { success: false, error: 'Failed to update staff member' }, 
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      data: updatedStudent,
-      message: 'Student updated successfully'
+      data: updatedStaff,
+      message: 'Staff member updated successfully'
     });
 
   } catch (error) {
-    console.error('Update student error:', error);
+    console.error('Update staff error:', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -328,3 +206,110 @@ export async function PUT(
     );
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' }, 
+        { status: 401 }
+      );
+    }
+
+    // Get user profile to check role and school
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('role, school_id, is_active')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' }, 
+        { status: 404 }
+      );
+    }
+
+    if (!profile.is_active) {
+      return NextResponse.json(
+        { success: false, error: 'Account inactive' }, 
+        { status: 403 }
+      );
+    }
+
+    // Only school admins can delete staff
+    if (profile.role !== 'school_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only school admins can delete staff' }, 
+        { status: 403 }
+      );
+    }
+
+    const staffId = params.id;
+
+    // First, get the staff member to check permissions
+    const { data: staff, error: staffError } = await adminClient
+      .from('profiles')
+      .select('id, school_id, first_name, last_name, user_id')
+      .eq('id', staffId)
+      .eq('school_id', profile.school_id)
+      .eq('role', 'school_staff')
+      .single();
+
+    if (staffError || !staff) {
+      return NextResponse.json(
+        { success: false, error: 'Staff member not found' }, 
+        { status: 404 }
+      );
+    }
+
+    // Delete the auth user first
+    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(staff.user_id);
+    if (deleteAuthError) {
+      console.error('Error deleting auth user:', deleteAuthError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete staff account' }, 
+        { status: 500 }
+      );
+    }
+
+    // Delete the profile (this should cascade due to foreign key)
+    const { error: deleteProfileError } = await adminClient
+      .from('profiles')
+      .delete()
+      .eq('id', staffId);
+
+    if (deleteProfileError) {
+      console.error('Error deleting profile:', deleteProfileError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete staff profile' }, 
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Staff member ${staff.first_name} ${staff.last_name} deleted successfully`
+    });
+
+  } catch (error) {
+    console.error('Delete staff error:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Internal server error' 
+      }, 
+      { status: 500 }
+    );
+  }
+}
+

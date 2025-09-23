@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: Request) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
     // Check authentication
@@ -49,6 +49,9 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
 
+    // Debug logging (can be removed in production)
+    console.log('API Request params:', { search, grade, status, page, limit });
+
     // Determine which school to fetch students for
     let targetSchoolId = profile.school_id;
     
@@ -80,7 +83,13 @@ export async function GET(req: Request) {
 
     // Apply grade filter
     if (grade && grade !== 'all') {
-      query = query.eq('grade_level', grade);
+      console.log('Applying grade filter:', grade);
+      
+      // Convert grade to lowercase to match database format
+      const normalizedGrade = grade.toLowerCase();
+      console.log('Normalized grade:', normalizedGrade);
+      
+      query = query.eq('grade_level', normalizedGrade);
     }
 
     // Apply status filter
@@ -92,6 +101,13 @@ export async function GET(req: Request) {
     query = query.range(offset, offset + limit - 1).order('created_at', { ascending: false });
 
     const { data: students, error: studentsError, count } = await query;
+
+    console.log('Query results:', { 
+      studentsCount: students?.length || 0, 
+      totalCount: count,
+      grade: grade,
+      hasGradeFilter: grade && grade !== 'all'
+    });
 
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
@@ -152,6 +168,157 @@ export async function GET(req: Request) {
 
   } catch (error) {
     console.error('Students API error:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Internal server error' 
+      }, 
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' }, 
+        { status: 401 }
+      );
+    }
+
+    // Get user profile to check role and school
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('role, school_id, is_active')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' }, 
+        { status: 404 }
+      );
+    }
+
+    if (!profile.is_active) {
+      return NextResponse.json(
+        { success: false, error: 'Account inactive' }, 
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const { 
+      student_id, 
+      first_name, 
+      last_name, 
+      grade_level, 
+      enrollment_date, 
+      status = 'active',
+      parent_name,
+      parent_phone,
+      parent_email,
+      school_id 
+    } = body;
+
+    // Validate required fields
+    if (!student_id || !first_name || !last_name) {
+      return NextResponse.json(
+        { success: false, error: 'Student ID, first name, and last name are required' }, 
+        { status: 400 }
+      );
+    }
+
+    // Determine which school to use
+    let targetSchoolId = school_id;
+    // If user is school staff, they can only add to their own school
+    if (['school_admin', 'school_staff'].includes(profile.role)) {
+      if (!profile.school_id) {
+        return NextResponse.json(
+          { success: false, error: 'School staff must be associated with a school' }, 
+          { status: 403 }
+        );
+      }
+      targetSchoolId = profile.school_id;
+    } else if (['super_admin', 'platform_admin', 'support_admin'].includes(profile.role) && !school_id) {
+      return NextResponse.json(
+        { success: false, error: 'Admins must specify a school_id' }, 
+        { status: 400 }
+      );
+    }
+
+    // Validate that the school exists
+    const { data: school, error: schoolError } = await adminClient
+      .from('schools')
+      .select('id')
+      .eq('id', targetSchoolId)
+      .single();
+
+    if (schoolError || !school) {
+      return NextResponse.json(
+        { success: false, error: 'School not found' }, 
+        { status: 404 }
+      );
+    }
+
+    // Check if student ID already exists in this school
+    const { data: existingStudent, error: checkError } = await adminClient
+      .from('students')
+      .select('id')
+      .eq('school_id', targetSchoolId)
+      .eq('student_id', student_id.trim())
+      .single();
+
+    if (existingStudent) {
+      return NextResponse.json(
+        { success: false, error: 'Student ID already exists in this school' }, 
+        { status: 409 }
+      );
+    }
+
+    // Create the student
+    const studentData = {
+      school_id: targetSchoolId,
+      student_id: student_id.trim(),
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      grade_level: grade_level?.trim() || null,
+      enrollment_date: enrollment_date || new Date().toISOString().split('T')[0],
+      status: status || 'active',
+      parent_name: parent_name?.trim() || null,
+      parent_phone: parent_phone?.trim() || null,
+      parent_email: parent_email?.trim() || null,
+    };
+
+    const { data: newStudent, error: insertError } = await adminClient
+      .from('students')
+      .insert(studentData)
+      .select('*')
+      .single();
+
+    if (insertError) {
+      console.error('Error creating student:', insertError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create student' }, 
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: newStudent,
+      message: 'Student created successfully'
+    });
+
+  } catch (error) {
+    console.error('Create student error:', error);
     return NextResponse.json(
       { 
         success: false, 

@@ -14,11 +14,21 @@ import {
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { BulkImportModal } from './BulkImportModal';
+import { AddStudentModal } from './AddStudentModal';
+import { EditStudentModal } from './EditStudentModal';
+import { ViewStudentModal } from './ViewStudentModal';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { StudentImportData } from '@/lib/csvParser';
 import { useStudents, Student } from '@/hooks/useStudents';
 
 export function SchoolStaffStudentsView() {
   const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showAddStudent, setShowAddStudent] = useState(false);
+  const [showEditStudent, setShowEditStudent] = useState(false);
+  const [showViewStudent, setShowViewStudent] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Use the students hook for data management
   const {
@@ -77,22 +87,26 @@ export function SchoolStaffStudentsView() {
   };
 
   const handleViewStudent = (student: Student) => {
-    // TODO: Implement student view modal
-    console.log('View student:', student);
+    setSelectedStudent(student);
+    setShowViewStudent(true);
   };
 
   const handleEditStudent = (student: Student) => {
-    // TODO: Implement student edit modal
-    console.log('Edit student:', student);
+    setSelectedStudent(student);
+    setShowEditStudent(true);
   };
 
-  const handleDeleteStudent = async (student: Student) => {
-    if (!confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}?`)) {
-      return;
-    }
+  const handleDeleteStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!selectedStudent) return;
+
+    setIsDeleting(true);
     try {
-      const response = await fetch(`/api/students/${student.id}`, {
+      const response = await fetch(`/api/students/${selectedStudent.id}`, {
         method: 'DELETE',
       });
 
@@ -108,10 +122,22 @@ export function SchoolStaffStudentsView() {
 
       // Refresh the student list
       refreshStudents();
+      setShowDeleteConfirm(false);
+      setSelectedStudent(null);
     } catch (error) {
       console.error('Delete error:', error);
       alert('Failed to delete student. Please try again.');
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleAddStudentSuccess = () => {
+    refreshStudents();
+  };
+
+  const handleEditStudentSuccess = () => {
+    refreshStudents();
   };
 
   // Generate grade options dynamically
@@ -263,7 +289,10 @@ export function SchoolStaffStudentsView() {
             </div>
 
             {/* Add Student Button */}
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+            <button 
+              onClick={() => setShowAddStudent(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+            >
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Student
             </button>
@@ -482,7 +511,10 @@ export function SchoolStaffStudentsView() {
             Quick Actions
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-green-300">
+            <button 
+              onClick={() => setShowAddStudent(true)}
+              className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-green-300"
+            >
               <div>
                 <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
                   <PlusIcon className="h-6 w-6" />
@@ -544,6 +576,38 @@ export function SchoolStaffStudentsView() {
         isOpen={showBulkImport}
         onClose={() => setShowBulkImport(false)}
         onImport={handleBulkImport}
+      />
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        isOpen={showAddStudent}
+        onClose={() => setShowAddStudent(false)}
+        onSuccess={handleAddStudentSuccess}
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        isOpen={showEditStudent}
+        onClose={() => setShowEditStudent(false)}
+        onSuccess={handleEditStudentSuccess}
+        student={selectedStudent}
+      />
+
+      {/* View Student Modal */}
+      <ViewStudentModal
+        isOpen={showViewStudent}
+        onClose={() => setShowViewStudent(false)}
+        onEdit={handleEditStudent}
+        student={selectedStudent}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        student={selectedStudent}
+        isDeleting={isDeleting}
       />
     </div>
   );
