@@ -342,3 +342,4 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
   );
 }
 
+
