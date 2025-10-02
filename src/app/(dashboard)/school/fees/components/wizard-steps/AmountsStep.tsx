@@ -16,7 +16,11 @@ interface AmountsStepProps {
 }
 
 export function AmountsStep({ selectedCategories, onChange }: AmountsStepProps) {
-  const updateCategoryAmount = (index: number, amount: number) => {
+  const updateCategoryAmount = (index: number, value: string) => {
+    // Remove leading zeros and convert to number
+    const cleanValue = value.replace(/^0+/, '') || '0';
+    const amount = parseFloat(cleanValue) || 0;
+    
     const updated = [...selectedCategories];
     updated[index].amount = amount;
     onChange(updated);
@@ -79,8 +83,8 @@ export function AmountsStep({ selectedCategories, onChange }: AmountsStepProps) 
                       type="number"
                       min="0"
                       step="0.01"
-                      value={category.amount}
-                      onChange={(e) => updateCategoryAmount(index, parseFloat(e.target.value) || 0)}
+                      value={category.amount || ''}
+                      onChange={(e) => updateCategoryAmount(index, e.target.value)}
                       className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                       placeholder="0.00"
                     />

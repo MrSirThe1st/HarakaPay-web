@@ -158,10 +158,18 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
   };
 
   const updateInstallment = (index: number, field: string, value: any) => {
+    let processedValue = value;
+    
+    // Handle numeric fields to remove leading zeros
+    if ((field === 'amount' || field === 'percentage') && typeof value === 'string') {
+      const cleanValue = value.replace(/^0+/, '') || '0';
+      processedValue = parseFloat(cleanValue) || 0;
+    }
+    
     const updated = {
       ...paymentSchedule,
       installments: paymentSchedule.installments.map((inst, i) => 
-        i === index ? { ...inst, [field]: value } : inst
+        i === index ? { ...inst, [field]: processedValue } : inst
       )
     };
     onChange(updated);
@@ -242,7 +250,12 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
               min="0"
               max="100"
               value={paymentSchedule.discountPercentage}
-              onChange={(e) => onChange({ ...paymentSchedule, discountPercentage: parseFloat(e.target.value) || 0 })}
+              onChange={(e) => {
+                const value = e.target.value;
+                const cleanValue = value.replace(/^0+/, '') || '0';
+                const discountPercentage = parseFloat(cleanValue) || 0;
+                onChange({ ...paymentSchedule, discountPercentage });
+              }}
               className="h-12"
               placeholder="0"
             />
@@ -321,8 +334,8 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
                       type="number"
                       min="0"
                       step="0.01"
-                      value={installment.amount}
-                      onChange={(e) => updateInstallment(index, 'amount', parseFloat(e.target.value) || 0)}
+                      value={installment.amount || ''}
+                      onChange={(e) => updateInstallment(index, 'amount', e.target.value)}
                       className="h-10"
                       placeholder="0.00"
                     />
@@ -334,8 +347,8 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
                       type="number"
                       min="0"
                       max="100"
-                      value={installment.percentage}
-                      onChange={(e) => updateInstallment(index, 'percentage', parseFloat(e.target.value) || 0)}
+                      value={installment.percentage || ''}
+                      onChange={(e) => updateInstallment(index, 'percentage', e.target.value)}
                       className="h-10"
                       placeholder="0"
                     />
@@ -379,8 +392,13 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
                       type="number"
                       min="0"
                       step="0.01"
-                      value={newInstallment.amount}
-                      onChange={(e) => setNewInstallment({ ...newInstallment, amount: parseFloat(e.target.value) || 0 })}
+                      value={newInstallment.amount || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const cleanValue = value.replace(/^0+/, '') || '0';
+                        const amount = parseFloat(cleanValue) || 0;
+                        setNewInstallment({ ...newInstallment, amount });
+                      }}
                       className="h-10"
                       placeholder="0.00"
                     />
@@ -392,8 +410,13 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
                       type="number"
                       min="0"
                       max="100"
-                      value={newInstallment.percentage}
-                      onChange={(e) => setNewInstallment({ ...newInstallment, percentage: parseFloat(e.target.value) || 0 })}
+                      value={newInstallment.percentage || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const cleanValue = value.replace(/^0+/, '') || '0';
+                        const percentage = parseFloat(cleanValue) || 0;
+                        setNewInstallment({ ...newInstallment, percentage });
+                      }}
                       className="h-10"
                       placeholder="0"
                     />

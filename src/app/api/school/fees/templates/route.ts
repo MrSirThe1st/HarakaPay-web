@@ -221,6 +221,62 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check for duplicate grade-level assignment in the same academic year
+    const { data: existingTemplate } = await adminClient
+      .from('fee_templates')
+      .select('id, name, grade_level, program_type')
+      .eq('academic_year_id', academic_year_id)
+      .eq('grade_level', grade_level)
+      .eq('program_type', program_type)
+      .single();
+
+    if (existingTemplate) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `A fee structure already exists for ${grade_level} (${program_type}) in this academic year. Please edit the existing structure or choose a different grade/program combination.` 
+        }, 
+        { status: 409 }
+      );
+    }
+
+    // If creating an "All Programs" template, check if any grade-specific templates exist
+    if (program_type === 'all') {
+      const { data: gradeSpecificTemplates } = await adminClient
+        .from('fee_templates')
+        .select('id, grade_level, program_type')
+        .eq('academic_year_id', academic_year_id)
+        .neq('program_type', 'all');
+
+      if (gradeSpecificTemplates && gradeSpecificTemplates.length > 0) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Cannot create an "All Programs" template because grade-specific templates already exist for this academic year. Please create grade-specific templates instead.` 
+          }, 
+          { status: 409 }
+        );
+      }
+    } else {
+      // If creating a grade-specific template, check if an "All Programs" template exists
+      const { data: allProgramsTemplate } = await adminClient
+        .from('fee_templates')
+        .select('id, name')
+        .eq('academic_year_id', academic_year_id)
+        .eq('program_type', 'all')
+        .single();
+
+      if (allProgramsTemplate) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `Cannot create a grade-specific template because an "All Programs" template already exists for this academic year. Please edit the existing template or delete it first.` 
+          }, 
+          { status: 409 }
+        );
+      }
+    }
+
     // Validate categories
     if (categories.length === 0) {
       return NextResponse.json(

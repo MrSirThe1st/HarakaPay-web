@@ -191,27 +191,40 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         throw new Error('Please set amounts for all selected categories');
       }
       
-      // Step 1: Create Academic Year
-      const academicYearData = {
-        name: wizardData.academicYear.name,
-        start_date: wizardData.academicYear.startDate,
-        end_date: wizardData.academicYear.endDate,
-        term_structure: wizardData.academicYear.termStructure,
-        is_active: true
-      };
+      // Step 1: Create Academic Year (or find existing one)
+      let academicYearId;
       
-      console.log('Academic year data:', academicYearData);
+      // First, check if academic year already exists
+      const existingYearsResponse = await feesAPI.academicYears.getAll();
+      const existingYear = existingYearsResponse.success && existingYearsResponse.data?.academicYears.find(
+        year => year.name === wizardData.academicYear.name
+      );
       
-      const academicYearResponse = await feesAPI.academicYears.create(academicYearData);
+      if (existingYear) {
+        academicYearId = existingYear.id;
+        console.log('Using existing academic year:', existingYear);
+      } else {
+        const academicYearData = {
+          name: wizardData.academicYear.name,
+          start_date: wizardData.academicYear.startDate,
+          end_date: wizardData.academicYear.endDate,
+          term_structure: wizardData.academicYear.termStructure,
+          is_active: false // Don't auto-activate, let user manage this manually
+        };
+        
+        console.log('Creating new academic year:', academicYearData);
+        
+        const academicYearResponse = await feesAPI.academicYears.create(academicYearData);
 
-      console.log('Academic year API response:', academicYearResponse);
+        console.log('Academic year API response:', academicYearResponse);
 
-      if (!academicYearResponse.success || !academicYearResponse.data) {
-        console.error('Academic year creation failed:', academicYearResponse.error);
-        throw new Error(academicYearResponse.error || 'Failed to create academic year');
+        if (!academicYearResponse.success || !academicYearResponse.data) {
+          console.error('Academic year creation failed:', academicYearResponse.error);
+          throw new Error(academicYearResponse.error || 'Failed to create academic year');
+        }
+
+        academicYearId = academicYearResponse.data.academicYear.id;
       }
-
-      const academicYearId = academicYearResponse.data.academicYear.id;
 
       // Step 2: Create Fee Categories (if they don't exist)
       const categoryPromises = wizardData.selectedCategories.map(async (category) => {
