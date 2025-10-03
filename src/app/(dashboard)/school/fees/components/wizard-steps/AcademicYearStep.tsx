@@ -44,10 +44,34 @@ const generateAcademicYearSuggestions = () => {
 const academicYearSuggestions = generateAcademicYearSuggestions();
 
 const termStructures = [
-  { value: '3 Terms', label: '3 Terms' },
-  { value: '2 Semesters', label: '2 Semesters' },
-  { value: '4 Quarters', label: '4 Quarters' },
-  { value: 'Custom', label: 'Custom Structure' }
+  { 
+    value: 'Kindergarten (3 Trimesters)', 
+    label: 'Kindergarten (3 Trimesters)', 
+    description: '180 school days, 3 trimesters with 2 periods each',
+    schoolDays: 180,
+    structure: '3 trimesters'
+  },
+  { 
+    value: 'Primary (3 Trimesters)', 
+    label: 'Primary (3 Trimesters)', 
+    description: '222 school days, 3 trimesters with 2 periods each',
+    schoolDays: 222,
+    structure: '3 trimesters'
+  },
+  { 
+    value: 'Secondary (2 Semesters)', 
+    label: 'Secondary (2 Semesters)', 
+    description: '222 school days, 2 semesters with 2 periods each',
+    schoolDays: 222,
+    structure: '2 semesters'
+  },
+  { 
+    value: 'Custom', 
+    label: 'Custom Structure', 
+    description: 'Define your own academic structure',
+    schoolDays: 0,
+    structure: 'custom'
+  }
 ];
 
 export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
@@ -249,6 +273,7 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
                       onSelect={() => handleTermSelect(term)}
                     >
                       <div className="font-medium text-gray-900">{term.label}</div>
+                      <div className="text-sm text-gray-500 mt-1">{term.description}</div>
                     </DropdownMenu.Item>
                   ))}
                 </DropdownMenu.Content>
@@ -290,6 +315,19 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
               </p>
             </div>
           )}
+
+          {/* DRC School Calendar Information */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">🇨🇩 DRC School Calendar Reference</h3>
+            <div className="space-y-2 text-sm text-blue-800">
+              <div><strong>Kindergarten:</strong> 180 school days, 3 trimesters (Oct-Jul)</div>
+              <div><strong>Primary:</strong> 222 school days, 3 trimesters (Oct-Aug)</div>
+              <div><strong>Secondary:</strong> 222 school days, 2 semesters (Oct-Aug)</div>
+              <div className="text-xs text-blue-600 mt-2">
+                💡 Each trimester/semester is split into 2 periods for detailed scheduling
+              </div>
+            </div>
+          </div>
 
           {/* Summary */}
           {data.name && data.startDate && data.endDate && data.termStructure && (

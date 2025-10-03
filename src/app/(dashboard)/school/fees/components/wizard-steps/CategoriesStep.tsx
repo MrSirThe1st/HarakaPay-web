@@ -11,7 +11,9 @@ interface CategoriesStepProps {
     categoryName: string;
     amount: number;
     isMandatory: boolean;
-    isRecurring: boolean;
+    supportsRecurring: boolean;
+    supportsOneTime: boolean;
+    categoryType: 'tuition' | 'additional';
   }[];
   onChange: (categories: any[]) => void;
 }
@@ -86,7 +88,9 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
       categoryName: newCategoryName,
       amount: 0,
       isMandatory: false,
-      isRecurring: false
+      supportsRecurring: true,
+      supportsOneTime: true,
+      categoryType: 'additional' as const
     };
     
     onChange([...selectedCategories, customCategory]);
@@ -105,7 +109,9 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
       categoryName: category.name,
       amount: 0,
       isMandatory: category.isMandatory,
-      isRecurring: category.isRecurring
+      supportsRecurring: true, // All categories support both by default
+      supportsOneTime: true,    // All categories support both by default
+      categoryType: category.name.toLowerCase().includes('tuition') ? 'tuition' as const : 'additional' as const
     };
     
     onChange([...selectedCategories, categoryData]);
@@ -122,6 +128,27 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
   return (
     <div className="space-y-6">
       <div className="max-w-4xl mx-auto">
+        {/* Information Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">Fee Category Configuration</h3>
+              <div className="mt-2 text-sm text-blue-700">
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Tuition fees</strong> are the main academic fees (can be paid any way: one-time, installments, per semester, etc.)</li>
+                  <li><strong>Additional fees</strong> are supplementary fees (uniforms, books, transport, etc.)</li>
+                  <li>You can customize payment requirements (mandatory/optional) and frequency options for each category</li>
+                  <li>Categories can support multiple payment frequencies simultaneously (both recurring AND one-time)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
         {/* Add Custom Category */}
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 mb-6">
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Add Custom Category</h4>
@@ -161,7 +188,20 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
 
         {/* Predefined Categories */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-900">Predefined Categories</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-lg font-semibold text-gray-900">Predefined Categories</h4>
+            <div className="text-sm text-gray-600">
+              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 mr-2">
+                Tuition
+              </span>
+              <span className="text-gray-500">= Main academic fees</span>
+              <span className="mx-2 text-gray-400">•</span>
+              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-2">
+                Additional
+              </span>
+              <span className="text-gray-500">= Supplementary fees</span>
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {availableCategories.map((category) => (
               <div key={category.id} className="relative">
@@ -180,14 +220,16 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                       <p className="text-xs text-gray-500">{category.description}</p>
                       <div className="flex space-x-2 mt-2">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          category.name.toLowerCase().includes('tuition') 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {category.name.toLowerCase().includes('tuition') ? 'Tuition' : 'Additional'}
+                        </span>
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           category.isMandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                         }`}>
                           {category.isMandatory ? 'Mandatory' : 'Optional'}
-                        </span>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          category.isRecurring ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {category.isRecurring ? 'Recurring' : 'One-time'}
                         </span>
                       </div>
                     </div>
@@ -215,26 +257,129 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
               <p className="text-sm text-gray-500 mt-1">Select categories above to continue</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {selectedCategories.map((category) => (
-                <div key={category.categoryId} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center space-x-4">
-                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.isMandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {category.isMandatory ? 'Mandatory' : 'Optional'}
-                    </span>
-                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.isRecurring ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {category.isRecurring ? 'Recurring' : 'One-time'}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{category.categoryName}</p>
+                <div key={category.categoryId} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <h5 className="text-lg font-semibold text-gray-900">{category.categoryName}</h5>
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.categoryType === 'tuition' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
+                        {category.categoryType === 'tuition' ? 'Tuition' : 'Additional'}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => removeCategory(category.categoryId)}
+                      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Category Configuration */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Mandatory/Optional Selection */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-700">Payment Requirement</label>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            const updated = selectedCategories.map(cat => 
+                              cat.categoryId === category.categoryId 
+                                ? { ...cat, isMandatory: true }
+                                : cat
+                            );
+                            onChange(updated);
+                          }}
+                          className={`flex-1 px-4 py-3 text-sm font-medium rounded-lg border transition-colors ${
+                            category.isMandatory 
+                              ? 'bg-red-100 text-red-800 border-red-300' 
+                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-red-50'
+                          }`}
+                        >
+                          Mandatory
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updated = selectedCategories.map(cat => 
+                              cat.categoryId === category.categoryId 
+                                ? { ...cat, isMandatory: false }
+                                : cat
+                            );
+                            onChange(updated);
+                          }}
+                          className={`flex-1 px-4 py-3 text-sm font-medium rounded-lg border transition-colors ${
+                            !category.isMandatory 
+                              ? 'bg-blue-100 text-blue-800 border-blue-300' 
+                              : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-blue-50'
+                          }`}
+                        >
+                          Optional
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Payment Frequency Support */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-700">Supported Payment Frequencies</label>
+                      <div className="space-y-2">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={category.supportsRecurring}
+                            onChange={(e) => {
+                              const updated = selectedCategories.map(cat => 
+                                cat.categoryId === category.categoryId 
+                                  ? { ...cat, supportsRecurring: e.target.checked }
+                                  : cat
+                              );
+                              onChange(updated);
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">Recurring Payments</span>
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={category.supportsOneTime}
+                            onChange={(e) => {
+                              const updated = selectedCategories.map(cat => 
+                                cat.categoryId === category.categoryId 
+                                  ? { ...cat, supportsOneTime: e.target.checked }
+                                  : cat
+                              );
+                              onChange(updated);
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">One-time Payments</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => removeCategory(category.categoryId)}
-                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+
+                  {/* Current Settings Summary */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.isMandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {category.isMandatory ? 'Mandatory' : 'Optional'}
+                      </span>
+                      {category.supportsRecurring && (
+                        <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          Supports Recurring
+                        </span>
+                      )}
+                      {category.supportsOneTime && (
+                        <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          Supports One-time
+                        </span>
+                      )}
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.categoryType === 'tuition' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
+                        {category.categoryType === 'tuition' ? 'Tuition Fee' : 'Additional Fee'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

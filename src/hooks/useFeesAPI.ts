@@ -76,6 +76,7 @@ export interface PaymentSchedule {
   name: string;
   schedule_type: 'upfront' | 'per-term' | 'monthly' | 'custom';
   discount_percentage: number;
+  template_id?: string;
   school_id: string;
   created_at: string;
   updated_at: string;
@@ -270,6 +271,7 @@ export function useFeesAPI() {
     },
 
     create: async (data: Partial<PaymentSchedule> & { 
+      template_id?: string;
       installments?: Array<{
         description: string;
         amount: number;

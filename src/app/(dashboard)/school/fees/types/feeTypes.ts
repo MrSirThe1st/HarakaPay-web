@@ -125,16 +125,29 @@ export interface WizardData {
   };
   gradeProgram: {
     gradeLevel: string;
-    programType: 'all' | 'primary' | 'secondary' | 'university' | 'custom';
+    programType: string;
   };
   selectedCategories: {
     categoryId: string;
     categoryName: string;
     amount: number;
     isMandatory: boolean;
-    isRecurring: boolean;
+    supportsRecurring: boolean;
+    supportsOneTime: boolean;
+    categoryType: 'tuition' | 'additional';
   }[];
   paymentSchedule: {
+    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
+    installments: {
+      installmentNumber: number;
+      amount: number;
+      dueDate: string;
+      percentage: number;
+      termId?: string;
+    }[];
+    discountPercentage?: number;
+  };
+  additionalPaymentSchedule?: {
     scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
     installments: {
       installmentNumber: number;

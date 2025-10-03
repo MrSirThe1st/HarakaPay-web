@@ -13,7 +13,59 @@ interface PublishStepProps {
 
 export function PublishStep({ wizardData, onPublish, isSaving = false }: PublishStepProps) {
   const totalCategories = wizardData.selectedCategories.length;
-  const totalAmount = wizardData.selectedCategories.reduce((sum, cat) => sum + (cat.amount || 0), 0);
+  
+  // Calculate base amounts (without interest)
+  const baseTotalAmount = wizardData.selectedCategories.reduce((sum, cat) => sum + (cat.amount || 0), 0);
+  
+  // Calculate total amount including interest from installments
+  const calculateTotalWithInterest = () => {
+    let tuitionTotal = 0;
+    let additionalTotal = 0;
+    
+    // Calculate tuition total with interest
+    if (wizardData.paymentSchedule.installments.length > 0) {
+      tuitionTotal = wizardData.paymentSchedule.installments.reduce((sum, installment) => {
+        return sum + installment.amount;
+      }, 0);
+    } else {
+      // If no installments, use base amount for tuition categories
+      tuitionTotal = wizardData.selectedCategories
+        .filter(cat => cat.categoryType === 'tuition')
+        .reduce((sum, cat) => sum + (cat.amount || 0), 0);
+    }
+    
+    // Calculate additional fees total with interest
+    if (wizardData.additionalPaymentSchedule && wizardData.additionalPaymentSchedule.installments.length > 0) {
+      additionalTotal = wizardData.additionalPaymentSchedule.installments.reduce((sum, installment) => {
+        return sum + installment.amount;
+      }, 0);
+    } else {
+      // If no installments, use base amount for additional categories
+      additionalTotal = wizardData.selectedCategories
+        .filter(cat => cat.categoryType === 'additional')
+        .reduce((sum, cat) => sum + (cat.amount || 0), 0);
+    }
+    
+    return tuitionTotal + additionalTotal;
+  };
+  
+  const totalAmount = calculateTotalWithInterest();
+  const interestAmount = totalAmount - baseTotalAmount;
+  
+  // Separate totals for display
+  const tuitionBaseTotal = wizardData.selectedCategories
+    .filter(cat => cat.categoryType === 'tuition')
+    .reduce((sum, cat) => sum + (cat.amount || 0), 0);
+  const additionalBaseTotal = wizardData.selectedCategories
+    .filter(cat => cat.categoryType === 'additional')
+    .reduce((sum, cat) => sum + (cat.amount || 0), 0);
+  
+  const tuitionTotalWithInterest = wizardData.paymentSchedule.installments.length > 0 
+    ? wizardData.paymentSchedule.installments.reduce((sum, installment) => sum + installment.amount, 0)
+    : tuitionBaseTotal;
+  const additionalTotalWithInterest = wizardData.additionalPaymentSchedule && wizardData.additionalPaymentSchedule.installments.length > 0
+    ? wizardData.additionalPaymentSchedule.installments.reduce((sum, installment) => sum + installment.amount, 0)
+    : additionalBaseTotal;
 
   return (
     <div className="space-y-6">
@@ -79,8 +131,16 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
               </div>
               <div className="ml-4">
                 <h4 className="text-sm font-medium text-gray-900">Total Amount</h4>
-                <p className="text-lg font-semibold text-gray-900">${totalAmount}</p>
-                <p className="text-xs text-gray-500">{wizardData.paymentSchedule.scheduleType}</p>
+                <p className="text-lg font-semibold text-gray-900">${totalAmount.toLocaleString()}</p>
+                <div className="text-xs text-gray-500 space-y-1">
+                  <div>Tuition: ${tuitionTotalWithInterest.toLocaleString()}</div>
+                  <div>Additional: ${additionalTotalWithInterest.toLocaleString()}</div>
+                </div>
+                {interestAmount > 0 && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    Base: ${baseTotalAmount.toLocaleString()} + Interest: ${interestAmount.toLocaleString()}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -124,9 +184,16 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${category.isMandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
                         {category.isMandatory ? 'Mandatory' : 'Optional'}
                       </span>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${category.isRecurring ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {category.isRecurring ? 'Recurring' : 'One-time'}
-                      </span>
+                      {category.supportsRecurring && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          Recurring
+                        </span>
+                      )}
+                      {category.supportsOneTime && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          One-time
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -137,18 +204,88 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
           {/* Payment Schedule */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Payment Schedule</h4>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h5 className="text-sm font-semibold text-gray-900">Schedule Type</h5>
-                <p className="text-sm font-medium text-gray-900 capitalize">{wizardData.paymentSchedule.scheduleType.replace('-', ' ')}</p>
+            
+            {/* Tuition Fees Schedule */}
+            {tuitionBaseTotal > 0 && (
+              <div className="p-4 bg-green-50 rounded-lg mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h5 className="text-sm font-semibold text-green-900">Tuition Fees Schedule</h5>
+                  <p className="text-sm font-medium text-green-900 capitalize">{wizardData.paymentSchedule.scheduleType.replace('-', ' ')}</p>
+                </div>
+                {wizardData.paymentSchedule.discountPercentage && (
+                  <p className="text-xs text-green-600 mb-2">Discount: {wizardData.paymentSchedule.discountPercentage}%</p>
+                )}
+                <div className="text-xs text-green-600 mb-3">
+                  Total: ${tuitionTotalWithInterest.toLocaleString()}
+                  {tuitionTotalWithInterest !== tuitionBaseTotal && (
+                    <span className="text-orange-600 ml-2">
+                      (Base: ${tuitionBaseTotal.toLocaleString()} + Interest: ${(tuitionTotalWithInterest - tuitionBaseTotal).toLocaleString()})
+                    </span>
+                  )}
+                </div>
+                
+                {/* Tuition Installment Details */}
+                {wizardData.paymentSchedule.installments.length > 0 && (
+                  <div className="mt-3">
+                    <h6 className="text-xs font-semibold text-green-700 mb-2">Tuition Installments:</h6>
+                    <div className="space-y-1">
+                      {wizardData.paymentSchedule.installments.map((installment, index) => (
+                        <div key={index} className="flex justify-between items-center text-xs">
+                          <span className="text-green-600">
+                            Installment {installment.installmentNumber}
+                            {installment.percentage > 0 && (
+                              <span className="text-orange-600 ml-1">(+{installment.percentage}%)</span>
+                            )}
+                          </span>
+                          <span className="font-medium text-green-900">${installment.amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              {wizardData.paymentSchedule.discountPercentage && (
-                <p className="text-xs text-gray-500 mb-2">Discount: {wizardData.paymentSchedule.discountPercentage}%</p>
-              )}
-              <div className="text-xs text-gray-500">
-                Total Amount: ${totalAmount}
+            )}
+            
+            {/* Additional Fees Schedule */}
+            {additionalBaseTotal > 0 && wizardData.additionalPaymentSchedule && (
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h5 className="text-sm font-semibold text-purple-900">Additional Fees Schedule</h5>
+                  <p className="text-sm font-medium text-purple-900 capitalize">{wizardData.additionalPaymentSchedule.scheduleType.replace('-', ' ')}</p>
+                </div>
+                {wizardData.additionalPaymentSchedule.discountPercentage && (
+                  <p className="text-xs text-purple-600 mb-2">Discount: {wizardData.additionalPaymentSchedule.discountPercentage}%</p>
+                )}
+                <div className="text-xs text-purple-600 mb-3">
+                  Total: ${additionalTotalWithInterest.toLocaleString()}
+                  {additionalTotalWithInterest !== additionalBaseTotal && (
+                    <span className="text-orange-600 ml-2">
+                      (Base: ${additionalBaseTotal.toLocaleString()} + Interest: ${(additionalTotalWithInterest - additionalBaseTotal).toLocaleString()})
+                    </span>
+                  )}
+                </div>
+                
+                {/* Additional Installment Details */}
+                {wizardData.additionalPaymentSchedule.installments.length > 0 && (
+                  <div className="mt-3">
+                    <h6 className="text-xs font-semibold text-purple-700 mb-2">Additional Fees Installments:</h6>
+                    <div className="space-y-1">
+                      {wizardData.additionalPaymentSchedule.installments.map((installment, index) => (
+                        <div key={index} className="flex justify-between items-center text-xs">
+                          <span className="text-purple-600">
+                            Installment {installment.installmentNumber}
+                            {installment.percentage > 0 && (
+                              <span className="text-orange-600 ml-1">(+{installment.percentage}%)</span>
+                            )}
+                          </span>
+                          <span className="font-medium text-purple-900">${installment.amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
 

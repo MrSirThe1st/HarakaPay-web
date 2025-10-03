@@ -2,14 +2,26 @@
 "use client";
 
 import React, { useState } from 'react';
-import { PlusIcon, TrashIcon, CalendarIcon, ChevronDownIcon, CreditCardIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { CreditCardIcon } from '@heroicons/react/24/outline';
+import { TabNavigation } from './components/TabNavigation';
+import { FeeSummary } from './components/FeeSummary';
+import { InstallmentManager } from './components/InstallmentManager';
+import { DiscountInput } from './components/DiscountInput';
+import { PaymentScheduleSummary } from './components/PaymentScheduleSummary';
 
 interface PaymentSchedulesStepProps {
   paymentSchedule: {
+    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
+    installments: {
+      installmentNumber: number;
+      amount: number;
+      dueDate: string;
+      percentage: number;
+      termId?: string;
+    }[];
+    discountPercentage?: number;
+  };
+  additionalPaymentSchedule?: {
     scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
     installments: {
       installmentNumber: number;
@@ -26,8 +38,26 @@ interface PaymentSchedulesStepProps {
     endDate: string;
     termStructure: string;
   };
-  totalAmount: number;
-  onChange: (schedule: {
+  selectedCategories: {
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+    isMandatory: boolean;
+    supportsRecurring: boolean;
+    supportsOneTime: boolean;
+    categoryType: 'tuition' | 'additional';
+  }[];
+  onChange: (tuitionSchedule: {
+    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
+    installments: {
+      installmentNumber: number;
+      amount: number;
+      dueDate: string;
+      percentage: number;
+      termId?: string;
+    }[];
+    discountPercentage?: number;
+  }, additionalSchedule?: {
     scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
     installments: {
       installmentNumber: number;
@@ -44,12 +74,6 @@ interface PaymentSchedulesStepProps {
 const getScheduleTypes = (termStructure: string) => {
   const baseTypes = [
     { 
-      value: 'upfront', 
-      label: 'Annual Upfront', 
-      description: 'Pay the full year amount at once',
-      icon: '💰'
-    },
-    { 
       value: 'monthly', 
       label: 'Monthly Installments', 
       description: 'Equal monthly payments throughout the year',
@@ -63,8 +87,22 @@ const getScheduleTypes = (termStructure: string) => {
     }
   ];
 
-  // Add term-based option based on term structure
-  if (termStructure.toLowerCase().includes('term')) {
+  // Add term-based option based on DRC structure
+  if (termStructure.includes('Kindergarten') || termStructure.includes('Primary')) {
+    baseTypes.splice(1, 0, {
+      value: 'per-term',
+      label: 'Per Trimester (3 Trimesters)',
+      description: 'Payments due at the start of each trimester (Oct, Feb, May)',
+      icon: '📚'
+    });
+  } else if (termStructure.includes('Secondary')) {
+    baseTypes.splice(1, 0, {
+      value: 'per-term',
+      label: 'Per Semester (2 Semesters)',
+      description: 'Payments due at the start of each semester (Oct, Mar)',
+      icon: '📚'
+    });
+  } else if (termStructure.toLowerCase().includes('term')) {
     const termCount = termStructure.match(/\d+/)?.[0] || '3';
     baseTypes.splice(1, 0, {
       value: 'per-term',
@@ -85,20 +123,61 @@ const getScheduleTypes = (termStructure: string) => {
   return baseTypes;
 };
 
-export function PaymentSchedulesStep({ paymentSchedule, academicYear, totalAmount, onChange }: PaymentSchedulesStepProps) {
+export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedule: initialAdditionalSchedule, academicYear, selectedCategories, onChange }: PaymentSchedulesStepProps) {
+  // Separate categories by type and frequency
+  const tuitionCategories = selectedCategories.filter(cat => cat.categoryType === 'tuition');
+  const additionalCategories = selectedCategories.filter(cat => cat.categoryType === 'additional');
+  
+  // State declarations
+  const [activeTab, setActiveTab] = useState<'tuition' | 'additional'>('tuition');
   const [isScheduleDropdownOpen, setIsScheduleDropdownOpen] = useState(false);
-  const [newInstallment, setNewInstallment] = useState({
-    description: '',
-    amount: 0,
-    percentage: 0,
-    dueDate: '',
-    termId: ''
+  const [isAdditionalScheduleDropdownOpen, setIsAdditionalScheduleDropdownOpen] = useState(false);
+  const [additionalPaymentSchedule, setAdditionalPaymentSchedule] = useState(initialAdditionalSchedule || {
+    scheduleType: 'upfront' as 'upfront' | 'per-term' | 'monthly' | 'custom',
+    installments: [] as {
+      installmentNumber: number;
+      amount: number;
+      dueDate: string;
+      percentage: number;
+      termId?: string;
+    }[],
+    discountPercentage: 0
   });
+
+  // Calculate base totals for each category type (regardless of payment frequency support)
+  const tuitionBaseTotal = tuitionCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  const additionalBaseTotal = additionalCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  
+  // Calculate totals including interest rates
+  const calculateTotalWithInterest = (baseAmount: number, installments: {
+    installmentNumber: number;
+    amount: number;
+    dueDate: string;
+    percentage: number;
+    termId?: string;
+  }[]) => {
+    if (installments.length === 0) return baseAmount;
+    
+    const totalWithInterest = installments.reduce((sum, installment) => {
+      return sum + installment.amount;
+    }, 0);
+    
+    return totalWithInterest;
+  };
+  
+  const tuitionTotal = calculateTotalWithInterest(tuitionBaseTotal, paymentSchedule.installments);
+  const additionalTotal = calculateTotalWithInterest(additionalBaseTotal, additionalPaymentSchedule.installments);
+  
+  // Separate by frequency for display purposes only
+  const tuitionRecurring = tuitionCategories.filter(cat => cat.supportsRecurring);
+  const tuitionOneTime = tuitionCategories.filter(cat => cat.supportsOneTime);
+  const additionalRecurring = additionalCategories.filter(cat => cat.supportsRecurring);
+  const additionalOneTime = additionalCategories.filter(cat => cat.supportsOneTime);
 
   const scheduleTypes = getScheduleTypes(academicYear.termStructure);
   const selectedSchedule = scheduleTypes.find(s => s.value === paymentSchedule.scheduleType);
 
-  const generateInstallments = (scheduleType: string) => {
+  const generateInstallments = (scheduleType: string, baseAmount: number) => {
     let installments: {
       installmentNumber: number;
       amount: number;
@@ -106,28 +185,37 @@ export function PaymentSchedulesStep({ paymentSchedule, academicYear, totalAmoun
       percentage: number;
       termId?: string;
     }[] = [];
-    const baseAmount = totalAmount || 0;
     
     switch (scheduleType) {
       case 'upfront':
         installments = [{
           installmentNumber: 1,
           amount: baseAmount,
-          percentage: 100,
+          percentage: 0, // Interest rate starts at 0
           dueDate: academicYear.startDate || '',
           termId: ''
         }];
         break;
       case 'per-term':
-        const termCount = academicYear.termStructure.match(/\d+/)?.[0] || '3';
-        const termAmount = baseAmount / parseInt(termCount);
-        const termPercentage = 100 / parseInt(termCount);
+        // Extract term count based on DRC structure
+        let termCount = 3; // Default to 3 trimesters
+        if (academicYear.termStructure.includes('Kindergarten') || academicYear.termStructure.includes('Primary')) {
+          termCount = 3; // 3 trimesters
+        } else if (academicYear.termStructure.includes('Secondary')) {
+          termCount = 2; // 2 semesters
+        } else {
+          // Fallback: try to extract number from structure
+          const match = academicYear.termStructure.match(/\d+/);
+          termCount = match ? parseInt(match[0]) : 3;
+        }
         
-        for (let i = 1; i <= parseInt(termCount); i++) {
+        const termAmount = baseAmount / termCount;
+        
+        for (let i = 1; i <= termCount; i++) {
           installments.push({
             installmentNumber: i,
             amount: Math.round(termAmount * 100) / 100, // Round to 2 decimal places
-            percentage: Math.round(termPercentage * 100) / 100,
+            percentage: 0, // Interest rate starts at 0
             dueDate: '',
             termId: ''
           });
@@ -135,12 +223,11 @@ export function PaymentSchedulesStep({ paymentSchedule, academicYear, totalAmoun
         break;
       case 'monthly':
         const monthlyAmount = baseAmount / 12;
-        const monthlyPercentage = 100 / 12;
         
         installments = Array.from({ length: 12 }, (_, i) => ({
           installmentNumber: i + 1,
           amount: Math.round(monthlyAmount * 100) / 100,
-          percentage: Math.round(monthlyPercentage * 100) / 100,
+          percentage: 0, // Interest rate starts at 0
           dueDate: '',
           termId: ''
         }));
@@ -153,68 +240,67 @@ export function PaymentSchedulesStep({ paymentSchedule, academicYear, totalAmoun
     return installments;
   };
 
-  const handleScheduleTypeChange = (scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom') => {
-    const installments = generateInstallments(scheduleType);
-    
-    onChange({
-      ...paymentSchedule,
-      scheduleType,
-      installments,
-      discountPercentage: scheduleType === 'upfront' ? paymentSchedule.discountPercentage : 0
-    });
-    setIsScheduleDropdownOpen(false);
-  };
 
-  const addInstallment = () => {
-    if (newInstallment.description.trim()) {
-      const updated = {
-        ...paymentSchedule,
-        installments: [...paymentSchedule.installments, {
-          installmentNumber: paymentSchedule.installments.length + 1,
-          amount: newInstallment.amount,
-          percentage: newInstallment.percentage,
-          dueDate: newInstallment.dueDate,
-          termId: newInstallment.termId
-        }]
-      };
-      onChange(updated);
-      setNewInstallment({
-        description: '',
-        amount: 0,
-        percentage: 0,
-        dueDate: '',
-        termId: ''
-      });
-    }
-  };
-
-  const removeInstallment = (index: number) => {
-    const updated = {
+  const handleTuitionScheduleChange = (scheduleType: string) => {
+    const installments = generateInstallments(scheduleType, tuitionBaseTotal);
+    const updatedTuitionSchedule = {
       ...paymentSchedule,
-      installments: paymentSchedule.installments.filter((_, i) => i !== index)
+      scheduleType: scheduleType as 'upfront' | 'per-term' | 'monthly' | 'custom',
+      installments
     };
-    onChange(updated);
+    onChange(updatedTuitionSchedule, additionalPaymentSchedule);
   };
 
-  const updateInstallment = (index: number, field: string, value: any) => {
-    let processedValue = value;
-    
-    // Handle numeric fields to remove leading zeros
-    if ((field === 'amount' || field === 'percentage') && typeof value === 'string') {
-      const cleanValue = value.replace(/^0+/, '') || '0';
-      processedValue = parseFloat(cleanValue) || 0;
-    }
-    
-    const updated = {
-      ...paymentSchedule,
-      installments: paymentSchedule.installments.map((inst, i) => 
-        i === index ? { ...inst, [field]: processedValue } : inst
-      )
+  const handleAdditionalScheduleChange = (scheduleType: string) => {
+    const installments = generateInstallments(scheduleType, additionalBaseTotal);
+    const updatedAdditionalSchedule = {
+      ...additionalPaymentSchedule,
+      scheduleType: scheduleType as 'upfront' | 'per-term' | 'monthly' | 'custom',
+      installments
     };
-    onChange(updated);
+    setAdditionalPaymentSchedule(updatedAdditionalSchedule);
+    onChange(paymentSchedule, updatedAdditionalSchedule);
   };
 
-  const canAddInstallment = newInstallment.description.trim().length > 0;
+  const handleTuitionInstallmentsChange = (installments: {
+    installmentNumber: number;
+    amount: number;
+    dueDate: string;
+    percentage: number;
+    termId?: string;
+  }[]) => {
+    const updatedTuitionSchedule = {
+      ...paymentSchedule,
+      installments
+    };
+    onChange(updatedTuitionSchedule, additionalPaymentSchedule);
+  };
+
+  const handleAdditionalInstallmentsChange = (installments: {
+    installmentNumber: number;
+    amount: number;
+    dueDate: string;
+    percentage: number;
+    termId?: string;
+  }[]) => {
+    const updatedAdditionalSchedule = {
+      ...additionalPaymentSchedule,
+      installments
+    };
+    setAdditionalPaymentSchedule(updatedAdditionalSchedule);
+    onChange(paymentSchedule, updatedAdditionalSchedule);
+  };
+
+  const handleTuitionDiscountChange = (discountPercentage: number) => {
+    const updatedTuitionSchedule = { ...paymentSchedule, discountPercentage };
+    onChange(updatedTuitionSchedule, additionalPaymentSchedule);
+  };
+
+  const handleAdditionalDiscountChange = (discountPercentage: number) => {
+    const updatedAdditionalSchedule = { ...additionalPaymentSchedule, discountPercentage };
+    setAdditionalPaymentSchedule(updatedAdditionalSchedule);
+    onChange(paymentSchedule, updatedAdditionalSchedule);
+  };
 
   return (
     <div className="space-y-8">
@@ -235,292 +321,199 @@ export function PaymentSchedulesStep({ paymentSchedule, academicYear, totalAmoun
           </div>
         </div>
 
-        {/* Schedule Type Selection */}
-        <div className="space-y-4">
-          <Label className="text-sm font-semibold text-gray-900">Payment Schedule Type *</Label>
-          <DropdownMenu.Root open={isScheduleDropdownOpen} onOpenChange={setIsScheduleDropdownOpen}>
-            <DropdownMenu.Trigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between h-12 px-4 text-left font-normal"
-              >
-                <span className={selectedSchedule ? "text-gray-900" : "text-gray-500"}>
-                  {selectedSchedule ? (
-                    <div className="flex items-center space-x-2">
-                      <span>{selectedSchedule.icon}</span>
-                      <span>{selectedSchedule.label}</span>
-                    </div>
-                  ) : "Select payment schedule type"}
-                </span>
-                <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-              </Button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content 
-                className="min-w-[400px] bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50"
-                align="start"
-              >
-                {scheduleTypes.map((schedule) => (
-                  <DropdownMenu.Item
-                    key={schedule.value}
-                    className="flex items-start p-3 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
-                    onSelect={() => handleScheduleTypeChange(schedule.value as 'upfront' | 'per-term' | 'monthly' | 'custom')}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <span className="text-lg">{schedule.icon}</span>
-                      <div>
-                        <div className="font-medium text-gray-900">{schedule.label}</div>
-                        <div className="text-sm text-gray-500">{schedule.description}</div>
-                      </div>
-                    </div>
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+        {/* Total Amounts Summary */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">Total Payment Amounts (Including Interest)</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-700">${tuitionTotal.toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Tuition Fees</div>
+              {tuitionTotal !== tuitionBaseTotal && (
+                <div className="text-xs text-green-600">
+                  Base: ${tuitionBaseTotal.toLocaleString()} + Interest: ${(tuitionTotal - tuitionBaseTotal).toLocaleString()}
+                </div>
+              )}
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-700">${additionalTotal.toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Additional Fees</div>
+              {additionalTotal !== additionalBaseTotal && (
+                <div className="text-xs text-purple-600">
+                  Base: ${additionalBaseTotal.toLocaleString()} + Interest: ${(additionalTotal - additionalBaseTotal).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="text-center mt-3 pt-3 border-t border-gray-200">
+            <div className="text-xl font-bold text-gray-900">${(tuitionTotal + additionalTotal).toLocaleString()}</div>
+            <div className="text-sm text-gray-600">Grand Total</div>
+          </div>
         </div>
 
-        {/* Total Amount Summary */}
-        {totalAmount > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <CurrencyDollarIcon className="h-5 w-5 text-green-600 mr-2" />
-                <span className="text-sm font-medium text-green-800">Total Amount to Distribute:</span>
-              </div>
-              <span className="text-lg font-bold text-green-900">${totalAmount.toLocaleString()}</span>
-            </div>
-            {paymentSchedule.scheduleType && paymentSchedule.installments.length > 0 && (
-              <div className="mt-2 text-sm text-green-700">
-                {paymentSchedule.scheduleType === 'upfront' && (
-                  <span>Single payment of ${totalAmount.toLocaleString()}</span>
-                )}
-                {paymentSchedule.scheduleType === 'per-term' && (
-                  <span>{paymentSchedule.installments.length} term payments of ${Math.round(totalAmount / paymentSchedule.installments.length).toLocaleString()} each</span>
-                )}
-                {paymentSchedule.scheduleType === 'monthly' && (
-                  <span>12 monthly payments of ${Math.round(totalAmount / 12).toLocaleString()} each</span>
-                )}
-                {paymentSchedule.scheduleType === 'custom' && (
-                  <span>{paymentSchedule.installments.length} custom payments</span>
-                )}
-              </div>
+
+        {/* Payment Schedule Tabs */}
+        <div className="space-y-6">
+          {/* Tab Navigation */}
+          <TabNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tuitionTotal={tuitionTotal}
+            additionalTotal={additionalTotal}
+          />
+
+          {/* Tab Content */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            {activeTab === 'tuition' && (tuitionRecurring.length > 0 || tuitionOneTime.length > 0) && (
+              <FeeSummary
+                categories={tuitionCategories}
+                total={tuitionTotal}
+                type="tuition"
+                scheduleType={paymentSchedule.scheduleType}
+                installments={paymentSchedule.installments}
+                scheduleTypes={scheduleTypes}
+                isDropdownOpen={isScheduleDropdownOpen}
+                onDropdownOpenChange={setIsScheduleDropdownOpen}
+                onScheduleChange={handleTuitionScheduleChange}
+              />
+            )}
+
+            {activeTab === 'additional' && (additionalRecurring.length > 0 || additionalOneTime.length > 0) && (
+              <FeeSummary
+                categories={additionalCategories}
+                total={additionalTotal}
+                type="additional"
+                scheduleType={additionalPaymentSchedule.scheduleType}
+                installments={additionalPaymentSchedule.installments}
+                scheduleTypes={scheduleTypes}
+                isDropdownOpen={isAdditionalScheduleDropdownOpen}
+                onDropdownOpenChange={setIsAdditionalScheduleDropdownOpen}
+                onScheduleChange={handleAdditionalScheduleChange}
+              />
             )}
           </div>
+        </div>
+
+        {/* Additional Fees Discount for Upfront */}
+        {activeTab === 'additional' && additionalPaymentSchedule.scheduleType === 'upfront' && additionalRecurring.length > 0 && (
+          <DiscountInput
+            value={additionalPaymentSchedule.discountPercentage || 0}
+            onChange={handleAdditionalDiscountChange}
+            type="additional"
+          />
+        )}
+
+        {/* Additional Fees Installments */}
+        {activeTab === 'additional' && additionalPaymentSchedule.scheduleType && additionalRecurring.length > 0 && (
+          <InstallmentManager
+            installments={additionalPaymentSchedule.installments}
+            scheduleType={additionalPaymentSchedule.scheduleType}
+            totalAmount={additionalBaseTotal}
+            type="additional"
+            onInstallmentsChange={handleAdditionalInstallmentsChange}
+            onAddInstallment={() => {
+              const newInstallmentNumber = additionalPaymentSchedule.installments.length + 1;
+              const newInstallment = {
+                installmentNumber: newInstallmentNumber,
+                amount: 0,
+                percentage: 0,
+                dueDate: '',
+                termId: ''
+              };
+              setAdditionalPaymentSchedule({
+                ...additionalPaymentSchedule,
+                installments: [...additionalPaymentSchedule.installments, newInstallment]
+              });
+            }}
+            onRemoveInstallment={(index) => {
+              const updatedInstallments = additionalPaymentSchedule.installments.filter((_, i) => i !== index);
+              setAdditionalPaymentSchedule({ ...additionalPaymentSchedule, installments: updatedInstallments });
+            }}
+            onUpdateInstallment={(index, field, value) => {
+              const updatedInstallments = additionalPaymentSchedule.installments.map((inst, i) => 
+                i === index ? { ...inst, [field]: value } : inst
+              );
+              setAdditionalPaymentSchedule({ ...additionalPaymentSchedule, installments: updatedInstallments });
+            }}
+          />
         )}
 
         {/* Discount for Upfront */}
-        {paymentSchedule.scheduleType === 'upfront' && (
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-gray-900">Early Payment Discount (%)</Label>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              value={paymentSchedule.discountPercentage}
-              onChange={(e) => {
-                const value = e.target.value;
-                const cleanValue = value.replace(/^0+/, '') || '0';
-                const discountPercentage = parseFloat(cleanValue) || 0;
-                onChange({ ...paymentSchedule, discountPercentage });
-              }}
-              className="h-12"
-              placeholder="0"
-            />
-            <p className="text-xs text-gray-500">Percentage discount for paying the full year upfront</p>
-          </div>
+        {activeTab === 'tuition' && paymentSchedule.scheduleType === 'upfront' && (
+          <DiscountInput
+            value={paymentSchedule.discountPercentage || 0}
+            onChange={handleTuitionDiscountChange}
+            type="tuition"
+          />
         )}
 
-        {/* Installments */}
-        {paymentSchedule.scheduleType && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Payment Installments</h3>
-              {paymentSchedule.scheduleType === 'custom' && (
-                <Button
-                  onClick={addInstallment}
-                  disabled={!canAddInstallment}
-                  className="h-10"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Installment
-                </Button>
-              )}
-            </div>
-
-            {/* Auto-generated installments info */}
-            {paymentSchedule.scheduleType !== 'custom' && paymentSchedule.installments.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-800">
-                  ✅ Installments auto-generated for {selectedSchedule?.label}. You can modify amounts and dates below.
-                </p>
-              </div>
-            )}
-
-            {paymentSchedule.installments.map((installment, index) => (
-              <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-md font-semibold text-gray-900">Installment {index + 1}</h4>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeInstallment(index)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Payment Number</Label>
-                    <Input
-                      type="number"
-                      value={installment.installmentNumber}
-                      onChange={(e) => updateInstallment(index, 'installmentNumber', parseInt(e.target.value) || 1)}
-                      className="h-10"
-                      placeholder="1"
-                      min="1"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Due Date</Label>
-                    <div className="relative">
-                      <Input
-                        type="date"
-                        value={installment.dueDate}
-                        onChange={(e) => updateInstallment(index, 'dueDate', e.target.value)}
-                        className="h-10 pr-10"
-                      />
-                      <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Amount ($)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={installment.amount || ''}
-                      onChange={(e) => updateInstallment(index, 'amount', e.target.value)}
-                      className="h-10"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Percentage (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={installment.percentage || ''}
-                      onChange={(e) => updateInstallment(index, 'percentage', e.target.value)}
-                      className="h-10"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Custom installment form */}
-            {paymentSchedule.scheduleType === 'custom' && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-900 mb-4">Add New Installment</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Description *</Label>
-                    <Input
-                      type="text"
-                      value={newInstallment.description}
-                      onChange={(e) => setNewInstallment({ ...newInstallment, description: e.target.value })}
-                      className="h-10"
-                      placeholder="e.g., Registration Fee"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Due Date</Label>
-                    <div className="relative">
-                      <Input
-                        type="date"
-                        value={newInstallment.dueDate}
-                        onChange={(e) => setNewInstallment({ ...newInstallment, dueDate: e.target.value })}
-                        className="h-10 pr-10"
-                      />
-                      <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Amount ($)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={newInstallment.amount || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const cleanValue = value.replace(/^0+/, '') || '0';
-                        const amount = parseFloat(cleanValue) || 0;
-                        setNewInstallment({ ...newInstallment, amount });
-                      }}
-                      className="h-10"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Percentage (%)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={newInstallment.percentage || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const cleanValue = value.replace(/^0+/, '') || '0';
-                        const percentage = parseFloat(cleanValue) || 0;
-                        setNewInstallment({ ...newInstallment, percentage });
-                      }}
-                      className="h-10"
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {paymentSchedule.installments.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No installments added yet.</p>
-                {paymentSchedule.scheduleType === 'custom' && (
-                  <p className="text-sm mt-2">Fill in the description above and click "Add Installment" to create payment schedules.</p>
-                )}
-              </div>
-            )}
-          </div>
+        {/* Tuition Fees Installments */}
+        {activeTab === 'tuition' && paymentSchedule.scheduleType && (
+          <InstallmentManager
+            installments={paymentSchedule.installments}
+            scheduleType={paymentSchedule.scheduleType}
+            totalAmount={tuitionBaseTotal}
+            type="tuition"
+            onInstallmentsChange={handleTuitionInstallmentsChange}
+            onAddInstallment={() => {
+              const newInstallmentNumber = paymentSchedule.installments.length + 1;
+              const newInstallment = {
+                installmentNumber: newInstallmentNumber,
+                amount: 0,
+                percentage: 0,
+                dueDate: '',
+                termId: ''
+              };
+              onChange({
+                ...paymentSchedule,
+                installments: [...paymentSchedule.installments, newInstallment]
+              });
+            }}
+            onRemoveInstallment={(index) => {
+              const updatedInstallments = paymentSchedule.installments.filter((_, i) => i !== index);
+              onChange({
+                ...paymentSchedule,
+                installments: updatedInstallments
+              });
+            }}
+            onUpdateInstallment={(index, field, value) => {
+              let processedValue = value;
+              
+              // Handle numeric fields to remove leading zeros
+              if ((field === 'amount' || field === 'percentage') && typeof value === 'string') {
+                const cleanValue = value.replace(/^0+/, '') || '0';
+                processedValue = parseFloat(cleanValue) || 0;
+              }
+              
+              const updatedInstallments = paymentSchedule.installments.map((inst, i) => 
+                i === index ? { ...inst, [field]: processedValue } : inst
+              );
+              onChange({
+                ...paymentSchedule,
+                installments: updatedInstallments
+              });
+            }}
+          />
         )}
 
         {/* Summary */}
-        {paymentSchedule.scheduleType && paymentSchedule.installments.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-semibold text-green-900">Payment Schedule Configured</span>
-            </div>
-            <div className="text-sm text-green-800">
-              <div className="font-medium">{selectedSchedule?.label}</div>
-              <div className="text-green-600">{paymentSchedule.installments.length} installment(s) defined</div>
-              {paymentSchedule.scheduleType === 'upfront' && paymentSchedule.discountPercentage && paymentSchedule.discountPercentage > 0 && (
-                <div className="text-green-600">{paymentSchedule.discountPercentage}% early payment discount</div>
-              )}
-            </div>
-          </div>
+        {activeTab === 'tuition' && (
+          <PaymentScheduleSummary
+            scheduleType={paymentSchedule.scheduleType}
+            installments={paymentSchedule.installments}
+            discountPercentage={paymentSchedule.discountPercentage}
+            type="tuition"
+            selectedSchedule={selectedSchedule}
+          />
+        )}
+
+        {activeTab === 'additional' && (
+          <PaymentScheduleSummary
+            scheduleType={additionalPaymentSchedule.scheduleType}
+            installments={additionalPaymentSchedule.installments}
+            discountPercentage={additionalPaymentSchedule.discountPercentage}
+            type="additional"
+            selectedSchedule={scheduleTypes.find(s => s.value === additionalPaymentSchedule.scheduleType)}
+          />
         )}
       </div>
     </div>

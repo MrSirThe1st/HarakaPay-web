@@ -10,7 +10,9 @@ interface AmountsStepProps {
     categoryName: string;
     amount: number;
     isMandatory: boolean;
-    isRecurring: boolean;
+    supportsRecurring: boolean;
+    supportsOneTime: boolean;
+    categoryType: 'tuition' | 'additional';
   }[];
   academicYear: {
     name: string;
@@ -43,7 +45,13 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
     onChange(updated);
   };
 
-  const totalAmount = selectedCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  // Separate tuition and additional fees
+  const tuitionCategories = selectedCategories.filter(cat => cat.categoryType === 'tuition');
+  const additionalCategories = selectedCategories.filter(cat => cat.categoryType === 'additional');
+  
+  const tuitionTotal = tuitionCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  const additionalTotal = additionalCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  const totalAmount = tuitionTotal + additionalTotal;
 
   return (
     <div className="space-y-6">
@@ -57,7 +65,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {selectedCategories.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
               <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -65,63 +73,186 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
               <p className="text-sm text-gray-500 mt-1">Please go back to Step 3 and select fee categories first</p>
             </div>
           ) : (
-            selectedCategories.map((category, index) => (
-              <div key={category.categoryId} className="bg-white border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{category.categoryName}</h3>
-                    <div className="flex items-center space-x-4 mt-1">
-                      {category.isMandatory && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Mandatory
-                        </span>
-                      )}
-                      {category.isRecurring && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Recurring
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">
-                      ${category.amount.toLocaleString()}
-                    </div>
-                  </div>
+            <>
+              {/* Tuition Categories */}
+              {tuitionCategories.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 mr-3">
+                      Tuition Fees
+                    </span>
+                  </h3>
+                  {tuitionCategories.map((category, index) => {
+                    const originalIndex = selectedCategories.findIndex(cat => cat.categoryId === category.categoryId);
+                    return (
+                      <div key={category.categoryId} className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{category.categoryName}</h3>
+                            <div className="flex items-center space-x-4 mt-1">
+                              {category.isMandatory && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Mandatory
+                                </span>
+                              )}
+                              {category.supportsRecurring && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Supports Recurring
+                                </span>
+                              )}
+                              {category.supportsOneTime && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Supports One-time
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-900">
+                              ${category.amount.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Amount (USD)</label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={category.amount || ''}
+                              onChange={(e) => updateCategoryAmount(originalIndex, e.target.value)}
+                              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Amount (USD)</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 sm:text-sm">$</span>
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={category.amount || ''}
-                      onChange={(e) => updateCategoryAmount(index, e.target.value)}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                      placeholder="0.00"
-                    />
-                  </div>
+              )}
+
+              {/* Additional Categories */}
+              {additionalCategories.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-3">
+                      Additional Fees
+                    </span>
+                  </h3>
+                  {additionalCategories.map((category, index) => {
+                    const originalIndex = selectedCategories.findIndex(cat => cat.categoryId === category.categoryId);
+                    return (
+                      <div key={category.categoryId} className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{category.categoryName}</h3>
+                            <div className="flex items-center space-x-4 mt-1">
+                              {category.isMandatory && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Mandatory
+                                </span>
+                              )}
+                              {category.supportsRecurring && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Supports Recurring
+                                </span>
+                              )}
+                              {category.supportsOneTime && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  Supports One-time
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-900">
+                              ${category.amount.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Amount (USD)</label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={category.amount || ''}
+                              onChange={(e) => updateCategoryAmount(originalIndex, e.target.value)}
+                              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            ))
+              )}
+            </>
           )}
         </div>
 
-        {/* Total Summary */}
-        <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-green-900">Total Fee Amount</h3>
-              <p className="text-sm text-green-700">Sum of all selected categories</p>
+        {/* Fee Summary */}
+        <div className="mt-8 space-y-4">
+          {/* Tuition Summary */}
+          {tuitionTotal > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-green-900">Tuition Fees</h3>
+                  <p className="text-sm text-green-700">Amount for payment schedule</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-green-900">
+                    ${tuitionTotal.toLocaleString()}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-green-900">
-                ${totalAmount.toLocaleString()}
+          )}
+
+          {/* Additional Fees Summary */}
+          {additionalTotal > 0 && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-purple-900">Additional Fees</h3>
+                  <p className="text-sm text-purple-700">One-time payments</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl font-bold text-purple-900">
+                    ${additionalTotal.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Grand Total */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Base Fee Total</h3>
+                <p className="text-sm text-gray-700">All fees combined (before interest)</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Final amounts may include interest rates set in Payment Schedule
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-gray-900">
+                  ${totalAmount.toLocaleString()}
+                </div>
               </div>
             </div>
           </div>

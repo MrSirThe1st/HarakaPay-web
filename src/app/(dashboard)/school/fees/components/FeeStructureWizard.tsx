@@ -52,6 +52,11 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       scheduleType: 'per-term',
       installments: [],
       discountPercentage: 0
+    },
+    additionalPaymentSchedule: {
+      scheduleType: 'upfront',
+      installments: [],
+      discountPercentage: 0
     }
   });
 
@@ -163,6 +168,9 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
     setSaveError(null);
     
     try {
+      console.log('Publishing fee structure with wizard data:', wizardData);
+      console.log('Payment schedule installments:', wizardData.paymentSchedule.installments);
+      console.log('Additional payment schedule installments:', wizardData.additionalPaymentSchedule?.installments);
       // Debug: Log the wizard data
       console.log('Wizard data being sent:', wizardData);
       
@@ -243,7 +251,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           name: category.categoryName,
           description: `${category.categoryName} fees`,
           is_mandatory: category.isMandatory,
-          is_recurring: category.isRecurring,
+          is_recurring: category.supportsRecurring,
           category_type: 'custom'
         });
 
@@ -278,23 +286,60 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
 
       const templateId = feeTemplateResponse.data.feeTemplate.id;
 
-      // Step 4: Create Payment Schedule (now with template_id)
-      const paymentScheduleResponse = await feesAPI.paymentSchedules.create({
-        name: `${wizardData.gradeProgram.gradeLevel} Payment Schedule`,
-        schedule_type: wizardData.paymentSchedule.scheduleType,
-        discount_percentage: wizardData.paymentSchedule.discountPercentage || 0,
-        template_id: templateId,
-        installments: wizardData.paymentSchedule.installments.map((inst, index) => ({
-          description: inst.description || `Installment ${index + 1}`,
-          amount: inst.amount,
-          percentage: inst.percentage,
-          due_date: inst.dueDate,
-          term_id: inst.termId
-        }))
-      });
+      // Step 4: Create Payment Schedule (only if there are installments)
+      let paymentScheduleResponse = null;
+      if (wizardData.paymentSchedule.installments.length > 0) {
+        console.log('Creating tuition payment schedule with installments:', wizardData.paymentSchedule.installments);
+        
+        paymentScheduleResponse = await feesAPI.paymentSchedules.create({
+          name: `${wizardData.gradeProgram.gradeLevel} Payment Schedule`,
+          schedule_type: wizardData.paymentSchedule.scheduleType,
+          discount_percentage: wizardData.paymentSchedule.discountPercentage || 0,
+          template_id: templateId,
+          installments: wizardData.paymentSchedule.installments.map((inst, index) => ({
+            description: `Installment ${inst.installmentNumber}`,
+            amount: inst.amount,
+            percentage: inst.percentage,
+            due_date: inst.dueDate,
+            term_id: inst.termId
+          }))
+        } as any);
 
-      if (!paymentScheduleResponse.success || !paymentScheduleResponse.data) {
-        throw new Error('Failed to create payment schedule');
+        if (!paymentScheduleResponse.success || !paymentScheduleResponse.data) {
+          throw new Error('Failed to create payment schedule');
+        }
+        
+        console.log('Tuition payment schedule created successfully:', paymentScheduleResponse.data);
+      } else {
+        console.log('No tuition installments to create payment schedule for');
+      }
+
+      // Step 5: Create Additional Fees Payment Schedule (if applicable)
+      let additionalPaymentScheduleResponse = null;
+      if (wizardData.additionalPaymentSchedule && wizardData.additionalPaymentSchedule.installments.length > 0) {
+        console.log('Creating additional fees payment schedule with installments:', wizardData.additionalPaymentSchedule.installments);
+        
+        additionalPaymentScheduleResponse = await feesAPI.paymentSchedules.create({
+          name: `${wizardData.gradeProgram.gradeLevel} Additional Fees Payment Schedule`,
+          schedule_type: wizardData.additionalPaymentSchedule.scheduleType,
+          discount_percentage: wizardData.additionalPaymentSchedule.discountPercentage || 0,
+          template_id: templateId,
+          installments: wizardData.additionalPaymentSchedule.installments.map((inst, index) => ({
+            description: `Additional Fees Installment ${inst.installmentNumber}`,
+            amount: inst.amount,
+            percentage: inst.percentage,
+            due_date: inst.dueDate,
+            term_id: inst.termId
+          }))
+        } as any);
+
+        if (!additionalPaymentScheduleResponse.success || !additionalPaymentScheduleResponse.data) {
+          throw new Error('Failed to create additional fees payment schedule');
+        }
+        
+        console.log('Additional fees payment schedule created successfully:', additionalPaymentScheduleResponse.data);
+      } else {
+        console.log('No additional fees installments to create payment schedule for');
       }
 
       setSaveSuccess(true);
@@ -499,9 +544,14 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           {wizardStep === 5 && (
             <PaymentSchedulesStep 
               paymentSchedule={wizardData.paymentSchedule}
+              additionalPaymentSchedule={wizardData.additionalPaymentSchedule}
               academicYear={wizardData.academicYear}
-              totalAmount={wizardData.selectedCategories.reduce((sum, cat) => sum + cat.amount, 0)}
-              onChange={(schedule) => setWizardData(prev => ({ ...prev, paymentSchedule: schedule }))}
+              selectedCategories={wizardData.selectedCategories}
+              onChange={(tuitionSchedule, additionalSchedule) => setWizardData(prev => ({ 
+                ...prev, 
+                paymentSchedule: tuitionSchedule,
+                additionalPaymentSchedule: additionalSchedule || prev.additionalPaymentSchedule
+              }))}
             />
           )}
           
