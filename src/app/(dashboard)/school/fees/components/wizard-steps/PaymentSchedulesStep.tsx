@@ -1,8 +1,8 @@
 // src/app/(dashboard)/school/fees/components/wizard-steps/PaymentSchedulesStep.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { PlusIcon, TrashIcon, CalendarIcon, ChevronDownIcon, CreditCardIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { PlusIcon, TrashIcon, CalendarIcon, ChevronDownIcon, CreditCardIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,57 +10,82 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 interface PaymentSchedulesStepProps {
   paymentSchedule: {
-    scheduleType: string;
+    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
     installments: {
-      description: string;
+      installmentNumber: number;
       amount: number;
-      percentage: number;
       dueDate: string;
+      percentage: number;
       termId?: string;
     }[];
-    discountPercentage: number;
+    discountPercentage?: number;
   };
+  academicYear: {
+    name: string;
+    startDate: string;
+    endDate: string;
+    termStructure: string;
+  };
+  totalAmount: number;
   onChange: (schedule: {
-    scheduleType: string;
+    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
     installments: {
-      description: string;
+      installmentNumber: number;
       amount: number;
-      percentage: number;
       dueDate: string;
+      percentage: number;
       termId?: string;
     }[];
-    discountPercentage: number;
+    discountPercentage?: number;
   }) => void;
 }
 
-const scheduleTypes = [
-  { 
-    value: 'annual', 
-    label: 'Annual Upfront', 
-    description: 'Pay the full year amount at once',
-    icon: '💰'
-  },
-  { 
-    value: 'per-term', 
-    label: 'Per Term/Semester', 
-    description: 'Payments due at the start of each term',
-    icon: '📚'
-  },
-  { 
-    value: 'monthly', 
-    label: 'Monthly Installments', 
-    description: 'Equal monthly payments throughout the year',
-    icon: '📅'
-  },
-  { 
-    value: 'custom', 
-    label: 'Custom Schedule', 
-    description: 'Define your own payment schedule',
-    icon: '⚙️'
-  }
-];
+// Dynamic schedule types based on term structure
+const getScheduleTypes = (termStructure: string) => {
+  const baseTypes = [
+    { 
+      value: 'upfront', 
+      label: 'Annual Upfront', 
+      description: 'Pay the full year amount at once',
+      icon: '💰'
+    },
+    { 
+      value: 'monthly', 
+      label: 'Monthly Installments', 
+      description: 'Equal monthly payments throughout the year',
+      icon: '📅'
+    },
+    { 
+      value: 'custom', 
+      label: 'Custom Schedule', 
+      description: 'Define your own payment schedule',
+      icon: '⚙️'
+    }
+  ];
 
-export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSchedulesStepProps) {
+  // Add term-based option based on term structure
+  if (termStructure.toLowerCase().includes('term')) {
+    const termCount = termStructure.match(/\d+/)?.[0] || '3';
+    baseTypes.splice(1, 0, {
+      value: 'per-term',
+      label: `Per Term (${termCount} Terms)`,
+      description: `Payments due at the start of each term`,
+      icon: '📚'
+    });
+  } else if (termStructure.toLowerCase().includes('semester')) {
+    const semesterCount = termStructure.match(/\d+/)?.[0] || '2';
+    baseTypes.splice(1, 0, {
+      value: 'per-term', // Use per-term for semesters too
+      label: `Per Semester (${semesterCount} Semesters)`,
+      description: `Payments due at the start of each semester`,
+      icon: '📚'
+    });
+  }
+
+  return baseTypes;
+};
+
+export function PaymentSchedulesStep({ paymentSchedule, academicYear, totalAmount, onChange }: PaymentSchedulesStepProps) {
   const [isScheduleDropdownOpen, setIsScheduleDropdownOpen] = useState(false);
   const [newInstallment, setNewInstallment] = useState({
     description: '',
@@ -70,40 +95,52 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
     termId: ''
   });
 
+  const scheduleTypes = getScheduleTypes(academicYear.termStructure);
   const selectedSchedule = scheduleTypes.find(s => s.value === paymentSchedule.scheduleType);
 
-  // Auto-generate installments based on schedule type
-  useEffect(() => {
-    if (paymentSchedule.scheduleType && paymentSchedule.installments.length === 0) {
-      generateDefaultInstallments();
-    }
-  }, [paymentSchedule.scheduleType]);
-
-  const generateDefaultInstallments = () => {
-    let installments = [];
+  const generateInstallments = (scheduleType: string) => {
+    let installments: {
+      installmentNumber: number;
+      amount: number;
+      dueDate: string;
+      percentage: number;
+      termId?: string;
+    }[] = [];
+    const baseAmount = totalAmount || 0;
     
-    switch (paymentSchedule.scheduleType) {
-      case 'annual':
+    switch (scheduleType) {
+      case 'upfront':
         installments = [{
-          description: 'Full Year Payment',
-          amount: 0,
+          installmentNumber: 1,
+          amount: baseAmount,
           percentage: 100,
-          dueDate: '',
+          dueDate: academicYear.startDate || '',
           termId: ''
         }];
         break;
       case 'per-term':
-        installments = [
-          { description: 'Term 1 Payment', amount: 0, percentage: 33.33, dueDate: '', termId: '' },
-          { description: 'Term 2 Payment', amount: 0, percentage: 33.33, dueDate: '', termId: '' },
-          { description: 'Term 3 Payment', amount: 0, percentage: 33.34, dueDate: '', termId: '' }
-        ];
+        const termCount = academicYear.termStructure.match(/\d+/)?.[0] || '3';
+        const termAmount = baseAmount / parseInt(termCount);
+        const termPercentage = 100 / parseInt(termCount);
+        
+        for (let i = 1; i <= parseInt(termCount); i++) {
+          installments.push({
+            installmentNumber: i,
+            amount: Math.round(termAmount * 100) / 100, // Round to 2 decimal places
+            percentage: Math.round(termPercentage * 100) / 100,
+            dueDate: '',
+            termId: ''
+          });
+        }
         break;
       case 'monthly':
+        const monthlyAmount = baseAmount / 12;
+        const monthlyPercentage = 100 / 12;
+        
         installments = Array.from({ length: 12 }, (_, i) => ({
-          description: `${new Date(2024, i).toLocaleString('default', { month: 'long' })} Payment`,
-          amount: 0,
-          percentage: 8.33,
+          installmentNumber: i + 1,
+          amount: Math.round(monthlyAmount * 100) / 100,
+          percentage: Math.round(monthlyPercentage * 100) / 100,
           dueDate: '',
           termId: ''
         }));
@@ -113,18 +150,17 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
         break;
     }
     
-    onChange({
-      ...paymentSchedule,
-      installments
-    });
+    return installments;
   };
 
-  const handleScheduleTypeChange = (scheduleType: string) => {
+  const handleScheduleTypeChange = (scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom') => {
+    const installments = generateInstallments(scheduleType);
+    
     onChange({
       ...paymentSchedule,
       scheduleType,
-      installments: [], // Clear existing installments
-      discountPercentage: scheduleType === 'annual' ? paymentSchedule.discountPercentage : 0
+      installments,
+      discountPercentage: scheduleType === 'upfront' ? paymentSchedule.discountPercentage : 0
     });
     setIsScheduleDropdownOpen(false);
   };
@@ -134,8 +170,11 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
       const updated = {
         ...paymentSchedule,
         installments: [...paymentSchedule.installments, {
-          ...newInstallment,
-          description: newInstallment.description.trim()
+          installmentNumber: paymentSchedule.installments.length + 1,
+          amount: newInstallment.amount,
+          percentage: newInstallment.percentage,
+          dueDate: newInstallment.dueDate,
+          termId: newInstallment.termId
         }]
       };
       onChange(updated);
@@ -225,7 +264,7 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
                   <DropdownMenu.Item
                     key={schedule.value}
                     className="flex items-start p-3 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
-                    onSelect={() => handleScheduleTypeChange(schedule.value)}
+                    onSelect={() => handleScheduleTypeChange(schedule.value as 'upfront' | 'per-term' | 'monthly' | 'custom')}
                   >
                     <div className="flex items-start space-x-3">
                       <span className="text-lg">{schedule.icon}</span>
@@ -241,8 +280,37 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
             </DropdownMenu.Root>
         </div>
 
-        {/* Discount for Annual */}
-        {paymentSchedule.scheduleType === 'annual' && (
+        {/* Total Amount Summary */}
+        {totalAmount > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <CurrencyDollarIcon className="h-5 w-5 text-green-600 mr-2" />
+                <span className="text-sm font-medium text-green-800">Total Amount to Distribute:</span>
+              </div>
+              <span className="text-lg font-bold text-green-900">${totalAmount.toLocaleString()}</span>
+            </div>
+            {paymentSchedule.scheduleType && paymentSchedule.installments.length > 0 && (
+              <div className="mt-2 text-sm text-green-700">
+                {paymentSchedule.scheduleType === 'upfront' && (
+                  <span>Single payment of ${totalAmount.toLocaleString()}</span>
+                )}
+                {paymentSchedule.scheduleType === 'per-term' && (
+                  <span>{paymentSchedule.installments.length} term payments of ${Math.round(totalAmount / paymentSchedule.installments.length).toLocaleString()} each</span>
+                )}
+                {paymentSchedule.scheduleType === 'monthly' && (
+                  <span>12 monthly payments of ${Math.round(totalAmount / 12).toLocaleString()} each</span>
+                )}
+                {paymentSchedule.scheduleType === 'custom' && (
+                  <span>{paymentSchedule.installments.length} custom payments</span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Discount for Upfront */}
+        {paymentSchedule.scheduleType === 'upfront' && (
           <div className="space-y-3">
             <Label className="text-sm font-semibold text-gray-900">Early Payment Discount (%)</Label>
             <Input
@@ -305,13 +373,14 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">Description</Label>
+                    <Label className="text-sm font-medium text-gray-700">Payment Number</Label>
                     <Input
-                      type="text"
-                      value={installment.description}
-                      onChange={(e) => updateInstallment(index, 'description', e.target.value)}
+                      type="number"
+                      value={installment.installmentNumber}
+                      onChange={(e) => updateInstallment(index, 'installmentNumber', parseInt(e.target.value) || 1)}
                       className="h-10"
-                      placeholder="e.g., Term 1 Payment"
+                      placeholder="1"
+                      min="1"
                     />
                   </div>
                   
@@ -447,7 +516,7 @@ export function PaymentSchedulesStep({ paymentSchedule, onChange }: PaymentSched
             <div className="text-sm text-green-800">
               <div className="font-medium">{selectedSchedule?.label}</div>
               <div className="text-green-600">{paymentSchedule.installments.length} installment(s) defined</div>
-              {paymentSchedule.scheduleType === 'annual' && paymentSchedule.discountPercentage > 0 && (
+              {paymentSchedule.scheduleType === 'upfront' && paymentSchedule.discountPercentage && paymentSchedule.discountPercentage > 0 && (
                 <div className="text-green-600">{paymentSchedule.discountPercentage}% early payment discount</div>
               )}
             </div>

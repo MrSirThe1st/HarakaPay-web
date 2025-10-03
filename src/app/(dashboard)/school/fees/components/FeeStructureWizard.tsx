@@ -490,6 +490,8 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           {wizardStep === 4 && (
             <AmountsStep 
               selectedCategories={wizardData.selectedCategories}
+              academicYear={wizardData.academicYear}
+              paymentSchedule={wizardData.paymentSchedule}
               onChange={(categories) => setWizardData(prev => ({ ...prev, selectedCategories: categories }))}
             />
           )}
@@ -497,6 +499,8 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           {wizardStep === 5 && (
             <PaymentSchedulesStep 
               paymentSchedule={wizardData.paymentSchedule}
+              academicYear={wizardData.academicYear}
+              totalAmount={wizardData.selectedCategories.reduce((sum, cat) => sum + cat.amount, 0)}
               onChange={(schedule) => setWizardData(prev => ({ ...prev, paymentSchedule: schedule }))}
             />
           )}
