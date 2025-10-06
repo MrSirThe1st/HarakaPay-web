@@ -1,43 +1,1515 @@
 [
   {
-    "table_name": "approval_workflows",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
   },
   {
-    "table_name": "audit_logs",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "academic_year_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
   },
   {
-    "table_name": "notifications",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "name",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
   },
   {
-    "table_name": "parent_students",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "start_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
   },
   {
-    "table_name": "parents",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "end_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
   },
   {
-    "table_name": "payment_settings",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "term_type",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
   },
   {
-    "table_name": "payments",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "term_order",
+    "Type": "integer",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
   },
   {
-    "table_name": "profiles",
-    "table_type": "BASE TABLE"
+    "Table": "academic_terms",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
   },
   {
-    "table_name": "schools",
-    "table_type": "BASE TABLE"
+    "Table": "academic_years",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
   },
   {
-    "table_name": "students",
-    "table_type": "BASE TABLE"
+    "Table": "academic_years",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "name",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "start_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "end_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "term_structure",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "false"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "academic_years",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "requester_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "entity_type",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "entity_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "change_type",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "change_details",
+    "Type": "jsonb",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "status",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'pending'::text"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "required_approvals",
+    "Type": "jsonb",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "received_approvals",
+    "Type": "jsonb",
+    "Nullable": "NULL",
+    "Default": "'[]'::jsonb"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "expires_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "approval_workflows",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "user_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "action",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "entity_type",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "entity_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "details",
+    "Type": "jsonb",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "ip_address",
+    "Type": "inet",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "user_agent",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "audit_logs",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "assignment_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "adjustment_type",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "reason",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "effective_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "expires_date",
+    "Type": "date",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_adjustments",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "entity_type",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "entity_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "action",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "old_values",
+    "Type": "jsonb",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "new_values",
+    "Type": "jsonb",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "performed_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "performed_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "ip_address",
+    "Type": "inet",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_audit_trail",
+    "Column": "user_agent",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "name",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "description",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "is_mandatory",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "false"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "is_recurring",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "false"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "category_type",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "'custom'::character varying"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_categories",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_template_categories",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "fee_template_categories",
+    "Column": "template_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_template_categories",
+    "Column": "category_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_template_categories",
+    "Column": "amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "0"
+  },
+  {
+    "Table": "fee_template_categories",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "fee_template_categories",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "academic_year_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "name",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "grade_level",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "program_type",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "total_amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "0"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "status",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "'draft'::character varying"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "fee_templates",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "notifications",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "notifications",
+    "Column": "user_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "notifications",
+    "Column": "title",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "notifications",
+    "Column": "message",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "notifications",
+    "Column": "type",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'info'::text"
+  },
+  {
+    "Table": "notifications",
+    "Column": "is_read",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "false"
+  },
+  {
+    "Table": "notifications",
+    "Column": "action_url",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "notifications",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "notifications",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "parent_students",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "parent_students",
+    "Column": "parent_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parent_students",
+    "Column": "student_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parent_students",
+    "Column": "relationship",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'parent'::text"
+  },
+  {
+    "Table": "parent_students",
+    "Column": "is_primary",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "false"
+  },
+  {
+    "Table": "parent_students",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "parents",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "parents",
+    "Column": "user_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parents",
+    "Column": "first_name",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parents",
+    "Column": "last_name",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parents",
+    "Column": "phone",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parents",
+    "Column": "email",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parents",
+    "Column": "address",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "parents",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "parents",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "parents",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "schedule_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "installment_number",
+    "Type": "integer",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "name",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "percentage",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "due_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "term_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "payment_installments",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "template_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "name",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "description",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "schedule_type",
+    "Type": "character varying",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "discount_percentage",
+    "Type": "numeric",
+    "Nullable": "NULL",
+    "Default": "0"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payment_schedules",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "gateway_provider",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "api_key",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "secret_key",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "webhook_url",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payment_settings",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payments",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "payments",
+    "Column": "student_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "payment_date",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payments",
+    "Column": "payment_method",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "status",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'pending'::text"
+  },
+  {
+    "Table": "payments",
+    "Column": "description",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "receipt_url",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "updated_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "payments",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "payments",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "profiles",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "profiles",
+    "Column": "user_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "first_name",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "last_name",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "role",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "'school_staff'::text"
+  },
+  {
+    "Table": "profiles",
+    "Column": "admin_type",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "phone",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "avatar_url",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "profiles",
+    "Column": "permissions",
+    "Type": "jsonb",
+    "Nullable": "NULL",
+    "Default": "'{}'::jsonb"
+  },
+  {
+    "Table": "profiles",
+    "Column": "is_active",
+    "Type": "boolean",
+    "Nullable": "NULL",
+    "Default": "true"
+  },
+  {
+    "Table": "profiles",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "profiles",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "schools",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "schools",
+    "Column": "name",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "address",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "contact_email",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "contact_phone",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "registration_number",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "status",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'pending'::text"
+  },
+  {
+    "Table": "schools",
+    "Column": "verification_status",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'pending'::text"
+  },
+  {
+    "Table": "schools",
+    "Column": "verification_date",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "verified_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "schools",
+    "Column": "payment_transparency",
+    "Type": "jsonb",
+    "Nullable": "NULL",
+    "Default": "'{\"support_admin_access\": false, \"platform_admin_access\": false}'::jsonb"
+  },
+  {
+    "Table": "schools",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "schools",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "student_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "template_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "schedule_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "academic_year_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "status",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "'active'::character varying"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "total_amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "paid_amount",
+    "Type": "numeric",
+    "Nullable": "NULL",
+    "Default": "0"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "outstanding_amount",
+    "Type": "numeric",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "assigned_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "assigned_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_assignments",
+    "Column": "notes",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "assignment_id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "installment_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "amount",
+    "Type": "numeric",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "payment_date",
+    "Type": "date",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "payment_method",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "reference_number",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "status",
+    "Type": "character varying",
+    "Nullable": "NULL",
+    "Default": "'completed'::character varying"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "notes",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "student_fee_payments",
+    "Column": "created_by",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "id",
+    "Type": "uuid",
+    "Nullable": "NOT NULL",
+    "Default": "gen_random_uuid()"
+  },
+  {
+    "Table": "students",
+    "Column": "school_id",
+    "Type": "uuid",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "student_id",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "first_name",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "last_name",
+    "Type": "text",
+    "Nullable": "NOT NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "grade_level",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "enrollment_date",
+    "Type": "date",
+    "Nullable": "NULL",
+    "Default": "CURRENT_DATE"
+  },
+  {
+    "Table": "students",
+    "Column": "status",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "'active'::text"
+  },
+  {
+    "Table": "students",
+    "Column": "created_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "students",
+    "Column": "updated_at",
+    "Type": "timestamp with time zone",
+    "Nullable": "NULL",
+    "Default": "now()"
+  },
+  {
+    "Table": "students",
+    "Column": "parent_name",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "parent_phone",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
+  },
+  {
+    "Table": "students",
+    "Column": "parent_email",
+    "Type": "text",
+    "Nullable": "NULL",
+    "Default": "No default"
   }
 ]
 

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { CreditCardIcon } from '@heroicons/react/24/outline';
+import { CreditCardIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { TabNavigation } from './components/TabNavigation';
 import { FeeSummary } from './components/FeeSummary';
 import { InstallmentManager } from './components/InstallmentManager';
@@ -188,11 +188,13 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
     
     switch (scheduleType) {
       case 'upfront':
+        // Use the end date of the academic year for upfront payments
+        const upfrontDueDate = academicYear.endDate || new Date().toISOString().split('T')[0];
         installments = [{
           installmentNumber: 1,
           amount: baseAmount,
           percentage: 0, // Interest rate starts at 0
-          dueDate: academicYear.startDate || '',
+          dueDate: upfrontDueDate,
           termId: ''
         }];
         break;
@@ -212,11 +214,22 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
         const termAmount = baseAmount / termCount;
         
         for (let i = 1; i <= termCount; i++) {
+          // Calculate due date based on academic year period
+          const startDate = new Date(academicYear.startDate || new Date());
+          const endDate = new Date(academicYear.endDate || new Date());
+          
+          // Calculate the duration and divide by term count
+          const totalDuration = endDate.getTime() - startDate.getTime();
+          const termDuration = totalDuration / termCount;
+          
+          // Set due date to the end of each term period
+          const dueDate = new Date(startDate.getTime() + (termDuration * i));
+          
           installments.push({
             installmentNumber: i,
             amount: Math.round(termAmount * 100) / 100, // Round to 2 decimal places
             percentage: 0, // Interest rate starts at 0
-            dueDate: '',
+            dueDate: dueDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
             termId: ''
           });
         }
@@ -224,13 +237,26 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
       case 'monthly':
         const monthlyAmount = baseAmount / 12;
         
-        installments = Array.from({ length: 12 }, (_, i) => ({
-          installmentNumber: i + 1,
-          amount: Math.round(monthlyAmount * 100) / 100,
-          percentage: 0, // Interest rate starts at 0
-          dueDate: '',
-          termId: ''
-        }));
+        installments = Array.from({ length: 12 }, (_, i) => {
+          // Calculate due date based on academic year period
+          const startDate = new Date(academicYear.startDate || new Date());
+          const endDate = new Date(academicYear.endDate || new Date());
+          
+          // Calculate the duration and divide by 12 months
+          const totalDuration = endDate.getTime() - startDate.getTime();
+          const monthDuration = totalDuration / 12;
+          
+          // Set due date to the end of each month period
+          const dueDate = new Date(startDate.getTime() + (monthDuration * (i + 1)));
+          
+          return {
+            installmentNumber: i + 1,
+            amount: Math.round(monthlyAmount * 100) / 100,
+            percentage: 0, // Interest rate starts at 0
+            dueDate: dueDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+            termId: ''
+          };
+        });
         break;
       case 'custom':
         installments = [];
@@ -402,6 +428,22 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
           />
         )}
 
+        {/* Due Date Information for Additional Fees */}
+        {activeTab === 'additional' && additionalPaymentSchedule.scheduleType && additionalRecurring.length > 0 && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <CalendarIcon className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
+              <div>
+                <h4 className="text-sm font-semibold text-purple-900">Due Date Information</h4>
+                <p className="text-sm text-purple-800 mt-1">
+                  Due dates are automatically calculated based on your academic year period ({academicYear.startDate} to {academicYear.endDate}).
+                  You can edit any due date by clicking on the date field below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Additional Fees Installments */}
         {activeTab === 'additional' && additionalPaymentSchedule.scheduleType && additionalRecurring.length > 0 && (
           <InstallmentManager
@@ -412,11 +454,18 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
             onInstallmentsChange={handleAdditionalInstallmentsChange}
             onAddInstallment={() => {
               const newInstallmentNumber = additionalPaymentSchedule.installments.length + 1;
+              // Calculate a reasonable due date based on academic year
+              const startDate = new Date(academicYear.startDate || new Date());
+              const endDate = new Date(academicYear.endDate || new Date());
+              const totalDuration = endDate.getTime() - startDate.getTime();
+              const installmentDuration = totalDuration / (additionalPaymentSchedule.installments.length + 1);
+              const dueDate = new Date(startDate.getTime() + (installmentDuration * newInstallmentNumber));
+              
               const newInstallment = {
                 installmentNumber: newInstallmentNumber,
                 amount: 0,
                 percentage: 0,
-                dueDate: '',
+                dueDate: dueDate.toISOString().split('T')[0],
                 termId: ''
               };
               setAdditionalPaymentSchedule({
@@ -446,6 +495,22 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
           />
         )}
 
+        {/* Due Date Information */}
+        {activeTab === 'tuition' && paymentSchedule.scheduleType && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <CalendarIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900">Due Date Information</h4>
+                <p className="text-sm text-blue-800 mt-1">
+                  Due dates are automatically calculated based on your academic year period ({academicYear.startDate} to {academicYear.endDate}).
+                  You can edit any due date by clicking on the date field below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tuition Fees Installments */}
         {activeTab === 'tuition' && paymentSchedule.scheduleType && (
           <InstallmentManager
@@ -456,11 +521,18 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
             onInstallmentsChange={handleTuitionInstallmentsChange}
             onAddInstallment={() => {
               const newInstallmentNumber = paymentSchedule.installments.length + 1;
+              // Calculate a reasonable due date based on academic year
+              const startDate = new Date(academicYear.startDate || new Date());
+              const endDate = new Date(academicYear.endDate || new Date());
+              const totalDuration = endDate.getTime() - startDate.getTime();
+              const installmentDuration = totalDuration / (paymentSchedule.installments.length + 1);
+              const dueDate = new Date(startDate.getTime() + (installmentDuration * newInstallmentNumber));
+              
               const newInstallment = {
                 installmentNumber: newInstallmentNumber,
                 amount: 0,
                 percentage: 0,
-                dueDate: '',
+                dueDate: dueDate.toISOString().split('T')[0],
                 termId: ''
               };
               onChange({

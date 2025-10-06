@@ -247,10 +247,10 @@ export async function POST(req: Request) {
       }, index: number) => ({
         schedule_id: newPaymentSchedule.id,
         installment_number: index + 1,
-        description: inst.description || `Installment ${index + 1}`,
+        name: inst.description || `Installment ${index + 1}`,
         amount: inst.amount,
         percentage: inst.percentage,
-        due_date: inst.due_date,
+        due_date: inst.due_date || new Date().toISOString().split('T')[0], // Use today's date if empty
         term_id: inst.term_id || null
       }));
 
