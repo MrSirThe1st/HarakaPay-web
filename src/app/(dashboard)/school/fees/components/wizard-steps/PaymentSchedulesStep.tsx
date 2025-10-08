@@ -86,15 +86,15 @@ const getScheduleTypes = (termStructure: string) => {
     }
   ];
 
-  // Add term-based option based on DRC structure
-  if (termStructure.includes('Kindergarten') || termStructure.includes('Primary')) {
+  // Add term-based option based on simplified structure
+  if (termStructure.includes('3 Trimesters')) {
     baseTypes.splice(1, 0, {
       value: 'per-term',
       label: 'Per Trimester (3 Trimesters)',
       description: 'Payments due at the start of each trimester (Oct, Feb, May)',
       icon: '📚'
     });
-  } else if (termStructure.includes('Secondary')) {
+  } else if (termStructure.includes('2 Semesters')) {
     baseTypes.splice(1, 0, {
       value: 'per-term',
       label: 'Per Semester (2 Semesters)',

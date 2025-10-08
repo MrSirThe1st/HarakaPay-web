@@ -20,12 +20,11 @@ interface GradeProgramStepProps {
 }
 
 const programTypes = [
-  { value: 'primary', label: 'Primary School', description: 'Grades 1-6 (Ages 6-12)' },
-  { value: 'secondary', label: 'Secondary School', description: 'Grades 7-12 (Ages 13-18)' },
-  { value: 'high-school', label: 'High School', description: 'Grades 9-12 (Ages 15-18)' },
-  { value: 'university', label: 'University', description: 'Undergraduate & Graduate' },
-  { value: 'vocational', label: 'Vocational Training', description: 'Technical & Skills Training' },
-  { value: 'all', label: 'All Programs', description: 'Applies to all program types' }
+  { value: 'kindergarten', label: 'Kindergarten' },
+  { value: 'primary', label: 'Primary School' },
+  { value: 'secondary', label: 'Secondary School' },
+  { value: 'high-school', label: 'High School' },
+  { value: 'university', label: 'University' }
 ];
 
 const commonGradeLevels = [
@@ -102,7 +101,6 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
                       onSelect={() => handleProgramSelect(program)}
                     >
                       <div className="font-medium text-gray-900">{program.label}</div>
-                      <div className="text-sm text-gray-500">{program.description}</div>
                     </DropdownMenu.Item>
                   ))}
                 </DropdownMenu.Content>
