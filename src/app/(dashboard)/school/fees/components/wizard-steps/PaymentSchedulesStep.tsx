@@ -6,7 +6,6 @@ import { CreditCardIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { TabNavigation } from './components/TabNavigation';
 import { FeeSummary } from './components/FeeSummary';
 import { InstallmentManager } from './components/InstallmentManager';
-import { DiscountInput } from './components/DiscountInput';
 import { PaymentScheduleSummary } from './components/PaymentScheduleSummary';
 
 interface PaymentSchedulesStepProps {
@@ -131,22 +130,65 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
   // State declarations
   const [activeTab, setActiveTab] = useState<'tuition' | 'additional'>('tuition');
   const [isScheduleDropdownOpen, setIsScheduleDropdownOpen] = useState(false);
-  const [isAdditionalScheduleDropdownOpen, setIsAdditionalScheduleDropdownOpen] = useState(false);
-  const [additionalPaymentSchedule, setAdditionalPaymentSchedule] = useState(initialAdditionalSchedule || {
-    scheduleType: 'upfront' as 'upfront' | 'per-term' | 'monthly' | 'custom',
-    installments: [] as {
+  const [tuitionOneTimeEnabled, setTuitionOneTimeEnabled] = useState(false);
+  const [tuitionOneTimeDiscount, setTuitionOneTimeDiscount] = useState(0);
+  const [tuitionOneTimeDueDate, setTuitionOneTimeDueDate] = useState('');
+  
+  // Individual additional fee schedules - one per category
+  const [additionalFeeSchedules, setAdditionalFeeSchedules] = useState<Record<string, {
+    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
+    installments: {
       installmentNumber: number;
       amount: number;
       dueDate: string;
       percentage: number;
       termId?: string;
-    }[],
-    discountPercentage: 0
-  });
+    }[];
+    discountPercentage: number;
+    oneTimeEnabled: boolean;
+    oneTimeDiscount: number;
+    oneTimeDueDate: string;
+  }>>({});
+  
+  // Individual dropdown states for each additional fee category
+  const [additionalDropdownStates, setAdditionalDropdownStates] = useState<Record<string, boolean>>({});
 
   // Calculate base totals for each category type (regardless of payment frequency support)
   const tuitionBaseTotal = tuitionCategories.reduce((sum, cat) => sum + cat.amount, 0);
   const additionalBaseTotal = additionalCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  
+  // Initialize individual additional fee schedules
+  React.useEffect(() => {
+    const newSchedules: Record<string, {
+      scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
+      installments: {
+        installmentNumber: number;
+        amount: number;
+        dueDate: string;
+        percentage: number;
+        termId?: string;
+      }[];
+      discountPercentage: number;
+      oneTimeEnabled: boolean;
+      oneTimeDiscount: number;
+      oneTimeDueDate: string;
+    }> = {};
+    additionalCategories.forEach(category => {
+      if (!additionalFeeSchedules[category.categoryId]) {
+        newSchedules[category.categoryId] = {
+          scheduleType: 'upfront' as 'upfront' | 'per-term' | 'monthly' | 'custom',
+          installments: [],
+          discountPercentage: 0,
+          oneTimeEnabled: false,
+          oneTimeDiscount: 0,
+          oneTimeDueDate: ''
+        };
+      }
+    });
+    if (Object.keys(newSchedules).length > 0) {
+      setAdditionalFeeSchedules(prev => ({ ...prev, ...newSchedules }));
+    }
+  }, [additionalCategories, additionalFeeSchedules]);
   
   // Calculate totals including interest rates
   const calculateTotalWithInterest = (baseAmount: number, installments: {
@@ -166,13 +208,23 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
   };
   
   const tuitionTotal = calculateTotalWithInterest(tuitionBaseTotal, paymentSchedule.installments);
-  const additionalTotal = calculateTotalWithInterest(additionalBaseTotal, additionalPaymentSchedule.installments);
+  
+  // Calculate individual additional fee totals
+  const additionalFeeTotals = additionalCategories.reduce((totals, category) => {
+    const schedule = additionalFeeSchedules[category.categoryId];
+    if (schedule) {
+      totals[category.categoryId] = calculateTotalWithInterest(category.amount, schedule.installments);
+    } else {
+      totals[category.categoryId] = category.amount;
+    }
+    return totals;
+  }, {} as Record<string, number>);
+  
+  const additionalTotal = Object.values(additionalFeeTotals).reduce((sum, total) => sum + total, 0);
   
   // Separate by frequency for display purposes only
   const tuitionRecurring = tuitionCategories.filter(cat => cat.supportsRecurring);
   const tuitionOneTime = tuitionCategories.filter(cat => cat.supportsOneTime);
-  const additionalRecurring = additionalCategories.filter(cat => cat.supportsRecurring);
-  const additionalOneTime = additionalCategories.filter(cat => cat.supportsOneTime);
 
   const scheduleTypes = getScheduleTypes(academicYear.termStructure);
   const selectedSchedule = scheduleTypes.find(s => s.value === paymentSchedule.scheduleType);
@@ -274,18 +326,94 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
       scheduleType: scheduleType as 'upfront' | 'per-term' | 'monthly' | 'custom',
       installments
     };
-    onChange(updatedTuitionSchedule, additionalPaymentSchedule);
+    onChange(updatedTuitionSchedule, initialAdditionalSchedule);
   };
 
-  const handleAdditionalScheduleChange = (scheduleType: string) => {
-    const installments = generateInstallments(scheduleType, additionalBaseTotal);
-    const updatedAdditionalSchedule = {
-      ...additionalPaymentSchedule,
+  // Individual additional fee schedule handlers
+  const handleAdditionalFeeScheduleChange = (categoryId: string, scheduleType: string) => {
+    const category = additionalCategories.find(cat => cat.categoryId === categoryId);
+    if (!category) return;
+    
+    const installments = generateInstallments(scheduleType, category.amount);
+    const updatedSchedule = {
+      ...additionalFeeSchedules[categoryId],
       scheduleType: scheduleType as 'upfront' | 'per-term' | 'monthly' | 'custom',
       installments
     };
-    setAdditionalPaymentSchedule(updatedAdditionalSchedule);
-    onChange(paymentSchedule, updatedAdditionalSchedule);
+    
+    setAdditionalFeeSchedules(prev => ({
+      ...prev,
+      [categoryId]: updatedSchedule
+    }));
+    
+    // Update parent with all additional schedules
+    const allAdditionalSchedules = Object.values({ ...additionalFeeSchedules, [categoryId]: updatedSchedule });
+    onChange(paymentSchedule, allAdditionalSchedules[0]); // For now, pass first schedule
+  };
+
+  const handleAdditionalDropdownOpenChange = (categoryId: string, isOpen: boolean) => {
+    setAdditionalDropdownStates(prev => ({
+      ...prev,
+      [categoryId]: isOpen
+    }));
+  };
+
+  // One-time payment handlers
+  const handleTuitionOneTimeToggle = (enabled: boolean) => {
+    setTuitionOneTimeEnabled(enabled);
+    // When enabling one-time, we might want to disable recurring installments
+    if (enabled && paymentSchedule.scheduleType !== 'upfront') {
+      handleTuitionScheduleChange('upfront');
+    }
+  };
+
+  const handleAdditionalFeeOneTimeToggle = (categoryId: string, enabled: boolean) => {
+    const updatedSchedule = {
+      ...additionalFeeSchedules[categoryId],
+      oneTimeEnabled: enabled
+    };
+    
+    setAdditionalFeeSchedules(prev => ({
+      ...prev,
+      [categoryId]: updatedSchedule
+    }));
+    
+    // When enabling one-time, we might want to disable recurring installments
+    if (enabled && updatedSchedule.scheduleType !== 'upfront') {
+      handleAdditionalFeeScheduleChange(categoryId, 'upfront');
+    }
+  };
+
+  const handleTuitionOneTimeDiscountChange = (discount: number) => {
+    setTuitionOneTimeDiscount(discount);
+  };
+
+  const handleAdditionalFeeOneTimeDiscountChange = (categoryId: string, discount: number) => {
+    const updatedSchedule = {
+      ...additionalFeeSchedules[categoryId],
+      oneTimeDiscount: discount
+    };
+    
+    setAdditionalFeeSchedules(prev => ({
+      ...prev,
+      [categoryId]: updatedSchedule
+    }));
+  };
+
+  const handleTuitionOneTimeDueDateChange = (dueDate: string) => {
+    setTuitionOneTimeDueDate(dueDate);
+  };
+
+  const handleAdditionalFeeOneTimeDueDateChange = (categoryId: string, dueDate: string) => {
+    const updatedSchedule = {
+      ...additionalFeeSchedules[categoryId],
+      oneTimeDueDate: dueDate
+    };
+    
+    setAdditionalFeeSchedules(prev => ({
+      ...prev,
+      [categoryId]: updatedSchedule
+    }));
   };
 
   const handleTuitionInstallmentsChange = (installments: {
@@ -299,34 +427,31 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
       ...paymentSchedule,
       installments
     };
-    onChange(updatedTuitionSchedule, additionalPaymentSchedule);
+    onChange(updatedTuitionSchedule, initialAdditionalSchedule);
   };
 
-  const handleAdditionalInstallmentsChange = (installments: {
+  const handleAdditionalFeeInstallmentsChange = (categoryId: string, installments: {
     installmentNumber: number;
     amount: number;
     dueDate: string;
     percentage: number;
     termId?: string;
   }[]) => {
-    const updatedAdditionalSchedule = {
-      ...additionalPaymentSchedule,
+    const updatedSchedule = {
+      ...additionalFeeSchedules[categoryId],
       installments
     };
-    setAdditionalPaymentSchedule(updatedAdditionalSchedule);
-    onChange(paymentSchedule, updatedAdditionalSchedule);
+    
+    setAdditionalFeeSchedules(prev => ({
+      ...prev,
+      [categoryId]: updatedSchedule
+    }));
+    
+    // Update parent with all additional schedules
+    const allAdditionalSchedules = Object.values({ ...additionalFeeSchedules, [categoryId]: updatedSchedule });
+    onChange(paymentSchedule, allAdditionalSchedules[0]); // For now, pass first schedule
   };
 
-  const handleTuitionDiscountChange = (discountPercentage: number) => {
-    const updatedTuitionSchedule = { ...paymentSchedule, discountPercentage };
-    onChange(updatedTuitionSchedule, additionalPaymentSchedule);
-  };
-
-  const handleAdditionalDiscountChange = (discountPercentage: number) => {
-    const updatedAdditionalSchedule = { ...additionalPaymentSchedule, discountPercentage };
-    setAdditionalPaymentSchedule(updatedAdditionalSchedule);
-    onChange(paymentSchedule, updatedAdditionalSchedule);
-  };
 
   return (
     <div className="space-y-8">
@@ -400,100 +525,124 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
                 isDropdownOpen={isScheduleDropdownOpen}
                 onDropdownOpenChange={setIsScheduleDropdownOpen}
                 onScheduleChange={handleTuitionScheduleChange}
+                oneTimeEnabled={tuitionOneTimeEnabled}
+                onOneTimeToggle={handleTuitionOneTimeToggle}
+                oneTimeDiscount={tuitionOneTimeDiscount}
+                onOneTimeDiscountChange={handleTuitionOneTimeDiscountChange}
+                oneTimeDueDate={tuitionOneTimeDueDate}
+                onOneTimeDueDateChange={handleTuitionOneTimeDueDateChange}
               />
             )}
 
-            {activeTab === 'additional' && (additionalRecurring.length > 0 || additionalOneTime.length > 0) && (
-              <FeeSummary
-                categories={additionalCategories}
-                total={additionalTotal}
-                type="additional"
-                scheduleType={additionalPaymentSchedule.scheduleType}
-                installments={additionalPaymentSchedule.installments}
-                scheduleTypes={scheduleTypes}
-                isDropdownOpen={isAdditionalScheduleDropdownOpen}
-                onDropdownOpenChange={setIsAdditionalScheduleDropdownOpen}
-                onScheduleChange={handleAdditionalScheduleChange}
-              />
+            {activeTab === 'additional' && additionalCategories.length > 0 && (
+              <div className="space-y-6">
+                {additionalCategories.map((category) => {
+                  const schedule = additionalFeeSchedules[category.categoryId];
+                  const categoryTotal = additionalFeeTotals[category.categoryId] || category.amount;
+                  const isDropdownOpen = additionalDropdownStates[category.categoryId] || false;
+                  
+                  return (
+                    <FeeSummary
+                      key={category.categoryId}
+                      categories={[category]}
+                      total={categoryTotal}
+                      type="additional"
+                      scheduleType={schedule?.scheduleType || 'upfront'}
+                      installments={schedule?.installments || []}
+                      scheduleTypes={scheduleTypes}
+                      isDropdownOpen={isDropdownOpen}
+                      onDropdownOpenChange={(isOpen) => handleAdditionalDropdownOpenChange(category.categoryId, isOpen)}
+                      onScheduleChange={(scheduleType) => handleAdditionalFeeScheduleChange(category.categoryId, scheduleType)}
+                      oneTimeEnabled={schedule?.oneTimeEnabled || false}
+                      onOneTimeToggle={(enabled) => handleAdditionalFeeOneTimeToggle(category.categoryId, enabled)}
+                      oneTimeDiscount={schedule?.oneTimeDiscount || 0}
+                      onOneTimeDiscountChange={(discount) => handleAdditionalFeeOneTimeDiscountChange(category.categoryId, discount)}
+                      oneTimeDueDate={schedule?.oneTimeDueDate || ''}
+                      onOneTimeDueDateChange={(dueDate) => handleAdditionalFeeOneTimeDueDateChange(category.categoryId, dueDate)}
+                    />
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Additional Fees Discount for Upfront */}
-        {activeTab === 'additional' && additionalPaymentSchedule.scheduleType === 'upfront' && additionalRecurring.length > 0 && (
-          <DiscountInput
-            value={additionalPaymentSchedule.discountPercentage || 0}
-            onChange={handleAdditionalDiscountChange}
-            type="additional"
-          />
-        )}
-
-        {/* Due Date Information for Additional Fees */}
-        {activeTab === 'additional' && additionalPaymentSchedule.scheduleType && additionalRecurring.length > 0 && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-            <div className="flex items-start">
-              <CalendarIcon className="h-5 w-5 text-purple-600 mt-0.5 mr-2" />
-              <div>
-                <h4 className="text-sm font-semibold text-purple-900">Due Date Information</h4>
-                <p className="text-sm text-purple-800 mt-1">
-                  Due dates are automatically calculated based on your academic year period ({academicYear.startDate} to {academicYear.endDate}).
-                  You can edit any due date by clicking on the date field below.
-                </p>
-              </div>
+        {/* Individual Additional Fees Installments */}
+        {activeTab === 'additional' && additionalCategories.map((category) => {
+          const schedule = additionalFeeSchedules[category.categoryId];
+          if (!schedule || !schedule.scheduleType || !category.supportsRecurring) return null;
+          
+          return (
+            <div key={`installments-${category.categoryId}`} className="mb-6">
+              <h4 className="text-lg font-semibold text-purple-800 mb-4">
+                {category.categoryName} - Payment Installments
+              </h4>
+              <InstallmentManager
+                installments={schedule.installments}
+                scheduleType={schedule.scheduleType}
+                totalAmount={category.amount}
+                type="additional"
+                onInstallmentsChange={(installments) => handleAdditionalFeeInstallmentsChange(category.categoryId, installments)}
+                onAddInstallment={() => {
+                  const newInstallmentNumber = schedule.installments.length + 1;
+                  // Calculate a reasonable due date based on academic year
+                  const startDate = new Date(academicYear.startDate || new Date());
+                  const endDate = new Date(academicYear.endDate || new Date());
+                  const totalDuration = endDate.getTime() - startDate.getTime();
+                  const installmentDuration = totalDuration / (schedule.installments.length + 1);
+                  const dueDate = new Date(startDate.getTime() + (installmentDuration * newInstallmentNumber));
+                  
+                  const newInstallment = {
+                    installmentNumber: newInstallmentNumber,
+                    amount: 0,
+                    percentage: 0,
+                    dueDate: dueDate.toISOString().split('T')[0],
+                    termId: ''
+                  };
+                  
+                  const updatedSchedule = {
+                    ...schedule,
+                    installments: [...schedule.installments, newInstallment]
+                  };
+                  
+                  setAdditionalFeeSchedules(prev => ({
+                    ...prev,
+                    [category.categoryId]: updatedSchedule
+                  }));
+                }}
+                onRemoveInstallment={(index) => {
+                  const updatedInstallments = schedule.installments.filter((_, i) => i !== index);
+                  const updatedSchedule = { ...schedule, installments: updatedInstallments };
+                  
+                  setAdditionalFeeSchedules(prev => ({
+                    ...prev,
+                    [category.categoryId]: updatedSchedule
+                  }));
+                }}
+                onUpdateInstallment={(index, field, value) => {
+                  let processedValue = value;
+                  
+                  // Handle numeric fields to remove leading zeros
+                  if ((field === 'amount' || field === 'percentage') && typeof value === 'string') {
+                    const cleanValue = value.replace(/^0+/, '') || '0';
+                    processedValue = parseFloat(cleanValue) || 0;
+                  }
+                  
+                  const updatedInstallments = schedule.installments.map((inst, i) => 
+                    i === index ? { ...inst, [field]: processedValue } : inst
+                  );
+                  
+                  const updatedSchedule = { ...schedule, installments: updatedInstallments };
+                  
+                  setAdditionalFeeSchedules(prev => ({
+                    ...prev,
+                    [category.categoryId]: updatedSchedule
+                  }));
+                }}
+              />
             </div>
-          </div>
-        )}
-
-        {/* Additional Fees Installments */}
-        {activeTab === 'additional' && additionalPaymentSchedule.scheduleType && additionalRecurring.length > 0 && (
-          <InstallmentManager
-            installments={additionalPaymentSchedule.installments}
-            scheduleType={additionalPaymentSchedule.scheduleType}
-            totalAmount={additionalBaseTotal}
-            type="additional"
-            onInstallmentsChange={handleAdditionalInstallmentsChange}
-            onAddInstallment={() => {
-              const newInstallmentNumber = additionalPaymentSchedule.installments.length + 1;
-              // Calculate a reasonable due date based on academic year
-              const startDate = new Date(academicYear.startDate || new Date());
-              const endDate = new Date(academicYear.endDate || new Date());
-              const totalDuration = endDate.getTime() - startDate.getTime();
-              const installmentDuration = totalDuration / (additionalPaymentSchedule.installments.length + 1);
-              const dueDate = new Date(startDate.getTime() + (installmentDuration * newInstallmentNumber));
-              
-              const newInstallment = {
-                installmentNumber: newInstallmentNumber,
-                amount: 0,
-                percentage: 0,
-                dueDate: dueDate.toISOString().split('T')[0],
-                termId: ''
-              };
-              setAdditionalPaymentSchedule({
-                ...additionalPaymentSchedule,
-                installments: [...additionalPaymentSchedule.installments, newInstallment]
-              });
-            }}
-            onRemoveInstallment={(index) => {
-              const updatedInstallments = additionalPaymentSchedule.installments.filter((_, i) => i !== index);
-              setAdditionalPaymentSchedule({ ...additionalPaymentSchedule, installments: updatedInstallments });
-            }}
-            onUpdateInstallment={(index, field, value) => {
-              const updatedInstallments = additionalPaymentSchedule.installments.map((inst, i) => 
-                i === index ? { ...inst, [field]: value } : inst
-              );
-              setAdditionalPaymentSchedule({ ...additionalPaymentSchedule, installments: updatedInstallments });
-            }}
-          />
-        )}
-
-        {/* Discount for Upfront */}
-        {activeTab === 'tuition' && paymentSchedule.scheduleType === 'upfront' && (
-          <DiscountInput
-            value={paymentSchedule.discountPercentage || 0}
-            onChange={handleTuitionDiscountChange}
-            type="tuition"
-          />
-        )}
+          );
+        })}
 
         {/* Due Date Information */}
         {activeTab === 'tuition' && paymentSchedule.scheduleType && (
@@ -578,15 +727,25 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
           />
         )}
 
-        {activeTab === 'additional' && (
-          <PaymentScheduleSummary
-            scheduleType={additionalPaymentSchedule.scheduleType}
-            installments={additionalPaymentSchedule.installments}
-            discountPercentage={additionalPaymentSchedule.discountPercentage}
-            type="additional"
-            selectedSchedule={scheduleTypes.find(s => s.value === additionalPaymentSchedule.scheduleType)}
-          />
-        )}
+        {activeTab === 'additional' && additionalCategories.map((category) => {
+          const schedule = additionalFeeSchedules[category.categoryId];
+          if (!schedule) return null;
+          
+          return (
+            <div key={`summary-${category.categoryId}`} className="mb-6">
+              <h4 className="text-lg font-semibold text-purple-800 mb-4">
+                {category.categoryName} - Payment Summary
+              </h4>
+              <PaymentScheduleSummary
+                scheduleType={schedule.scheduleType}
+                installments={schedule.installments}
+                discountPercentage={schedule.discountPercentage}
+                type="additional"
+                selectedSchedule={scheduleTypes.find(s => s.value === schedule.scheduleType)}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

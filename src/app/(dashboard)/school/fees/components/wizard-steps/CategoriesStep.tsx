@@ -26,6 +26,7 @@ const availableCategories: FeeCategory[] = [
     description: 'Core academic instruction fees',
     isMandatory: true,
     isRecurring: true,
+    supportsOneTime: true,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15'
   },
@@ -35,6 +36,7 @@ const availableCategories: FeeCategory[] = [
     description: 'Textbooks and learning materials',
     isMandatory: true,
     isRecurring: true,
+    supportsOneTime: true,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15'
   },
@@ -44,6 +46,7 @@ const availableCategories: FeeCategory[] = [
     description: 'School uniform and PE kit',
     isMandatory: false,
     isRecurring: false,
+    supportsOneTime: true,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15'
   },
@@ -53,6 +56,7 @@ const availableCategories: FeeCategory[] = [
     description: 'School bus transportation',
     isMandatory: false,
     isRecurring: true,
+    supportsOneTime: true,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15'
   },
@@ -62,6 +66,7 @@ const availableCategories: FeeCategory[] = [
     description: 'School meal program',
     isMandatory: false,
     isRecurring: true,
+    supportsOneTime: true,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15'
   },
@@ -71,6 +76,7 @@ const availableCategories: FeeCategory[] = [
     description: 'Exam registration and materials',
     isMandatory: false,
     isRecurring: false,
+    supportsOneTime: true,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15'
   }

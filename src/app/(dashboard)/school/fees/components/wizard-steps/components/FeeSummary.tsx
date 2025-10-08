@@ -33,6 +33,12 @@ interface FeeSummaryProps {
   isDropdownOpen: boolean;
   onDropdownOpenChange: (open: boolean) => void;
   onScheduleChange: (scheduleType: string, installments: any[]) => void;
+  oneTimeEnabled?: boolean;
+  onOneTimeToggle?: (enabled: boolean) => void;
+  oneTimeDiscount?: number;
+  onOneTimeDiscountChange?: (discount: number) => void;
+  oneTimeDueDate?: string;
+  onOneTimeDueDateChange?: (dueDate: string) => void;
 }
 
 export function FeeSummary({
@@ -44,7 +50,13 @@ export function FeeSummary({
   scheduleTypes,
   isDropdownOpen,
   onDropdownOpenChange,
-  onScheduleChange
+  onScheduleChange,
+  oneTimeEnabled = false,
+  onOneTimeToggle,
+  oneTimeDiscount = 0,
+  onOneTimeDiscountChange,
+  oneTimeDueDate = '',
+  onOneTimeDueDateChange
 }: FeeSummaryProps) {
   const recurringCategories = categories.filter(cat => cat.supportsRecurring);
   const oneTimeCategories = categories.filter(cat => cat.supportsOneTime);
@@ -168,41 +180,116 @@ export function FeeSummary({
 
       {/* One-time Payments */}
       {oneTimeCategories.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className={`text-sm font-medium ${colorScheme.textSecondary}`}>
-              One-time Payments:
-            </span>
-            <span className={`text-sm font-semibold ${colorScheme.text}`}>
-              ${total.toLocaleString()}
-            </span>
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className={`text-lg font-semibold ${colorScheme.text}`}>
+              💰 One-time Payment Options
+            </h4>
+            <div className="flex items-center space-x-2">
+              <span className={`text-sm font-medium ${colorScheme.textSecondary}`}>
+                Total: ${total.toLocaleString()}
+              </span>
+            </div>
           </div>
           
-          <div className="space-y-1 mb-3 ml-4">
+          <div className="space-y-3 mb-4">
             {oneTimeCategories.map((fee) => (
-              <div key={fee.categoryId} className="flex justify-between items-center text-sm">
-                <span className={colorScheme.textAccent}>{fee.categoryName}</span>
-                <span className={`font-medium ${colorScheme.textSecondary}`}>
+              <div key={fee.categoryId} className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200">
+                <span className={`font-medium ${colorScheme.textAccent}`}>{fee.categoryName}</span>
+                <span className={`font-semibold ${colorScheme.textSecondary}`}>
                   ${fee.amount.toLocaleString()}
                 </span>
               </div>
             ))}
           </div>
           
-          <div className="ml-4 space-y-2">
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id={`${type}-upfront`}
-                className={`rounded ${colorScheme.button} focus:ring-${type === 'tuition' ? 'green' : 'purple'}-500`}
-              />
-              <label htmlFor={`${type}-upfront`} className={`text-sm ${colorScheme.textAccent}`}>
-                💰 Annual Upfront Payment (with discount)
-              </label>
+          {/* One-time Payment Toggle */}
+          <div className={`${colorScheme.bg} ${colorScheme.border} rounded-lg p-4 border-2`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <input 
+                  type="checkbox" 
+                  id={`${type}-one-time-toggle`}
+                  checked={oneTimeEnabled}
+                  onChange={(e) => onOneTimeToggle?.(e.target.checked)}
+                  className={`w-5 h-5 rounded border-2 ${colorScheme.button} focus:ring-${type === 'tuition' ? 'green' : 'purple'}-500 focus:ring-2`}
+                />
+                <label htmlFor={`${type}-one-time-toggle`} className={`text-lg font-semibold ${colorScheme.text} cursor-pointer`}>
+                  Enable Annual Upfront Payment
+                </label>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${oneTimeEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                {oneTimeEnabled ? 'Enabled' : 'Disabled'}
+              </div>
             </div>
-            <div className={`text-sm ${colorScheme.textAccent}`}>
-              📅 Due Date: <input type="date" className={`ml-2 px-2 py-1 border ${colorScheme.border} rounded text-sm`} />
-            </div>
+            
+            {oneTimeEnabled && (
+              <div className="space-y-4 pl-8 border-l-2 border-gray-300">
+                {/* Discount Input */}
+                <div className="flex items-center space-x-4">
+                  <label className={`text-sm font-medium ${colorScheme.textSecondary} min-w-[120px]`}>
+                    Early Payment Discount:
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="50" 
+                      step="0.5"
+                      value={oneTimeDiscount}
+                      onChange={(e) => onOneTimeDiscountChange?.(parseFloat(e.target.value) || 0)}
+                      className={`w-20 px-3 py-2 border ${colorScheme.border} rounded-lg text-sm focus:ring-2 focus:ring-${type === 'tuition' ? 'green' : 'purple'}-500 focus:border-${type === 'tuition' ? 'green' : 'purple'}-500`}
+                    />
+                    <span className={`text-sm ${colorScheme.textAccent}`}>%</span>
+                  </div>
+                </div>
+                
+                {/* Due Date Input */}
+                <div className="flex items-center space-x-4">
+                  <label className={`text-sm font-medium ${colorScheme.textSecondary} min-w-[120px]`}>
+                    Payment Due Date:
+                  </label>
+                  <input 
+                    type="date" 
+                    value={oneTimeDueDate}
+                    onChange={(e) => onOneTimeDueDateChange?.(e.target.value)}
+                    className={`px-3 py-2 border ${colorScheme.border} rounded-lg text-sm focus:ring-2 focus:ring-${type === 'tuition' ? 'green' : 'purple'}-500 focus:border-${type === 'tuition' ? 'green' : 'purple'}-500`}
+                  />
+                </div>
+                
+                {/* Payment Summary */}
+                <div className={`${colorScheme.bg} ${colorScheme.border} rounded-lg p-3 border`}>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-sm font-medium ${colorScheme.textSecondary}`}>
+                      Original Amount:
+                    </span>
+                    <span className={`text-sm font-semibold ${colorScheme.text}`}>
+                      ${total.toLocaleString()}
+                    </span>
+                  </div>
+                  {oneTimeDiscount > 0 && (
+                    <>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className={`text-sm font-medium ${colorScheme.textSecondary}`}>
+                          Discount ({oneTimeDiscount}%):
+                        </span>
+                        <span className={`text-sm font-semibold text-green-600`}>
+                          -${(total * oneTimeDiscount / 100).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
+                        <span className={`text-base font-semibold ${colorScheme.text}`}>
+                          Final Amount:
+                        </span>
+                        <span className={`text-lg font-bold text-green-600`}>
+                          ${(total * (1 - oneTimeDiscount / 100)).toLocaleString()}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

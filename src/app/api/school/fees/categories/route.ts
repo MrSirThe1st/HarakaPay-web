@@ -172,6 +172,7 @@ export async function POST(req: Request) {
       description, 
       is_mandatory = false,
       is_recurring = false,
+      supports_one_time = true,
       category_type = 'custom'
     } = body;
 
@@ -206,6 +207,7 @@ export async function POST(req: Request) {
         description: description || '',
         is_mandatory,
         is_recurring,
+        supports_one_time,
         category_type,
         school_id: profile.school_id
       })

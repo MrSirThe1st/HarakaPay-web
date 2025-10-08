@@ -23,6 +23,7 @@ export interface FeeCategory {
   description: string;
   isMandatory: boolean;
   isRecurring: boolean;
+  supportsOneTime: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -160,6 +161,6 @@ export interface WizardData {
   };
 }
 
-export type ActiveTab = 'academic-year' | 'categories' | 'structures' | 'schedules' | 'publish' | 'audit';
+export type ActiveTab = 'academic-year' | 'categories' | 'structures' | 'schedules' | 'auto-assign' | 'publish' | 'audit';
 export type ViewMode = 'wizard' | 'management';
 export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;

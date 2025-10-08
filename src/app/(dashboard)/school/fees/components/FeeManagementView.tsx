@@ -13,10 +13,12 @@ import {
   EyeIcon,
   ExclamationTriangleIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { ActiveTab } from '../types/feeTypes';
 import { useFeesAPI, AcademicYear, FeeCategory, FeeTemplate, PaymentSchedule, StudentFeeAssignment } from '@/hooks/useFeesAPI';
+import { AutoAssignFees } from './AutoAssignFees';
 
 interface FeeManagementViewProps {
   onCreateNew: () => void;
@@ -60,6 +62,7 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
     { id: 'categories', name: 'Fee Categories', icon: ClipboardDocumentListIcon },
     { id: 'structures', name: 'Fee Structures', icon: AcademicCapIcon },
     { id: 'schedules', name: 'Payment Schedules', icon: ReceiptPercentIcon },
+    { id: 'auto-assign', name: 'Auto Assign', icon: UserGroupIcon },
     { id: 'publish', name: 'Publish Schedule', icon: CheckCircleIcon },
     { id: 'audit', name: 'Audit Trail', icon: DocumentTextIcon },
   ];
@@ -106,6 +109,17 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
       }
     } catch (error) {
       console.error('Error loading fees data:', error);
+    }
+  };
+
+  const loadStudentAssignments = async () => {
+    try {
+      const assignmentsResponse = await feesAPI.studentFeeAssignments.getAll();
+      if (assignmentsResponse.success && assignmentsResponse.data) {
+        setStudentAssignments(assignmentsResponse.data.studentFeeAssignments);
+      }
+    } catch (error) {
+      console.error('Error loading student assignments:', error);
     }
   };
 
@@ -514,8 +528,16 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
             </div>
           )}
 
+          {/* Auto Assign Tab */}
+          {activeTab === 'auto-assign' && (
+            <AutoAssignFees onAssignmentComplete={() => {
+              // Refresh student assignments when auto-assignment is complete
+              loadStudentAssignments();
+            }} />
+          )}
+
           {/* Other tabs will show placeholder content for now */}
-          {activeTab !== 'academic-year' && activeTab !== 'categories' && (
+          {activeTab !== 'academic-year' && activeTab !== 'categories' && activeTab !== 'auto-assign' && (
             <div className="text-center py-12">
               <p className="text-gray-500">{tabs.find(t => t.id === activeTab)?.name} content will be implemented</p>
             </div>
