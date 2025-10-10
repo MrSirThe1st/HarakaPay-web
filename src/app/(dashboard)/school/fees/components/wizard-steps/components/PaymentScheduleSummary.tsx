@@ -7,7 +7,9 @@ interface ScheduleType {
   value: string;
   label: string;
   description: string;
-  icon: string;
+  recommended?: boolean;
+  termCount?: number;
+  termType?: string;
 }
 
 interface PaymentScheduleSummaryProps {

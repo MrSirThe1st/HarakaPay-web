@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { PlusIcon, TrashIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import { FeeCategory } from '../../types/feeTypes';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface CategoriesStepProps {
   selectedCategories: {
@@ -15,15 +16,23 @@ interface CategoriesStepProps {
     supportsOneTime: boolean;
     categoryType: 'tuition' | 'additional';
   }[];
-  onChange: (categories: any[]) => void;
+  onChange: (categories: {
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+    isMandatory: boolean;
+    supportsRecurring: boolean;
+    supportsOneTime: boolean;
+    categoryType: 'tuition' | 'additional';
+  }[]) => void;
 }
 
-// Predefined categories
-const availableCategories: FeeCategory[] = [
+// Predefined categories - will be translated in component
+const getAvailableCategories = (t: (key: string) => string): FeeCategory[] => [
   {
     id: '1',
-    name: 'Tuition',
-    description: 'Core academic instruction fees',
+    name: t('Tuition'),
+    description: t('Core academic instruction fees'),
     isMandatory: true,
     isRecurring: true,
     supportsOneTime: true,
@@ -32,9 +41,9 @@ const availableCategories: FeeCategory[] = [
   },
   {
     id: '2',
-    name: 'Books & Materials',
-    description: 'Textbooks and learning materials',
-    isMandatory: true,
+    name: t('Books & Materials'),
+    description: t('Textbooks and learning materials'),
+    isMandatory: false,
     isRecurring: true,
     supportsOneTime: true,
     createdAt: '2024-01-15',
@@ -42,8 +51,8 @@ const availableCategories: FeeCategory[] = [
   },
   {
     id: '3',
-    name: 'Uniform',
-    description: 'School uniform and PE kit',
+    name: t('Uniform'),
+    description: t('School uniform and PE kit'),
     isMandatory: false,
     isRecurring: false,
     supportsOneTime: true,
@@ -52,8 +61,8 @@ const availableCategories: FeeCategory[] = [
   },
   {
     id: '4',
-    name: 'Transport',
-    description: 'School bus transportation',
+    name: t('Transport'),
+    description: t('School bus transportation'),
     isMandatory: false,
     isRecurring: true,
     supportsOneTime: true,
@@ -62,8 +71,8 @@ const availableCategories: FeeCategory[] = [
   },
   {
     id: '5',
-    name: 'Meals',
-    description: 'School meal program',
+    name: t('Meals'),
+    description: t('School meal program'),
     isMandatory: false,
     isRecurring: true,
     supportsOneTime: true,
@@ -72,8 +81,8 @@ const availableCategories: FeeCategory[] = [
   },
   {
     id: '6',
-    name: 'Examination Fees',
-    description: 'Exam registration and materials',
+    name: t('Examination Fees'),
+    description: t('Exam registration and materials'),
     isMandatory: false,
     isRecurring: false,
     supportsOneTime: true,
@@ -83,6 +92,7 @@ const availableCategories: FeeCategory[] = [
 ];
 
 export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepProps) {
+  const { t } = useTranslation();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
 
@@ -117,8 +127,14 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
       isMandatory: category.isMandatory,
       supportsRecurring: true, // All categories support both by default
       supportsOneTime: true,    // All categories support both by default
-      categoryType: category.name.toLowerCase().includes('tuition') ? 'tuition' as const : 'additional' as const
+      categoryType: category.id === '1' ? 'tuition' as const : 'additional' as const
     };
+    
+    console.log('Adding predefined category:', {
+      id: category.id,
+      name: category.name,
+      categoryType: categoryData.categoryType
+    });
     
     onChange([...selectedCategories, categoryData]);
   };
@@ -134,46 +150,26 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
   return (
     <div className="space-y-6">
       <div className="max-w-4xl mx-auto">
-        {/* Information Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Fee Category Configuration</h3>
-              <div className="mt-2 text-sm text-blue-700">
-                <ul className="list-disc list-inside space-y-1">
-                  <li><strong>Tuition fees</strong> are the main academic fees (can be paid any way: one-time, installments, per semester, etc.)</li>
-                  <li><strong>Additional fees</strong> are supplementary fees (uniforms, books, transport, etc.)</li>
-                  <li>You can customize payment requirements (mandatory/optional) and frequency options for each category</li>
-                  <li>Categories can support multiple payment frequencies simultaneously (both recurring AND one-time)</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
+
         {/* Add Custom Category */}
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 mb-6">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Add Custom Category</h4>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('Add Custom Category')}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">Category Name *</label>
+              <label className="block text-sm font-semibold text-gray-900">{t('Category Name')} *</label>
               <input
                 type="text"
-                placeholder="e.g., Sports Equipment, Field Trip"
+                placeholder={t('e.g., Sports Equipment, Field Trip')}
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">Description</label>
+              <label className="block text-sm font-semibold text-gray-900">{t('Description')}</label>
               <input
                 type="text"
-                placeholder="Brief description"
+                placeholder={t('Brief description')}
                 value={newCategoryDescription}
                 onChange={(e) => setNewCategoryDescription(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
@@ -187,7 +183,7 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              Add Custom Category
+              {t('Add Custom Category')}
             </button>
           </div>
         </div>
@@ -195,21 +191,21 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
         {/* Predefined Categories */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-lg font-semibold text-gray-900">Predefined Categories</h4>
+            <h4 className="text-lg font-semibold text-gray-900">{t('Predefined Categories')}</h4>
             <div className="text-sm text-gray-600">
               <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 mr-2">
-                Tuition
+                {t('Tuition')}
               </span>
-              <span className="text-gray-500">= Main academic fees</span>
+              <span className="text-gray-500">= {t('Main academic fees')}</span>
               <span className="mx-2 text-gray-400">•</span>
               <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-2">
-                Additional
+                {t('Additional')}
               </span>
-              <span className="text-gray-500">= Supplementary fees</span>
+              <span className="text-gray-500">= {t('Supplementary fees')}</span>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {availableCategories.map((category) => (
+            {getAvailableCategories(t).map((category) => (
               <div key={category.id} className="relative">
                 <button
                   onClick={() => addPredefinedCategory(category)}
@@ -226,16 +222,16 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                       <p className="text-xs text-gray-500">{category.description}</p>
                       <div className="flex space-x-2 mt-2">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          category.name.toLowerCase().includes('tuition') 
+                          category.id === '1' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-purple-100 text-purple-800'
                         }`}>
-                          {category.name.toLowerCase().includes('tuition') ? 'Tuition' : 'Additional'}
+                          {category.id === '1' ? t('Tuition') : t('Additional')}
                         </span>
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           category.isMandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {category.isMandatory ? 'Mandatory' : 'Optional'}
+                          {category.isMandatory ? t('Mandatory') : t('Optional')}
                         </span>
                       </div>
                     </div>
@@ -255,12 +251,12 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
 
         {/* Selected Categories */}
         <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-900">Selected Categories ({selectedCategories.length})</h4>
+          <h4 className="text-lg font-semibold text-gray-900">{t('Selected Categories')} ({selectedCategories.length})</h4>
           {selectedCategories.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
               <ClipboardDocumentListIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-4 text-gray-600 font-medium">No categories selected yet</p>
-              <p className="text-sm text-gray-500 mt-1">Select categories above to continue</p>
+              <p className="mt-4 text-gray-600 font-medium">{t('No categories selected yet')}</p>
+              <p className="text-sm text-gray-500 mt-1">{t('Select categories above to continue')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -271,7 +267,7 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                     <div className="flex items-center space-x-3">
                       <h5 className="text-lg font-semibold text-gray-900">{category.categoryName}</h5>
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.categoryType === 'tuition' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
-                        {category.categoryType === 'tuition' ? 'Tuition' : 'Additional'}
+                        {category.categoryType === 'tuition' ? t('Tuition') : t('Additional')}
                       </span>
                     </div>
                     <button 
@@ -286,7 +282,7 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Mandatory/Optional Selection */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-medium text-gray-700">Payment Requirement</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('Payment Requirement')}</label>
                       <div className="flex space-x-2">
                         <button
                           onClick={() => {
@@ -303,7 +299,7 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                               : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-red-50'
                           }`}
                         >
-                          Mandatory
+                          {t('Mandatory')}
                         </button>
                         <button
                           onClick={() => {
@@ -320,14 +316,14 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                               : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-blue-50'
                           }`}
                         >
-                          Optional
+                          {t('Optional')}
                         </button>
                       </div>
                     </div>
 
                     {/* Payment Frequency Support */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-medium text-gray-700">Supported Payment Frequencies</label>
+                      <label className="block text-sm font-medium text-gray-700">{t('Supported Payment Frequencies')}</label>
                       <div className="space-y-2">
                         <label className="flex items-center">
                           <input
@@ -343,7 +339,7 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                             }}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">Recurring Payments</span>
+                          <span className="ml-2 text-sm text-gray-700">{t('Recurring Payments')}</span>
                         </label>
                         <label className="flex items-center">
                           <input
@@ -359,7 +355,7 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                             }}
                             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">One-time Payments</span>
+                          <span className="ml-2 text-sm text-gray-700">{t('One-time Payments')}</span>
                         </label>
                       </div>
                     </div>
@@ -369,20 +365,20 @@ export function CategoriesStep({ selectedCategories, onChange }: CategoriesStepP
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <div className="flex flex-wrap gap-2">
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.isMandatory ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {category.isMandatory ? 'Mandatory' : 'Optional'}
+                        {category.isMandatory ? t('Mandatory') : t('Optional')}
                       </span>
                       {category.supportsRecurring && (
                         <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          Supports Recurring
+                          {t('Supports Recurring')}
                         </span>
                       )}
                       {category.supportsOneTime && (
                         <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Supports One-time
+                          {t('Supports One-time')}
                         </span>
                       )}
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${category.categoryType === 'tuition' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
-                        {category.categoryType === 'tuition' ? 'Tuition Fee' : 'Additional Fee'}
+                        {category.categoryType === 'tuition' ? t('Tuition Fee') : t('Additional Fee')}
                       </span>
                     </div>
                   </div>

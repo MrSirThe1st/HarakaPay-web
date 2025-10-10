@@ -18,8 +18,10 @@ import { EditStaffModal } from './EditStaffModal';
 import { ViewStaffModal } from './ViewStaffModal';
 import { DeleteStaffModal } from './DeleteStaffModal';
 import { useStaff, Staff } from '@/hooks/useStaff';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function StaffManagementView() {
+  const { t } = useTranslation();
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [showEditStaff, setShowEditStaff] = useState(false);
   const [showViewStaff, setShowViewStaff] = useState(false);
@@ -79,8 +81,8 @@ export function StaffManagementView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-        <p className="text-gray-600">Manage your school staff members and their permissions</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('Staff Management')}</h1>
+        <p className="text-gray-600">{t('Manage your school staff members and their permissions')}</p>
       </div>
 
       {/* Quick Stats */}
@@ -94,7 +96,7 @@ export function StaffManagementView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Staff
+                    {t('Total Staff')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.total}
@@ -114,7 +116,7 @@ export function StaffManagementView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Active Staff
+                    {t('Active Staff')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.active}
@@ -134,7 +136,7 @@ export function StaffManagementView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Inactive Staff
+                    {t('Inactive Staff')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.inactive}
@@ -156,7 +158,7 @@ export function StaffManagementView() {
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search staff by name..."
+                  placeholder={t('Search staff by name...')}
                   value={filters.search}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
@@ -170,7 +172,7 @@ export function StaffManagementView() {
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              Add Staff Member
+              {t('Add Staff Member')}
             </button>
           </div>
         </div>
@@ -188,16 +190,16 @@ export function StaffManagementView() {
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500">Loading staff...</p>
+              <p className="mt-2 text-sm text-gray-500">{t('Loading staff...')}</p>
             </div>
           ) : staff.length === 0 ? (
             <div className="text-center py-12">
               <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No staff members found</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">{t('No staff members found')}</h3>
               <p className="mt-1 text-sm text-gray-500">
                 {filters.search 
-                  ? 'Try adjusting your search'
-                  : 'Get started by adding your first staff member'
+                  ? t('Try adjusting your search')
+                  : t('Get started by adding your first staff member')
                 }
               </p>
             </div>
@@ -209,16 +211,16 @@ export function StaffManagementView() {
                   <thead className="bg-gray-50">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Staff Member
+                          {t('Staff Member')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                          {t('Status')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Created
+                          {t('Created')}
                         </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('Actions')}
                       </th>
                     </tr>
                   </thead>
@@ -247,7 +249,7 @@ export function StaffManagementView() {
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {staffMember.is_active ? 'Active' : 'Inactive'}
+                            {staffMember.is_active ? t('Active') : t('Inactive')}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -258,21 +260,21 @@ export function StaffManagementView() {
                             <button
                               onClick={() => handleViewStaff(staffMember)}
                               className="text-green-600 hover:text-green-900"
-                              title="View staff member"
+                              title={t('View staff member')}
                             >
                               <EyeIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleEditStaff(staffMember)}
                               className="text-blue-600 hover:text-blue-900"
-                              title="Edit staff member"
+                              title={t('Edit staff member')}
                             >
                               <PencilIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteStaff(staffMember)}
                               className="text-red-600 hover:text-red-900"
-                              title="Delete staff member"
+                              title={t('Delete staff member')}
                             >
                               <TrashIcon className="h-4 w-4" />
                             </button>
@@ -293,20 +295,20 @@ export function StaffManagementView() {
                       disabled={pagination.page <= 1}
                       className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('Previous')}
                     </button>
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page >= pagination.pages}
                       className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('Next')}
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing{' '}
+                        {t('Showing')}{' '}
                         <span className="font-medium">
                           {((pagination.page - 1) * pagination.limit) + 1}
                         </span>{' '}
@@ -314,9 +316,9 @@ export function StaffManagementView() {
                         <span className="font-medium">
                           {Math.min(pagination.page * pagination.limit, pagination.total)}
                         </span>{' '}
-                        of{' '}
+                        {t('of')}{' '}
                         <span className="font-medium">{pagination.total}</span>{' '}
-                        results
+                        {t('results')}
                       </p>
                     </div>
                     <div>

@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { CreditCardIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/hooks/useTranslation';
 import { TabNavigation } from './components/TabNavigation';
 import { FeeSummary } from './components/FeeSummary';
 import { InstallmentManager } from './components/InstallmentManager';
@@ -69,60 +70,84 @@ interface PaymentSchedulesStepProps {
   }) => void;
 }
 
-// Dynamic schedule types based on term structure
-const getScheduleTypes = (termStructure: string) => {
+// Enhanced schedule types based on academic year term structure
+const getScheduleTypes = (termStructure: string, academicYear: { name: string; startDate: string; endDate: string }, t: (key: string) => string) => {
   const baseTypes = [
     { 
       value: 'monthly', 
-      label: 'Monthly Installments', 
-      description: 'Equal monthly payments throughout the year',
-      icon: '📅'
+      label: t('Monthly Installments'), 
+      description: t('Equal monthly payments throughout the year'),
+      icon: '',
+      recommended: false
     },
     { 
       value: 'custom', 
-      label: 'Custom Schedule', 
-      description: 'Define your own payment schedule',
-      icon: '⚙️'
+      label: t('Custom Schedule'), 
+      description: t('Define your own payment schedule'),
+      icon: '',
+      recommended: false
     }
   ];
 
-  // Add term-based option based on simplified structure
-  if (termStructure.includes('3 Trimesters')) {
-    baseTypes.splice(1, 0, {
+  // Determine term-based schedule based on academic year structure
+  let termBasedOption = null;
+  
+  if (termStructure === '3 Trimesters') {
+    termBasedOption = {
       value: 'per-term',
-      label: 'Per Trimester (3 Trimesters)',
-      description: 'Payments due at the start of each trimester (Oct, Feb, May)',
-      icon: '📚'
-    });
-  } else if (termStructure.includes('2 Semesters')) {
-    baseTypes.splice(1, 0, {
+      label: t('Per Trimester (3 Trimesters)'),
+      description: t('Payments due at the start of each trimester (Oct, Fév, Mai)'),
+      icon: '',
+      recommended: true,
+      termCount: 3,
+      termType: 'trimester'
+    };
+  } else if (termStructure === '2 Semesters') {
+    termBasedOption = {
       value: 'per-term',
-      label: 'Per Semester (2 Semesters)',
-      description: 'Payments due at the start of each semester (Oct, Mar)',
-      icon: '📚'
-    });
-  } else if (termStructure.toLowerCase().includes('term')) {
+      label: t('Per Semester (2 Semesters)'),
+      description: t('Payments due at the start of each semester (Sep, Jan)'),
+      icon: '',
+      recommended: true,
+      termCount: 2,
+      termType: 'semester'
+    };
+  } else if (termStructure && termStructure !== 'Custom') {
+    // Handle custom term structures
     const termCount = termStructure.match(/\d+/)?.[0] || '3';
-    baseTypes.splice(1, 0, {
+    const isSemester = termStructure.toLowerCase().includes('semester');
+    
+    termBasedOption = {
       value: 'per-term',
-      label: `Per Term (${termCount} Terms)`,
-      description: `Payments due at the start of each term`,
-      icon: '📚'
-    });
-  } else if (termStructure.toLowerCase().includes('semester')) {
-    const semesterCount = termStructure.match(/\d+/)?.[0] || '2';
-    baseTypes.splice(1, 0, {
-      value: 'per-term', // Use per-term for semesters too
-      label: `Per Semester (${semesterCount} Semesters)`,
-      description: `Payments due at the start of each semester`,
-      icon: '📚'
-    });
+      label: isSemester ? t(`Per Semester (${termCount} Semesters)`) : t(`Per Term (${termCount} Terms)`),
+      description: isSemester ? t('Payments due at the start of each semester') : t('Payments due at the start of each term'),
+      icon: '',
+      recommended: true,
+      termCount: parseInt(termCount),
+      termType: isSemester ? 'semester' : 'term'
+    };
   }
 
-  return baseTypes;
+  // Build final schedule types array with recommendations
+  const scheduleTypes = [];
+  
+  // Add term-based option first if available (recommended for structured academic years)
+  if (termBasedOption) {
+    scheduleTypes.push(termBasedOption);
+  }
+  
+  // Add monthly installments
+  scheduleTypes.push(baseTypes[0]);
+  
+  // Add custom schedule last
+  scheduleTypes.push(baseTypes[1]);
+
+  return scheduleTypes;
 };
 
 export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedule: initialAdditionalSchedule, academicYear, selectedCategories, onChange }: PaymentSchedulesStepProps) {
+  const { t } = useTranslation();
+  
   // Separate categories by type and frequency
   const tuitionCategories = selectedCategories.filter(cat => cat.categoryType === 'tuition');
   const additionalCategories = selectedCategories.filter(cat => cat.categoryType === 'additional');
@@ -226,7 +251,7 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
   const tuitionRecurring = tuitionCategories.filter(cat => cat.supportsRecurring);
   const tuitionOneTime = tuitionCategories.filter(cat => cat.supportsOneTime);
 
-  const scheduleTypes = getScheduleTypes(academicYear.termStructure);
+  const scheduleTypes = getScheduleTypes(academicYear.termStructure, academicYear, t);
   const selectedSchedule = scheduleTypes.find(s => s.value === paymentSchedule.scheduleType);
 
   const generateInstallments = (scheduleType: string, baseAmount: number) => {
@@ -458,8 +483,8 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Payment Schedule Setup</h3>
-          <p className="text-gray-600">Define when and how payments are due</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('Payment Schedule Setup')}</h3>
+          <p className="text-gray-600">{t('Define when and how payments are due')}</p>
         </div>
 
         {/* Info Box */}
@@ -467,37 +492,37 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
           <div className="flex items-center">
             <CreditCardIcon className="h-5 w-5 text-blue-600 mr-2" />
             <p className="text-sm text-blue-800">
-              Choose a payment schedule that works for your school and parents. You can always modify installments after selection.
+              {t('Choose a payment schedule that works for your school and parents. You can always modify installments after selection.')}
             </p>
           </div>
         </div>
 
         {/* Total Amounts Summary */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">Total Payment Amounts (Including Interest)</h4>
+          <h4 className="text-sm font-semibold text-gray-900 mb-3">{t('Total Payment Amounts (Including Interest)')}</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-700">${tuitionTotal.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Tuition Fees</div>
+              <div className="text-sm text-gray-600">{t('Tuition Fees')}</div>
               {tuitionTotal !== tuitionBaseTotal && (
                 <div className="text-xs text-green-600">
-                  Base: ${tuitionBaseTotal.toLocaleString()} + Interest: ${(tuitionTotal - tuitionBaseTotal).toLocaleString()}
+                  {t('Base')}: ${tuitionBaseTotal.toLocaleString()} + {t('Interest')}: ${(tuitionTotal - tuitionBaseTotal).toLocaleString()}
                 </div>
               )}
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-700">${additionalTotal.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Additional Fees</div>
+              <div className="text-sm text-gray-600">{t('Additional Fees')}</div>
               {additionalTotal !== additionalBaseTotal && (
                 <div className="text-xs text-purple-600">
-                  Base: ${additionalBaseTotal.toLocaleString()} + Interest: ${(additionalTotal - additionalBaseTotal).toLocaleString()}
+                  {t('Base')}: ${additionalBaseTotal.toLocaleString()} + {t('Interest')}: ${(additionalTotal - additionalBaseTotal).toLocaleString()}
                 </div>
               )}
             </div>
           </div>
           <div className="text-center mt-3 pt-3 border-t border-gray-200">
             <div className="text-xl font-bold text-gray-900">${(tuitionTotal + additionalTotal).toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Grand Total</div>
+            <div className="text-sm text-gray-600">{t('Grand Total')}</div>
           </div>
         </div>
 
@@ -575,7 +600,7 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
           return (
             <div key={`installments-${category.categoryId}`} className="mb-6">
               <h4 className="text-lg font-semibold text-purple-800 mb-4">
-                {category.categoryName} - Payment Installments
+                {category.categoryName} - {t('Payment Installments')}
               </h4>
               <InstallmentManager
                 installments={schedule.installments}
@@ -612,12 +637,31 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
                 }}
                 onRemoveInstallment={(index) => {
                   const updatedInstallments = schedule.installments.filter((_, i) => i !== index);
-                  const updatedSchedule = { ...schedule, installments: updatedInstallments };
                   
-                  setAdditionalFeeSchedules(prev => ({
-                    ...prev,
-                    [category.categoryId]: updatedSchedule
-                  }));
+                  // Recalculate amounts for monthly payments when removing installments
+                  if (schedule.scheduleType === 'monthly' && updatedInstallments.length > 0) {
+                    const monthlyAmount = category.amount / updatedInstallments.length;
+                    const recalculatedInstallments = updatedInstallments.map((inst, i) => ({
+                      ...inst,
+                      installmentNumber: i + 1,
+                      amount: Math.round(monthlyAmount * 100) / 100
+                    }));
+                    
+                    const updatedSchedule = { ...schedule, installments: recalculatedInstallments };
+                    
+                    setAdditionalFeeSchedules(prev => ({
+                      ...prev,
+                      [category.categoryId]: updatedSchedule
+                    }));
+                  } else {
+                    // For other schedule types, just remove the installment
+                    const updatedSchedule = { ...schedule, installments: updatedInstallments };
+                    
+                    setAdditionalFeeSchedules(prev => ({
+                      ...prev,
+                      [category.categoryId]: updatedSchedule
+                    }));
+                  }
                 }}
                 onUpdateInstallment={(index, field, value) => {
                   let processedValue = value;
@@ -650,10 +694,10 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
             <div className="flex items-start">
               <CalendarIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
               <div>
-                <h4 className="text-sm font-semibold text-blue-900">Due Date Information</h4>
+                <h4 className="text-sm font-semibold text-blue-900">{t('Due Date Information')}</h4>
                 <p className="text-sm text-blue-800 mt-1">
-                  Due dates are automatically calculated based on your academic year period ({academicYear.startDate} to {academicYear.endDate}).
-                  You can edit any due date by clicking on the date field below.
+                  {t('Due dates are automatically calculated based on your academic year period')} ({academicYear.startDate} {t('to')} {academicYear.endDate}).
+                  {t('You can edit any due date by clicking on the date field below.')}
                 </p>
               </div>
             </div>
@@ -691,10 +735,27 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
             }}
             onRemoveInstallment={(index) => {
               const updatedInstallments = paymentSchedule.installments.filter((_, i) => i !== index);
-              onChange({
-                ...paymentSchedule,
-                installments: updatedInstallments
-              });
+              
+              // Recalculate amounts for monthly payments when removing installments
+              if (paymentSchedule.scheduleType === 'monthly' && updatedInstallments.length > 0) {
+                const monthlyAmount = tuitionBaseTotal / updatedInstallments.length;
+                const recalculatedInstallments = updatedInstallments.map((inst, i) => ({
+                  ...inst,
+                  installmentNumber: i + 1,
+                  amount: Math.round(monthlyAmount * 100) / 100
+                }));
+                
+                onChange({
+                  ...paymentSchedule,
+                  installments: recalculatedInstallments
+                });
+              } else {
+                // For other schedule types, just remove the installment
+                onChange({
+                  ...paymentSchedule,
+                  installments: updatedInstallments
+                });
+              }
             }}
             onUpdateInstallment={(index, field, value) => {
               let processedValue = value;
@@ -734,7 +795,7 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
           return (
             <div key={`summary-${category.categoryId}`} className="mb-6">
               <h4 className="text-lg font-semibold text-purple-800 mb-4">
-                {category.categoryName} - Payment Summary
+                {category.categoryName} - {t('Payment Summary')}
               </h4>
               <PaymentScheduleSummary
                 scheduleType={schedule.scheduleType}

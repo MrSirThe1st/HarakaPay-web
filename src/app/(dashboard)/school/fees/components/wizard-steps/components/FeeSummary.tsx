@@ -20,7 +20,9 @@ interface ScheduleType {
   value: string;
   label: string;
   description: string;
-  icon: string;
+  recommended?: boolean;
+  termCount?: number;
+  termType?: string;
 }
 
 interface FeeSummaryProps {
@@ -82,6 +84,14 @@ export function FeeSummary({
   };
 
   const selectedSchedule = scheduleTypes.find(s => s.value === scheduleType);
+
+  // Auto-enable one-time payment if any category supports it
+  React.useEffect(() => {
+    const hasOneTimeSupport = categories.some(cat => cat.supportsOneTime);
+    if (hasOneTimeSupport && !oneTimeEnabled && onOneTimeToggle) {
+      onOneTimeToggle(true);
+    }
+  }, [categories, oneTimeEnabled, onOneTimeToggle]);
 
   return (
     <div className={`${colorScheme.bg} ${colorScheme.border} rounded-lg p-4`}>
@@ -145,7 +155,6 @@ export function FeeSummary({
                       }}
                     >
                       <div className="flex items-center">
-                        <span className="mr-2">{schedule.icon}</span>
                         <div>
                           <div className="font-medium">{schedule.label}</div>
                           <div className="text-xs text-gray-500">{schedule.description}</div>

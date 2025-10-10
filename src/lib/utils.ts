@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { getGradeOptions, CONGOLESE_PROGRAM_TYPES } from './congoleseGrades';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -29,23 +30,14 @@ export function generatePassword(length: number = 12): string {
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
+// Completely replaced with Congolese education system
 export function generateGradeOptions() {
-  const grades = [];
-  
-  // Pre-K to 12th grade
-  for (let i = -1; i <= 12; i++) {
-    if (i === -1) {
-      grades.push({ value: 'pre-k', label: 'Pre-K' });
-    } else if (i === 0) {
-      grades.push({ value: 'kindergarten', label: 'Kindergarten' });
-    } else {
-      const suffix = i === 1 ? 'st' : i === 2 ? 'nd' : i === 3 ? 'rd' : 'th';
-      grades.push({ 
-        value: `grade-${i}`, 
-        label: `${i}${suffix} Grade` 
-      });
-    }
-  }
-  
-  return grades;
+  return getGradeOptions();
+}
+
+export function generateProgramTypeOptions() {
+  return CONGOLESE_PROGRAM_TYPES.map(program => ({
+    value: program.value,
+    label: program.label
+  }));
 }

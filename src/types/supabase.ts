@@ -69,6 +69,10 @@ export interface Database {
           verification_date: string | null;
           verified_by: string | null;
           payment_transparency: Json;
+          logo_url: string | null;
+          currency: string;
+          payment_provider: string | null;
+          payment_provider_config: Json;
           created_at: string;
           updated_at: string;
         };
@@ -84,6 +88,10 @@ export interface Database {
           verification_date?: string | null;
           verified_by?: string | null;
           payment_transparency?: Json;
+          logo_url?: string | null;
+          currency?: string;
+          payment_provider?: string | null;
+          payment_provider_config?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -99,6 +107,45 @@ export interface Database {
           verification_date?: string | null;
           verified_by?: string | null;
           payment_transparency?: Json;
+          logo_url?: string | null;
+          currency?: string;
+          payment_provider?: string | null;
+          payment_provider_config?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      academic_years: {
+        Row: {
+          id: string;
+          school_id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          term_structure: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          term_structure?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          name?: string;
+          start_date?: string;
+          end_date?: string;
+          term_structure?: string;
+          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -149,6 +196,7 @@ export interface Database {
           first_name: string;
           last_name: string;
           grade_level: string | null;
+          level: string | null;
           enrollment_date: string;
           status: "active" | "inactive" | "graduated";
           parent_name: string | null;
@@ -164,6 +212,7 @@ export interface Database {
           first_name: string;
           last_name: string;
           grade_level?: string | null;
+          level?: string | null;
           enrollment_date?: string;
           status?: "active" | "inactive" | "graduated";
           parent_name?: string | null;
@@ -179,6 +228,7 @@ export interface Database {
           first_name?: string;
           last_name?: string;
           grade_level?: string | null;
+          level?: string | null;
           enrollment_date?: string;
           status?: "active" | "inactive" | "graduated";
           parent_name?: string | null;

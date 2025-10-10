@@ -11,16 +11,18 @@ import {
   ClockIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function SchoolStaffPaymentsView() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Payment Management</h1>
-        <p className="text-gray-600">Process and track student payments and fees</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('Payment Management')}</h1>
+        <p className="text-gray-600">{t('Process and track student payments and fees')}</p>
       </div>
 
       {/* Quick Stats */}
@@ -34,7 +36,7 @@ export function SchoolStaffPaymentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Revenue
+                    {t('Total Revenue')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     $45,231
@@ -54,7 +56,7 @@ export function SchoolStaffPaymentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Successful
+                    {t('Successful')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     234
@@ -74,7 +76,7 @@ export function SchoolStaffPaymentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pending
+                    {t('Pending')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     18
@@ -94,7 +96,7 @@ export function SchoolStaffPaymentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Failed
+                    {t('Failed')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     3
@@ -116,7 +118,7 @@ export function SchoolStaffPaymentsView() {
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search payments by student name, ID, or reference..."
+                  placeholder={t('Search payments by student name, ID, or reference...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -131,18 +133,18 @@ export function SchoolStaffPaymentsView() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Status</option>
-                <option value="successful">Successful</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
+                <option value="all">{t('All Status')}</option>
+                <option value="successful">{t('Successful')}</option>
+                <option value="pending">{t('Pending')}</option>
+                <option value="failed">{t('Failed')}</option>
+                <option value="refunded">{t('Refunded')}</option>
               </select>
             </div>
 
             {/* Process Payment Button */}
             <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
               <PlusIcon className="h-4 w-4 mr-2" />
-              Process Payment
+              {t('Process Payment')}
             </button>
           </div>
         </div>
@@ -153,9 +155,9 @@ export function SchoolStaffPaymentsView() {
         <div className="px-4 py-5 sm:p-6">
           <div className="text-center py-12">
             <CreditCardIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Payment Management</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('Payment Management')}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Payment listing, processing, and management interface coming soon...
+              Interface de liste, traitement et gestion des paiements bientôt disponible...
             </p>
           </div>
         </div>
@@ -165,7 +167,7 @@ export function SchoolStaffPaymentsView() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Quick Actions
+            {t('Quick Actions')}
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
@@ -177,10 +179,10 @@ export function SchoolStaffPaymentsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Process Payment
+                  {t('Process Payment')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Handle a new student payment
+                  {t('Handle a new student payment')}
                 </p>
               </div>
             </button>
@@ -194,10 +196,10 @@ export function SchoolStaffPaymentsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Bulk Processing
+                  {t('Bulk Processing')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Process multiple payments at once
+                  {t('Process multiple payments at once')}
                 </p>
               </div>
             </button>
@@ -211,10 +213,10 @@ export function SchoolStaffPaymentsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Payment Reports
+                  {t('Payment Reports')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Generate payment summaries
+                  {t('Generate payment summaries')}
                 </p>
               </div>
             </button>
@@ -226,27 +228,27 @@ export function SchoolStaffPaymentsView() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Recent Activity
+            {t('Recent Activity')}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
               <div className="flex items-center">
                 <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                <span className="text-sm text-gray-600">Payment received from John Doe</span>
+                <span className="text-sm text-gray-600">{t('Payment received from')} John Doe</span>
               </div>
               <span className="text-sm font-medium text-gray-900">$150.00</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
               <div className="flex items-center">
                 <ClockIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                <span className="text-sm text-gray-600">Payment pending from Jane Smith</span>
+                <span className="text-sm text-gray-600">{t('Payment pending from')} Jane Smith</span>
               </div>
               <span className="text-sm font-medium text-gray-900">$200.00</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
               <div className="flex items-center">
                 <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                <span className="text-sm text-gray-600">Payment received from Mike Johnson</span>
+                <span className="text-sm text-gray-600">{t('Payment received from')} Mike Johnson</span>
               </div>
               <span className="text-sm font-medium text-gray-900">$175.00</span>
             </div>

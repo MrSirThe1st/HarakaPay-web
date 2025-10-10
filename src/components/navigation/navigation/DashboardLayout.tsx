@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 import AdminSidebar from '@/components/admin/layout/AdminSidebar';
 import SchoolSidebar from '@/components/school/layout/SchoolSidebar';
 import AdminTopbar from '@/components/admin/layout/AdminTopbar';
@@ -14,6 +15,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { t } = useTranslation();
   const { user, profile, loading, canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
   const router = useRouter();
 
@@ -79,8 +81,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
-        <p className="text-gray-600">You don&apos;t have permission to access this area.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('Access Denied')}</h1>
+        <p className="text-gray-600">{t('You don\'t have permission to access this area.')}</p>
       </div>
     </div>
   );

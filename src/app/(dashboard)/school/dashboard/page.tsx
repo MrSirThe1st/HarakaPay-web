@@ -7,20 +7,24 @@ import {
   ChatBubbleLeftRightIcon, 
   AcademicCapIcon 
 } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const stats = [
-  { name: 'Total Students', value: '156', icon: UserGroupIcon, change: '+3', changeType: 'positive' },
-  { name: 'Active Payments', value: '89', icon: CreditCardIcon, change: '+12', changeType: 'positive' },
-  { name: 'Pending Communications', value: '5', icon: ChatBubbleLeftRightIcon, change: '-2', changeType: 'negative' },
-  { name: 'Attendance Rate', value: '94.2%', icon: AcademicCapIcon, change: '+1.2%', changeType: 'positive' },
-];
 
 export default function SchoolDashboard() {
+  const { t } = useTranslation();
+  
+  const stats = [
+    { name: t('Total Students'), value: '156', icon: UserGroupIcon, change: '+3', changeType: 'positive' },
+    { name: t('Active Payments'), value: '89', icon: CreditCardIcon, change: '+12', changeType: 'positive' },
+    { name: t('Pending Communications'), value: '5', icon: ChatBubbleLeftRightIcon, change: '-2', changeType: 'negative' },
+    { name: t('Attendance Rate'), value: '94.2%', icon: AcademicCapIcon, change: '+1.2%', changeType: 'positive' },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">School Dashboard</h1>
-        <p className="text-gray-600">Welcome to your school management portal</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('School Dashboard')}</h1>
+        <p className="text-gray-600">{t('Welcome to your school management portal')}</p>
       </div>
 
       {/* Stats Grid */}
@@ -54,7 +58,7 @@ export default function SchoolDashboard() {
                 }`}>
                   {item.change}
                 </span>
-                <span className="text-gray-500"> from last week</span>
+                <span className="text-gray-500"> {t('from last week')}</span>
               </div>
             </div>
           </div>
@@ -65,7 +69,7 @@ export default function SchoolDashboard() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Quick Actions
+            {t('Quick Actions')}
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-gray-300">
@@ -77,10 +81,10 @@ export default function SchoolDashboard() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Manage Students
+                  {t('Manage Students')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  View and manage student records
+                  {t('View and manage student records')}
                 </p>
               </div>
             </button>
@@ -94,10 +98,10 @@ export default function SchoolDashboard() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Process Payments
+                  {t('Process Payments')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Handle student payments and fees
+                  {t('Handle student payments and fees')}
                 </p>
               </div>
             </button>
@@ -111,10 +115,10 @@ export default function SchoolDashboard() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Send Notifications
+                  {t('Send Notifications')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Communicate with students and parents
+                  {t('Communicate with students and parents')}
                 </p>
               </div>
             </button>
@@ -126,7 +130,7 @@ export default function SchoolDashboard() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Recent Activity
+            {t('Recent Activity')}
           </h3>
           <div className="flow-root">
             <ul className="-mb-8">
@@ -140,11 +144,11 @@ export default function SchoolDashboard() {
                   <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                     <div>
                       <p className="text-sm text-gray-500">
-                        New student <span className="font-medium text-gray-900">John Doe</span> registered
+                        {t('New student')} <span className="font-medium text-gray-900">John Doe</span> {t('registered')}
                       </p>
                     </div>
                     <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                      <time>2 hours ago</time>
+                      <time>2 {t('hours ago')}</time>
                     </div>
                   </div>
                 </div>
@@ -159,11 +163,11 @@ export default function SchoolDashboard() {
                   <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                     <div>
                       <p className="text-sm text-gray-500">
-                        Payment received from <span className="font-medium text-gray-900">Jane Smith</span>
+                        {t('Payment received from')} <span className="font-medium text-gray-900">Jane Smith</span>
                       </p>
                     </div>
                     <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                      <time>4 hours ago</time>
+                      <time>4 {t('hours ago')}</time>
                     </div>
                   </div>
                 </div>

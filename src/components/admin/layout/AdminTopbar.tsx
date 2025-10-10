@@ -8,8 +8,10 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function AdminTopbar() {
+  const { t } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { signOut } = useDualAuth();
@@ -59,8 +61,8 @@ export default function AdminTopbar() {
                   <span className="text-white text-sm font-medium">A</span>
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-500">Administrator</p>
+                  <p className="text-sm font-medium text-gray-900">{t('Admin User')}</p>
+                  <p className="text-xs text-gray-500">{t('Administrator')}</p>
                 </div>
                 <UserCircleIcon className="h-5 w-5 text-gray-400" />
               </button>
@@ -72,13 +74,13 @@ export default function AdminTopbar() {
                     href="/admin/profile"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    Profile Settings
+                    {t('Profile Settings')}
                   </a>
                   <a
                     href="/admin/settings"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    System Settings
+                    {t('System Settings')}
                   </a>
                   <hr className="my-1" />
                   <button
@@ -88,7 +90,7 @@ export default function AdminTopbar() {
                       signOut();
                     }}
                   >
-                    Sign out
+                    {t('Sign out')}
                   </button>
                 </div>
               )}

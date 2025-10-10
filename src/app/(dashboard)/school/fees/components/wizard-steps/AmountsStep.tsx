@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AmountsStepProps {
   selectedCategories: {
@@ -35,6 +36,7 @@ interface AmountsStepProps {
 }
 
 export function AmountsStep({ selectedCategories, academicYear, paymentSchedule, onChange }: AmountsStepProps) {
+  const { t } = useTranslation();
   const updateCategoryAmount = (index: number, value: string) => {
     // Remove leading zeros and convert to number
     const cleanValue = value.replace(/^0+/, '') || '0';
@@ -46,8 +48,17 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
   };
 
   // Separate tuition and additional fees
+  console.log('AmountsStep - All selected categories:', selectedCategories.map(cat => ({
+    id: cat.categoryId,
+    name: cat.categoryName,
+    type: cat.categoryType
+  })));
+  
   const tuitionCategories = selectedCategories.filter(cat => cat.categoryType === 'tuition');
   const additionalCategories = selectedCategories.filter(cat => cat.categoryType === 'additional');
+  
+  console.log('Tuition categories:', tuitionCategories.length);
+  console.log('Additional categories:', additionalCategories.length);
   
   const tuitionTotal = tuitionCategories.reduce((sum, cat) => sum + cat.amount, 0);
   const additionalTotal = additionalCategories.reduce((sum, cat) => sum + cat.amount, 0);
@@ -60,7 +71,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
           <div className="flex items-center">
             <CurrencyDollarIcon className="h-5 w-5 text-blue-600 mr-2" />
             <p className="text-sm text-blue-800">
-              Enter the amount for each fee category. These amounts will be used to calculate the total fees for this grade/program.
+              {t('Enter the amount for each fee category. These amounts will be used to calculate the total fees for this grade/program.')}
             </p>
           </div>
         </div>
@@ -69,8 +80,8 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
           {selectedCategories.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
               <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-4 text-gray-600 font-medium">No categories selected</p>
-              <p className="text-sm text-gray-500 mt-1">Please go back to Step 3 and select fee categories first</p>
+              <p className="mt-4 text-gray-600 font-medium">{t('No categories selected')}</p>
+              <p className="text-sm text-gray-500 mt-1">{t('Please go back to Step 3 and select fee categories first')}</p>
             </div>
           ) : (
             <>
@@ -79,7 +90,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 mr-3">
-                      Tuition Fees
+                      {t('Tuition Fees')}
                     </span>
                   </h3>
                   {tuitionCategories.map((category, index) => {
@@ -92,12 +103,12 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                             <div className="flex items-center space-x-4 mt-1">
                               {category.isMandatory && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  Mandatory
+                                  {t('Mandatory')}
                                 </span>
                               )}
                               {category.supportsRecurring && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  Supports Recurring
+                                  {t('Supports Recurring')}
                                 </span>
                               )}
                               {category.supportsOneTime && (
@@ -115,7 +126,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700">Amount (USD)</label>
+                          <label className="block text-sm font-medium text-gray-700">{t('Amount')} (USD)</label>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <span className="text-gray-500 sm:text-sm">$</span>
@@ -142,7 +153,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 mr-3">
-                      Additional Fees
+                      {t('Additional Fees')}
                     </span>
                   </h3>
                   {additionalCategories.map((category, index) => {
@@ -155,12 +166,12 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                             <div className="flex items-center space-x-4 mt-1">
                               {category.isMandatory && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  Mandatory
+                                  {t('Mandatory')}
                                 </span>
                               )}
                               {category.supportsRecurring && (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  Supports Recurring
+                                  {t('Supports Recurring')}
                                 </span>
                               )}
                               {category.supportsOneTime && (
@@ -178,7 +189,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                         </div>
                         
                         <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700">Amount (USD)</label>
+                          <label className="block text-sm font-medium text-gray-700">{t('Amount')} (USD)</label>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                               <span className="text-gray-500 sm:text-sm">$</span>
@@ -210,8 +221,8 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-green-900">Tuition Fees</h3>
-                  <p className="text-sm text-green-700">Amount for payment schedule</p>
+                  <h3 className="text-lg font-semibold text-green-900">{t('Tuition Fees')}</h3>
+                  <p className="text-sm text-green-700">{t('Amount for payment schedule')}</p>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-green-900">
@@ -227,7 +238,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-purple-900">Additional Fees</h3>
+                  <h3 className="text-lg font-semibold text-purple-900">{t('Additional Fees')}</h3>
                   <p className="text-sm text-purple-700">One-time payments</p>
                 </div>
                 <div className="text-right">
@@ -243,7 +254,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Base Fee Total</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('Base Fee Total')}</h3>
                 <p className="text-sm text-gray-700">All fees combined (before interest)</p>
                 <p className="text-xs text-gray-500 mt-1">
                   💡 Final amounts may include interest rates set in Payment Schedule

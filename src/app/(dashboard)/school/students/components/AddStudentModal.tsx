@@ -8,6 +8,9 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { useStudents } from '@/hooks/useStudents';
+import { CONGOLESE_GRADES } from '@/lib/congoleseGrades';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AddStudentModalProps {
   isOpen: boolean;
@@ -20,6 +23,7 @@ interface StudentFormData {
   first_name: string;
   last_name: string;
   grade_level: string;
+  level: string;
   enrollment_date: string;
   status: 'active' | 'inactive' | 'graduated';
   parent_name: string;
@@ -32,6 +36,7 @@ const initialFormData: StudentFormData = {
   first_name: '',
   last_name: '',
   grade_level: '',
+  level: '',
   enrollment_date: new Date().toISOString().split('T')[0],
   status: 'active',
   parent_name: '',
@@ -39,12 +44,8 @@ const initialFormData: StudentFormData = {
   parent_email: ''
 };
 
-const gradeOptions = [
-  'Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5',
-  'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'
-];
-
 export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<StudentFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +130,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 </div>
                 <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                   <h3 className="text-lg font-medium leading-6 text-gray-900">
-                    Add New Student
+                    {t('Add Student')}
                   </h3>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
@@ -165,7 +166,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 {/* Student ID */}
                 <div>
                   <label htmlFor="student_id" className="block text-sm font-medium text-gray-700">
-                    Student ID *
+                    {t('Student ID')} *
                   </label>
                   <input
                     type="text"
@@ -183,7 +184,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                      First Name *
+                      {t('First Name')} *
                     </label>
                     <input
                       type="text"
@@ -198,7 +199,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                   </div>
                   <div>
                     <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                      Last Name *
+                      {t('Last Name')} *
                     </label>
                     <input
                       type="text"
@@ -217,7 +218,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700">
-                      Grade Level
+                      {t('Grade Level')}
                     </label>
                     <select
                       name="grade_level"
@@ -226,15 +227,15 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                       onChange={handleInputChange}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                     >
-                      <option value="">Select grade</option>
-                      {gradeOptions.map(grade => (
-                        <option key={grade} value={grade}>{grade}</option>
+                      <option value="">{t('Select grade')}</option>
+                      {CONGOLESE_GRADES.map(grade => (
+                        <option key={grade.value} value={grade.value}>{grade.label}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                      Status
+                      {t('Status')}
                     </label>
                     <select
                       name="status"
@@ -243,9 +244,9 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                       onChange={handleInputChange}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="graduated">Graduated</option>
+                      <option value="active">{t('Active')}</option>
+                      <option value="inactive">{t('Inactive')}</option>
+                      <option value="graduated">{t('Graduated')}</option>
                     </select>
                   </div>
                 </div>
@@ -253,7 +254,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 {/* Enrollment Date */}
                 <div>
                   <label htmlFor="enrollment_date" className="block text-sm font-medium text-gray-700">
-                    Enrollment Date
+                    {t('Enrollment Date')}
                   </label>
                   <input
                     type="date"
@@ -267,11 +268,11 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
 
                 {/* Parent Information */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Parent/Guardian Information</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Parent/Guardian Information')}</h4>
                   
                   <div>
                     <label htmlFor="parent_name" className="block text-sm font-medium text-gray-700">
-                      Parent/Guardian Name
+                      {t('Parent Name')}
                     </label>
                     <input
                       type="text"
@@ -287,7 +288,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
                     <div>
                       <label htmlFor="parent_phone" className="block text-sm font-medium text-gray-700">
-                        Phone Number
+                        {t('Parent Phone')}
                       </label>
                       <input
                         type="tel"
@@ -301,7 +302,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                     </div>
                     <div>
                       <label htmlFor="parent_email" className="block text-sm font-medium text-gray-700">
-                        Email Address
+                        {t('Parent Email')}
                       </label>
                       <input
                         type="email"
@@ -324,7 +325,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 disabled={isSubmitting}
                 className="inline-flex w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto sm:text-sm"
               >
-                {isSubmitting ? 'Creating...' : 'Create Student'}
+                {isSubmitting ? t('Loading...') : t('Save')}
               </button>
               <button
                 type="button"
@@ -332,7 +333,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 disabled={isSubmitting}
                 className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
               >
-                Cancel
+                {t('Cancel')}
               </button>
             </div>
           </form>

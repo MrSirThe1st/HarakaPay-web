@@ -10,7 +10,9 @@ interface ScheduleType {
   value: string;
   label: string;
   description: string;
-  icon: string;
+  recommended?: boolean;
+  termCount?: number;
+  termType?: string;
 }
 
 interface ScheduleDropdownProps {
@@ -39,21 +41,32 @@ export function ScheduleDropdown({
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content className="w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg">
+        <DropdownMenu.Content className="w-full min-w-[300px] bg-white border border-gray-200 rounded-lg shadow-lg p-2">
           {scheduleTypes.map((schedule) => (
             <DropdownMenu.Item
               key={schedule.value}
-              className="px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+              className="px-3 py-3 text-sm hover:bg-gray-50 cursor-pointer rounded-md transition-colors"
               onSelect={() => {
                 onScheduleSelect(schedule.value);
                 onOpenChange(false);
               }}
             >
-              <div className="flex items-center">
-                <span className="mr-2">{schedule.icon}</span>
-                <div>
-                  <div className="font-medium">{schedule.label}</div>
-                  <div className="text-xs text-gray-500">{schedule.description}</div>
+              <div className="flex items-start">
+                <div className="flex-1">
+                  <div className="flex items-center">
+                    <div className="font-medium text-gray-900">{schedule.label}</div>
+                    {schedule.recommended && (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Recommended
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{schedule.description}</div>
+                  {schedule.termCount && schedule.termType && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      {schedule.termCount} {schedule.termType}{schedule.termCount > 1 ? 's' : ''} • Matches your academic structure
+                    </div>
+                  )}
                 </div>
               </div>
             </DropdownMenu.Item>

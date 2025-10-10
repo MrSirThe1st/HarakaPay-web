@@ -9,6 +9,7 @@ type StudentImport = {
   first_name: string;
   last_name: string;
   grade_level?: string | null;
+  level?: string | null;
   enrollment_date?: string;
   status?: "active" | "inactive" | "graduated";
   parent_name?: string | null;
@@ -134,6 +135,7 @@ export async function POST(req: Request) {
       first_name: student.first_name.trim(),
       last_name: student.last_name.trim(),
       grade_level: student.grade_level?.trim() || null,
+      level: student.level?.trim() || null,
       enrollment_date: student.enrollment_date || new Date().toISOString().split('T')[0],
       status: student.status || 'active',
       parent_name: student.parent_name?.trim() || null,

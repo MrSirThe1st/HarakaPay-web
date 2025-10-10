@@ -289,56 +289,31 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
           </div>
         </div>
 
-        {/* Save Template Buttons */}
+        {/* Publish Button */}
         <div className="text-center pt-6">
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={onPublish}
-              disabled={isSaving}
-              className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-semibold rounded-lg text-white transition-colors shadow-lg ${
-                isSaving 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {isSaving ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <CheckCircleIcon className="h-5 w-5 mr-2" />
-                  Save Template
-                </>
-              )}
-            </button>
-            <button
-              onClick={onPublish}
-              disabled={isSaving}
-              className={`inline-flex items-center px-6 py-3 border text-base font-semibold rounded-lg transition-colors ${
-                isSaving 
-                  ? 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed' 
-                  : 'border-green-600 text-green-600 bg-white hover:bg-green-50'
-              }`}
-            >
-              <CheckCircleIcon className="h-5 w-5 mr-2" />
-              Save & Apply to Students
-            </button>
-            <button
-              onClick={onPublish}
-              disabled={isSaving}
-              className={`inline-flex items-center px-6 py-3 border text-base font-semibold rounded-lg transition-colors ${
-                isSaving 
-                  ? 'border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed' 
-                  : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-              }`}
-            >
-              Save as Draft
-            </button>
-          </div>
+          <button
+            onClick={onPublish}
+            disabled={isSaving}
+            className={`inline-flex items-center px-8 py-4 border border-transparent text-lg font-semibold rounded-lg text-white transition-colors shadow-lg ${
+              isSaving 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                Publishing...
+              </>
+            ) : (
+              <>
+                <CheckCircleIcon className="h-6 w-6 mr-3" />
+                Publish Fee Structure
+              </>
+            )}
+          </button>
           <p className="text-sm text-gray-500 mt-4">
-            Choose how you want to save this fee template
+            Publish this fee structure to make it available for student assignments
           </p>
         </div>
       </div>

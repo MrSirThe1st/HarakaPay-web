@@ -11,16 +11,18 @@ import {
   CheckCircleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function SchoolStaffCommunicationsView() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Communications</h1>
-        <p className="text-gray-600">Manage school communications and notifications</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('Communications')}</h1>
+        <p className="text-gray-600">{t('Manage school communications and notifications')}</p>
       </div>
 
       {/* Quick Stats */}
@@ -34,7 +36,7 @@ export function SchoolStaffCommunicationsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Messages
+                    {t('Total Messages')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     1,247
@@ -54,7 +56,7 @@ export function SchoolStaffCommunicationsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Delivered
+                    {t('Delivered')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     1,189
@@ -74,7 +76,7 @@ export function SchoolStaffCommunicationsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Pending
+                    {t('Pending')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     58
@@ -94,7 +96,7 @@ export function SchoolStaffCommunicationsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Active Campaigns
+                    {t('Active Campaigns')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     12
@@ -116,7 +118,7 @@ export function SchoolStaffCommunicationsView() {
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search communications by subject, recipient, or content..."
+                  placeholder={t('Search communications by subject, recipient, or content...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -131,18 +133,18 @@ export function SchoolStaffCommunicationsView() {
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Types</option>
-                <option value="email">Email</option>
-                <option value="sms">SMS</option>
-                <option value="notification">Push Notification</option>
-                <option value="announcement">Announcement</option>
+                <option value="all">{t('All Types')}</option>
+                <option value="email">{t('Email')}</option>
+                <option value="sms">{t('SMS')}</option>
+                <option value="notification">{t('Push Notification')}</option>
+                <option value="announcement">{t('Announcement')}</option>
               </select>
             </div>
 
             {/* New Message Button */}
             <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
               <PlusIcon className="h-4 w-4 mr-2" />
-              New Message
+              {t('New Message')}
             </button>
           </div>
         </div>
@@ -153,9 +155,9 @@ export function SchoolStaffCommunicationsView() {
         <div className="px-4 py-5 sm:p-6">
           <div className="text-center py-12">
             <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Communication Management</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('Communication Management')}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Message listing, composition, and management interface coming soon...
+              {t('Message listing, composition, and management interface coming soon...')}
             </p>
           </div>
         </div>
@@ -165,7 +167,7 @@ export function SchoolStaffCommunicationsView() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Quick Actions
+            {t('Quick Actions')}
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
@@ -177,10 +179,10 @@ export function SchoolStaffCommunicationsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Send Email
+                  {t('Send Email')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Compose and send email messages
+                  {t('Compose and send email messages')}
                 </p>
               </div>
             </button>
@@ -194,10 +196,10 @@ export function SchoolStaffCommunicationsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Push Notification
+                  {t('Push Notification')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Send instant app notifications
+                  {t('Send instant app notifications')}
                 </p>
               </div>
             </button>
@@ -211,10 +213,10 @@ export function SchoolStaffCommunicationsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Announcement
+                  {t('Announcement')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Create school-wide announcements
+                  {t('Create school-wide announcements')}
                 </p>
               </div>
             </button>
@@ -226,25 +228,25 @@ export function SchoolStaffCommunicationsView() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Recent Communications
+            {t('Recent Communications')}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
               <div className="flex items-center">
                 <EnvelopeIcon className="h-5 w-5 text-blue-500 mr-3" />
                 <div>
-                  <span className="text-sm font-medium text-gray-900">Monthly Newsletter</span>
-                  <p className="text-xs text-gray-500">Sent to all parents</p>
+                  <span className="text-sm font-medium text-gray-900">{t('Monthly Newsletter')}</span>
+                  <p className="text-xs text-gray-500">{t('Sent to all parents')}</p>
                 </div>
               </div>
-              <span className="text-sm text-gray-600">2 hours ago</span>
+              <span className="text-sm text-gray-600">2 {t('hours ago')}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
               <div className="flex items-center">
                 <BellIcon className="h-5 w-5 text-green-500 mr-3" />
                 <div>
-                  <span className="text-sm font-medium text-gray-900">Payment Reminder</span>
-                  <p className="text-xs text-gray-500">Sent to 45 students</p>
+                  <span className="text-sm font-medium text-gray-900">{t('Payment Reminder')}</span>
+                  <p className="text-xs text-gray-500">{t('Sent to 45 students')}</p>
                 </div>
               </div>
               <span className="text-sm text-gray-600">1 day ago</span>

@@ -5,6 +5,7 @@ export interface StudentImportData {
   first_name: string;
   last_name: string;
   grade_level?: string;
+  level?: string;
   enrollment_date?: string;
   status?: "active" | "inactive" | "graduated";
   // Parent information is optional and will be linked later via mobile app
@@ -36,6 +37,7 @@ const COLUMN_MAPPINGS = {
     first_name: ['first_name', 'firstname', 'first name', 'given_name', 'givenname'],
     last_name: ['last_name', 'lastname', 'last name', 'surname', 'family_name', 'familyname'],
     grade_level: ['grade_level', 'gradelevel', 'grade level', 'grade', 'class', 'year'],
+    level: ['level', 'education_level', 'educationlevel', 'education level', 'program_level', 'programlevel'],
     enrollment_date: ['enrollment_date', 'enrollmentdate', 'enrollment date', 'enrolled_date', 'enrolleddate', 'date_enrolled'],
     status: ['status', 'student_status', 'studentstatus', 'active_status', 'activestatus'],
     parent_name: ['parent_name', 'parentname', 'parent name', 'guardian_name', 'guardianname', 'guardian name'],
@@ -48,6 +50,7 @@ const COLUMN_MAPPINGS = {
     first_name: ['first name', 'firstname', 'given name', 'givenname'],
     last_name: ['last name', 'lastname', 'surname', 'family name'],
     grade_level: ['grade level', 'gradelevel', 'grade', 'class', 'year'],
+    level: ['level', 'education level', 'educationlevel', 'program level', 'programlevel'],
     enrollment_date: ['enrollment date', 'enrollmentdate', 'enrolled date', 'date enrolled'],
     status: ['status', 'student status', 'active status'],
     parent_name: ['parent name', 'parentname', 'guardian name', 'guardianname'],
@@ -60,6 +63,7 @@ const COLUMN_MAPPINGS = {
     first_name: ['First Name', 'FirstName', 'Given Name', 'GivenName'],
     last_name: ['Last Name', 'LastName', 'Surname', 'Family Name'],
     grade_level: ['Grade Level', 'GradeLevel', 'Grade', 'Class', 'Year'],
+    level: ['Level', 'Education Level', 'EducationLevel', 'Program Level', 'ProgramLevel'],
     enrollment_date: ['Enrollment Date', 'EnrollmentDate', 'Enrolled Date', 'Date Enrolled'],
     status: ['Status', 'Student Status', 'Active Status'],
     parent_name: ['Parent Name', 'ParentName', 'Guardian Name', 'GuardianName'],
@@ -226,17 +230,20 @@ function mapRowToStudentData(values: string[], columnMap: Record<string, number>
     throw new Error('Missing required fields: student_id, first_name, or last_name');
   }
 
-  return {
+  const result = {
     student_id: student_id.trim(),
     first_name: first_name.trim(),
     last_name: last_name.trim(),
     grade_level: getValue(values, columnMap, 'grade_level', rowNumber)?.trim() || undefined,
+    level: getValue(values, columnMap, 'level', rowNumber)?.trim() || undefined,
     enrollment_date: getValue(values, columnMap, 'enrollment_date', rowNumber)?.trim() || undefined,
     status: getValue(values, columnMap, 'status', rowNumber)?.trim() as "active" | "inactive" | "graduated" || 'active',
     parent_name: getValue(values, columnMap, 'parent_name', rowNumber)?.trim() || undefined,
     parent_phone: getValue(values, columnMap, 'parent_phone', rowNumber)?.trim() || undefined,
     parent_email: getValue(values, columnMap, 'parent_email', rowNumber)?.trim() || undefined,
   };
+  
+  return result;
 }
 
 function getValue(values: string[], columnMap: Record<string, number>, field: string, _rowNumber: number): string | undefined {

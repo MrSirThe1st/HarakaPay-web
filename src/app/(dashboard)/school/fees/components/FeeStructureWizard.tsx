@@ -9,8 +9,6 @@ import {
   ReceiptPercentIcon,
   DocumentDuplicateIcon,
   ClipboardDocumentListIcon,
-  PlusIcon,
-  TrashIcon,
   EyeIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
@@ -22,6 +20,7 @@ import { AmountsStep } from './wizard-steps/AmountsStep';
 import { PaymentSchedulesStep } from './wizard-steps/PaymentSchedulesStep';
 import { PublishStep } from './wizard-steps/PublishStep';
 import { useFeesAPI } from '@/hooks/useFeesAPI';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FeeStructureWizardProps {
   onComplete: () => void;
@@ -29,6 +28,7 @@ interface FeeStructureWizardProps {
 }
 
 export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardProps) {
+  const { t } = useTranslation();
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -63,43 +63,43 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
   const wizardSteps = [
     { 
       id: 1, 
-      title: 'Academic Year', 
-      description: 'Choose year & terms',
+      title: t('Academic Year'), 
+      description: t('Choose year & terms'),
       icon: CalendarIcon,
       completed: wizardData.academicYear.name !== '' && wizardData.academicYear.startDate !== '' && wizardData.academicYear.endDate !== ''
     },
     { 
       id: 2, 
-      title: 'Grade/Program', 
-      description: 'Select level',
+      title: t('Grade/Program'), 
+      description: t('Select level'),
       icon: AcademicCapIcon,
       completed: wizardData.gradeProgram.gradeLevel !== ''
     },
     { 
       id: 3, 
-      title: 'Categories', 
-      description: 'Add fee types',
+      title: t('Categories'), 
+      description: t('Add fee types'),
       icon: ClipboardDocumentListIcon,
       completed: wizardData.selectedCategories.length > 0
     },
     { 
       id: 4, 
-      title: 'Amounts', 
-      description: 'Enter amounts',
+      title: t('Amounts'), 
+      description: t('Enter amounts'),
       icon: ReceiptPercentIcon,
       completed: wizardData.selectedCategories.length > 0 && wizardData.selectedCategories.every(cat => cat.amount > 0)
     },
     { 
       id: 5, 
-      title: 'Payment Schedule', 
-      description: 'Define schedule',
+      title: t('Payment Schedule'), 
+      description: t('Define schedule'),
       icon: ReceiptPercentIcon,
       completed: wizardData.paymentSchedule.installments.length > 0
     },
     { 
       id: 6, 
-      title: 'Review & Save', 
-      description: 'Save template',
+      title: t('Review & Save'), 
+      description: t('Save template'),
       icon: CheckCircleIcon,
       completed: false // Only completed when actually saved
     }
@@ -296,14 +296,14 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           schedule_type: wizardData.paymentSchedule.scheduleType,
           discount_percentage: wizardData.paymentSchedule.discountPercentage || 0,
           template_id: templateId,
-          installments: wizardData.paymentSchedule.installments.map((inst, index) => ({
+          installments: wizardData.paymentSchedule.installments.map((inst) => ({
             description: `Installment ${inst.installmentNumber}`,
             amount: inst.amount,
             percentage: inst.percentage,
             due_date: inst.dueDate,
             term_id: inst.termId
           }))
-        } as any);
+        });
 
         if (!paymentScheduleResponse.success || !paymentScheduleResponse.data) {
           throw new Error('Failed to create payment schedule');
@@ -324,14 +324,14 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           schedule_type: wizardData.additionalPaymentSchedule.scheduleType,
           discount_percentage: wizardData.additionalPaymentSchedule.discountPercentage || 0,
           template_id: templateId,
-          installments: wizardData.additionalPaymentSchedule.installments.map((inst, index) => ({
+          installments: wizardData.additionalPaymentSchedule.installments.map((inst) => ({
             description: `Additional Fees Installment ${inst.installmentNumber}`,
             amount: inst.amount,
             percentage: inst.percentage,
             due_date: inst.dueDate,
             term_id: inst.termId
           }))
-        } as any);
+        });
 
         if (!additionalPaymentScheduleResponse.success || !additionalPaymentScheduleResponse.data) {
           throw new Error('Failed to create additional fees payment schedule');
@@ -406,7 +406,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Fee Structure Setup</h2>
-            <p className="text-sm text-gray-600 mt-1">Configure your school's fee structure step by step</p>
+            <p className="text-sm text-gray-600 mt-1">Configure your school&apos;s fee structure step by step</p>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-green-600">{wizardStep}</div>
@@ -572,7 +572,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           className="inline-flex items-center px-6 py-3 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
         >
           <EyeIcon className="mr-2 w-4 h-4" />
-          Back to Management
+          {t('Back to Management')}
         </button>
         <div className="flex space-x-3">
           {wizardStep > 1 && (
@@ -583,7 +583,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Previous
+              {t('Previous')}
             </button>
           )}
           {wizardStep < 6 ? (
@@ -591,7 +591,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               onClick={nextWizardStep}
               className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
             >
-              Next: {wizardSteps[wizardStep]?.title}
+              {t('Next')}: {wizardSteps[wizardStep]?.title}
               <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -602,7 +602,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
             >
               <CheckCircleIcon className="h-4 w-4 mr-2" />
-              Publish Schedule
+              {t('Publish Schedule')}
             </button>
           )}
         </div>

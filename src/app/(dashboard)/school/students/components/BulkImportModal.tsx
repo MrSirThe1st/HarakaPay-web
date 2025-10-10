@@ -12,6 +12,7 @@ import {
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { parseCSV, generateCSVTemplate, StudentImportData, CSVParseResult } from '@/lib/csvParser';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface BulkImportModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface BulkImportModalProps {
 }
 
 export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'upload' | 'preview' | 'importing' | 'success'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [parseResult, setParseResult] = useState<CSVParseResult | null>(null);
@@ -114,7 +116,7 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <DocumentArrowUpIcon className="h-5 w-5 text-green-600" />
-              Bulk Import Students
+              {t('Bulk Import Students')}
             </h3>
             <button
               onClick={handleClose}
@@ -131,9 +133,9 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
             <div className="space-y-6">
               <div className="text-center">
                 <DocumentArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Upload CSV File</h3>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">{t('Upload CSV File')}</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Select a CSV file containing student data to import
+                  {t('Select a CSV file containing student data to import')}
                 </p>
               </div>
 
@@ -299,7 +301,7 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
                     onClick={handleClose}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                   >
-                    Cancel
+                    {t('Cancel')}
                   </button>
                   <button
                     onClick={handleImport}
@@ -337,7 +339,7 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
                   onClick={handleClose}
                   className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700"
                 >
-                  Close
+                  {t('Close')}
                 </button>
               </div>
             </div>

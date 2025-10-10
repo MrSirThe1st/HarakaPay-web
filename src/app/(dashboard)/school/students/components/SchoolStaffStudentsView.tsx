@@ -11,7 +11,9 @@ import {
   TrashIcon,
   EyeIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  CheckIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { BulkImportModal } from './BulkImportModal';
 import { AddStudentModal } from './AddStudentModal';
@@ -20,15 +22,23 @@ import { ViewStudentModal } from './ViewStudentModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { StudentImportData } from '@/lib/csvParser';
 import { useStudents, Student } from '@/hooks/useStudents';
+import { useTranslation } from '@/hooks/useTranslation';
+import { getGradeByValue, CONGOLESE_GRADES } from '@/lib/congoleseGrades';
 
 export function SchoolStaffStudentsView() {
+  const { t } = useTranslation();
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [showEditStudent, setShowEditStudent] = useState(false);
   const [showViewStudent, setShowViewStudent] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  
+  // Bulk selection state
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
 
   // Use the students hook for data management
   const {
@@ -86,6 +96,66 @@ export function SchoolStaffStudentsView() {
     updateFilters({ page });
   };
 
+  // Bulk selection handlers
+  const handleSelectStudent = (studentId: string) => {
+    setSelectedStudents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId);
+      } else {
+        newSet.add(studentId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.size === students.length) {
+      // If all are selected, deselect all
+      setSelectedStudents(new Set());
+    } else {
+      // Select all students
+      setSelectedStudents(new Set(students.map(student => student.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStudents.size === 0) return;
+    
+    setIsBulkDeleting(true);
+    try {
+      const response = await fetch('/api/students/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          studentIds: Array.from(selectedStudents) 
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Bulk delete failed');
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Bulk delete failed');
+      }
+
+      // Clear selection and refresh
+      setSelectedStudents(new Set());
+      refreshStudents();
+      setShowBulkDeleteConfirm(false);
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      alert(t('Failed to delete students. Please try again.'));
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const handleViewStudent = (student: Student) => {
     setSelectedStudent(student);
     setShowViewStudent(true);
@@ -140,21 +210,19 @@ export function SchoolStaffStudentsView() {
     refreshStudents();
   };
 
-  // Generate grade options dynamically
+  // Generate grade options dynamically using Congolese grades
   const gradeOptions = useMemo(() => {
-    const grades = ['Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 
-                   'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
-    return grades.map(grade => ({
-      value: grade,
-      label: grade
+    return CONGOLESE_GRADES.map(grade => ({
+      value: grade.value,
+      label: grade.label
     }));
   }, []);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Student Management</h1>
-        <p className="text-gray-600">Manage your school&apos;s student records and information</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('Student Management')}</h1>
+        <p className="text-gray-600">{t('Manage your school\'s student records and information')}</p>
       </div>
 
       {/* Quick Stats */}
@@ -168,7 +236,7 @@ export function SchoolStaffStudentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Students
+                    {t('Total Students')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.total}
@@ -188,7 +256,7 @@ export function SchoolStaffStudentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Active Students
+                    {t('Active Students')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.active}
@@ -208,7 +276,7 @@ export function SchoolStaffStudentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    New This Month
+                    {t('New This Month')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.newThisMonth}
@@ -228,7 +296,7 @@ export function SchoolStaffStudentsView() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Graduating
+                    {t('Graduating')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {loading ? '...' : stats.graduating}
@@ -250,7 +318,7 @@ export function SchoolStaffStudentsView() {
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search students by name, ID..."
+                  placeholder={t('Search students by name, ID...')}
                   value={filters.search}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
@@ -265,7 +333,7 @@ export function SchoolStaffStudentsView() {
                 onChange={(e) => handleGradeFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
               >
-                <option value="all">All Grades</option>
+                <option value="all">{t('All Grades')}</option>
                 {gradeOptions.map(grade => (
                   <option key={grade.value} value={grade.value}>
                     {grade.label}
@@ -281,10 +349,10 @@ export function SchoolStaffStudentsView() {
                 onChange={(e) => handleStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="graduated">Graduated</option>
+                <option value="all">{t('All Status')}</option>
+                <option value="active">{t('Active')}</option>
+                <option value="inactive">{t('Inactive')}</option>
+                <option value="graduated">{t('Graduated')}</option>
               </select>
             </div>
 
@@ -294,7 +362,7 @@ export function SchoolStaffStudentsView() {
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              Add Student
+              {t('Add Student')}
             </button>
           </div>
         </div>
@@ -312,49 +380,95 @@ export function SchoolStaffStudentsView() {
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500">Loading students...</p>
+              <p className="mt-2 text-sm text-gray-500">{t('Loading students...')}</p>
             </div>
           ) : students.length === 0 ? (
             <div className="text-center py-12">
               <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">{t('No students found')}</h3>
               <p className="mt-1 text-sm text-gray-500">
                 {filters.search || filters.grade !== 'all' || filters.status !== 'all' 
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by adding your first student'
+                  ? t('Try adjusting your search or filters')
+                  : t('Get started by adding your first student')
                 }
               </p>
             </div>
           ) : (
             <>
+              {/* Bulk Actions Bar */}
+              {selectedStudents.size > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <CheckIcon className="h-5 w-5 text-blue-600 mr-2" />
+                      <span className="text-sm font-medium text-blue-900">
+                        {t('{{count}} students selected').replace('{{count}}', selectedStudents.size.toString())}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => setSelectedStudents(new Set())}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {t('Clear Selection')}
+                      </button>
+                      <button
+                        onClick={() => setShowBulkDeleteConfirm(true)}
+                        disabled={isBulkDeleting}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        {isBulkDeleting ? t('Deleting...') : t('Delete Selected')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Student Table */}
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Student
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.size === students.length && students.length > 0}
+                          onChange={handleSelectAll}
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        />
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Student ID
+                        {t('Student')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Grade
+                        {t('Student ID')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        {t('Grade')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Enrollment Date
+                        {t('Status')}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {t('Enrollment Date')}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('Actions')}
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {students.map((student) => (
                       <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.has(student.id)}
+                            onChange={() => handleSelectStudent(student.id)}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
@@ -375,7 +489,7 @@ export function SchoolStaffStudentsView() {
                           {student.student_id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {student.grade_level || 'N/A'}
+                          {student.grade_level ? getGradeByValue(student.grade_level)?.label || student.grade_level : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -396,21 +510,21 @@ export function SchoolStaffStudentsView() {
                             <button
                               onClick={() => handleViewStudent(student)}
                               className="text-green-600 hover:text-green-900"
-                              title="View student"
+                              title={t('View student')}
                             >
                               <EyeIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleEditStudent(student)}
                               className="text-blue-600 hover:text-blue-900"
-                              title="Edit student"
+                              title={t('Edit student')}
                             >
                               <PencilIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteStudent(student)}
                               className="text-red-600 hover:text-red-900"
-                              title="Delete student"
+                              title={t('Delete student')}
                             >
                               <TrashIcon className="h-4 w-4" />
                             </button>
@@ -431,20 +545,20 @@ export function SchoolStaffStudentsView() {
                       disabled={pagination.page <= 1}
                       className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('Previous')}
                     </button>
                     <button
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page >= pagination.pages}
                       className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('Next')}
                     </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing{' '}
+                        {t('Showing')}{' '}
                         <span className="font-medium">
                           {((pagination.page - 1) * pagination.limit) + 1}
                         </span>{' '}
@@ -452,9 +566,9 @@ export function SchoolStaffStudentsView() {
                         <span className="font-medium">
                           {Math.min(pagination.page * pagination.limit, pagination.total)}
                         </span>{' '}
-                        of{' '}
+                        {t('of')}{' '}
                         <span className="font-medium">{pagination.total}</span>{' '}
-                        results
+                        {t('results')}
                       </p>
                     </div>
                     <div>
@@ -508,7 +622,7 @@ export function SchoolStaffStudentsView() {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Quick Actions
+            {t('Quick Actions')}
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button 
@@ -523,10 +637,10 @@ export function SchoolStaffStudentsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Add New Student
+                  {t('Add New Student')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Register a new student in your school
+                  {t('Register a new student in your school')}
                 </p>
               </div>
             </button>
@@ -543,10 +657,10 @@ export function SchoolStaffStudentsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Bulk Import
+                  {t('Bulk Import')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Import multiple students at once
+                  {t('Import multiple students at once')}
                 </p>
               </div>
             </button>
@@ -560,10 +674,10 @@ export function SchoolStaffStudentsView() {
               <div className="mt-8">
                 <h3 className="text-lg font-medium">
                   <span className="absolute inset-0" aria-hidden="true" />
-                  Export Data
+                  {t('Export Data')}
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
-                  Export student information
+                  {t('Export student information')}
                 </p>
               </div>
             </button>
@@ -609,6 +723,56 @@ export function SchoolStaffStudentsView() {
         student={selectedStudent}
         isDeleting={isDeleting}
       />
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowBulkDeleteConfirm(false)} />
+
+            <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+
+            <div className="relative inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg font-medium leading-6 text-gray-900">
+                      {t('Delete Selected Students')}
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        {t('Are you sure you want to delete {{count}} students? This action cannot be undone.').replace('{{count}}', selectedStudents.size.toString())}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  disabled={isBulkDeleting}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isBulkDeleting ? t('Deleting...') : t('Delete')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  {t('Cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

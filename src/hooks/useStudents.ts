@@ -7,6 +7,7 @@ export interface Student {
   first_name: string;
   last_name: string;
   grade_level: string | null;
+  level: string | null;
   enrollment_date: string;
   status: 'active' | 'inactive' | 'graduated';
   parent_name: string | null;

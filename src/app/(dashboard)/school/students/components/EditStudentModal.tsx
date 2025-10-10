@@ -8,6 +8,9 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { useStudents } from '@/hooks/useStudents';
+import { CONGOLESE_GRADES } from '@/lib/congoleseGrades';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Student } from '@/hooks/useStudents';
 
 interface EditStudentModalProps {
@@ -22,6 +25,7 @@ interface StudentFormData {
   first_name: string;
   last_name: string;
   grade_level: string;
+  level: string;
   enrollment_date: string;
   status: 'active' | 'inactive' | 'graduated';
   parent_name: string;
@@ -29,17 +33,14 @@ interface StudentFormData {
   parent_email: string;
 }
 
-const gradeOptions = [
-  'Kindergarten', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5',
-  'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'
-];
-
 export function EditStudentModal({ isOpen, onClose, onSuccess, student }: EditStudentModalProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<StudentFormData>({
     student_id: '',
     first_name: '',
     last_name: '',
     grade_level: '',
+    level: '',
     enrollment_date: '',
     status: 'active',
     parent_name: '',
@@ -234,7 +235,7 @@ export function EditStudentModal({ isOpen, onClose, onSuccess, student }: EditSt
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700">
-                      Grade Level
+                      {t('Grade Level')}
                     </label>
                     <select
                       name="grade_level"
@@ -243,9 +244,9 @@ export function EditStudentModal({ isOpen, onClose, onSuccess, student }: EditSt
                       onChange={handleInputChange}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                     >
-                      <option value="">Select grade</option>
-                      {gradeOptions.map(grade => (
-                        <option key={grade} value={grade}>{grade}</option>
+                      <option value="">{t('Select grade')}</option>
+                      {CONGOLESE_GRADES.map(grade => (
+                        <option key={grade.value} value={grade.value}>{grade.label}</option>
                       ))}
                     </select>
                   </div>

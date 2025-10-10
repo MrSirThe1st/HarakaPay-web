@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AcademicYearStepProps {
   data: {
@@ -34,7 +35,7 @@ const generateAcademicYearSuggestions = () => {
     suggestions.push({
       value: `${year}-${year + 1}`,
       label: `${year}-${year + 1}`,
-      description: 'Academic Year'
+      description: 'Année académique'
     });
   }
   
@@ -46,28 +47,29 @@ const academicYearSuggestions = generateAcademicYearSuggestions();
 const termStructures = [
   { 
     value: '3 Trimesters', 
-    label: '3 Trimesters', 
-    description: '3 trimesters with 2 periods each',
+    label: '3 Trimestres', 
+    description: '3 trimestres avec 2 périodes chacun',
     schoolDays: 222,
     structure: '3 trimesters'
   },
   { 
     value: '2 Semesters', 
-    label: '2 Semesters', 
-    description: '2 semesters with 2 periods each',
+    label: '2 Semestres', 
+    description: '2 semestres avec 2 périodes chacun',
     schoolDays: 222,
     structure: '2 semesters'
   },
   { 
     value: 'Custom', 
-    label: 'Custom Structure', 
-    description: 'Define your own academic structure',
+    label: 'Structure personnalisée', 
+    description: 'Définissez votre propre structure académique',
     schoolDays: 0,
     structure: 'custom'
   }
 ];
 
 export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
+  const { t } = useTranslation();
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isTermDropdownOpen, setIsTermDropdownOpen] = useState(false);
   const [showCustomTermInput, setShowCustomTermInput] = useState(false);
@@ -122,14 +124,14 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Academic Year Setup</h3>
-          <p className="text-gray-600">Configure your academic year and term structure</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('Academic Year Setup')}</h3>
+          <p className="text-gray-600">{t('Configure your academic year and term structure')}</p>
         </div>
 
         <div className="space-y-6">
           {/* Academic Year Name */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold text-gray-900">Academic Year Name *</Label>
+            <Label className="text-sm font-semibold text-gray-900">{t('Academic Year Name')} *</Label>
             <DropdownMenu.Root open={isYearDropdownOpen} onOpenChange={setIsYearDropdownOpen}>
               <DropdownMenu.Trigger asChild>
                 <Button
@@ -137,7 +139,7 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
                   className="w-full justify-between h-12 px-4 text-left font-normal"
                 >
                   <span className={selectedYear ? "text-gray-900" : "text-gray-500"}>
-                    {selectedYear ? selectedYear.label : "Select academic year"}
+                    {selectedYear ? selectedYear.label : t('Select academic year')}
                   </span>
                   <ChevronDownIcon className="h-4 w-4 text-gray-400" />
                 </Button>
@@ -167,10 +169,10 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
 
           {/* Date Range Selection */}
           <div className="space-y-4">
-            <Label className="text-sm font-semibold text-gray-900">Academic Period *</Label>
+            <Label className="text-sm font-semibold text-gray-900">{t('Academic Period')} *</Label>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm text-gray-700">Start Date</Label>
+                <Label className="text-sm text-gray-700">{t('Start Date')}</Label>
                 <div className="relative">
                   <Input
                     type="date"
@@ -182,7 +184,7 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-gray-700">End Date</Label>
+                <Label className="text-sm text-gray-700">{t('End Date')}</Label>
                 <div className="relative">
                   <Input
                     type="date"
@@ -195,13 +197,13 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              Set the start and end dates for your academic year. These dates will be used for fee scheduling and term calculations.
+              {t('Set the start and end dates for your academic year. These dates will be used for fee scheduling and term calculations.')}
             </p>
           </div>
 
           {/* Term Structure Selection */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold text-gray-900">Term Structure *</Label>
+            <Label className="text-sm font-semibold text-gray-900">{t('Term Structure')} *</Label>
             <DropdownMenu.Root open={isTermDropdownOpen} onOpenChange={setIsTermDropdownOpen}>
               <DropdownMenu.Trigger asChild>
                 <Button
@@ -209,7 +211,7 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
                   className="w-full justify-between h-12 px-4 text-left font-normal"
                 >
                   <span className={selectedTerm ? "text-gray-900" : "text-gray-500"}>
-                    {selectedTerm ? selectedTerm.label : "Select term structure"}
+                    {selectedTerm ? selectedTerm.label : t('Select term structure')}
                   </span>
                   <ChevronDownIcon className="h-4 w-4 text-gray-400" />
                 </Button>
@@ -237,11 +239,11 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
           {/* Custom Term Structure Input */}
           {showCustomTermInput && (
             <div className="space-y-3">
-              <Label className="text-sm font-semibold text-gray-900">Define Custom Term Structure</Label>
+              <Label className="text-sm font-semibold text-gray-900">{t('Define Custom Term Structure')}</Label>
               <div className="flex space-x-3">
                 <Input
                   type="text"
-                  placeholder="e.g., 2 Trimesters, 6 Modules, 4 Quarters, etc."
+                  placeholder={t('e.g., 2 Trimesters, 6 Modules, 4 Quarters, etc.')}
                   value={customTermStructure}
                   onChange={(e) => setCustomTermStructure(e.target.value)}
                   className="h-12"
@@ -250,7 +252,7 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
                   onClick={handleCustomTermSubmit}
                   className="h-12 px-6"
                 >
-                  Save
+                  {t('Save')}
                 </Button>
                 <Button
                   variant="outline"
@@ -260,11 +262,11 @@ export function AcademicYearStep({ data, onChange }: AcademicYearStepProps) {
                   }}
                   className="h-12 px-4"
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
               </div>
               <p className="text-xs text-gray-500">
-                Define your own term structure. This will be used for fee scheduling and payment plans.
+                {t('Define your own term structure. This will be used for fee scheduling and payment plans.')}
               </p>
             </div>
           )}

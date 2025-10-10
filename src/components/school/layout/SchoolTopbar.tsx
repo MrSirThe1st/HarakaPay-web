@@ -9,8 +9,10 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function SchoolTopbar() {
+  const { t } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { signOut } = useDualAuth();
@@ -34,17 +36,7 @@ export default function SchoolTopbar() {
               )}
             </button>
 
-            {/* Search */}
-            <div className="hidden sm:block ml-4">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search students, payments..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500 w-64"
-                />
-              </div>
-            </div>
+           
           </div>
 
           {/* Right side - Notifications and profile */}
@@ -70,8 +62,8 @@ export default function SchoolTopbar() {
                   <span className="text-white text-sm font-medium">S</span>
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">School Staff</p>
-                  <p className="text-xs text-gray-500">Staff Member</p>
+                  <p className="text-sm font-medium text-gray-900">{t('School Staff')}</p>
+                  <p className="text-xs text-gray-500">{t('Staff Member')}</p>
                 </div>
                 <UserCircleIcon className="h-5 w-5 text-gray-400" />
               </button>
@@ -83,13 +75,13 @@ export default function SchoolTopbar() {
                     href="/school/profile"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    Profile Settings
+                    {t('Profile Settings')}
                   </a>
                   <a
                     href="/school/settings"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
-                    School Settings
+                    {t('School Settings')}
                   </a>
                   <hr className="my-1" />
                   <button
@@ -99,7 +91,7 @@ export default function SchoolTopbar() {
                       signOut();
                     }}
                   >
-                    Sign out
+                    {t('Sign out')}
                   </button>
                 </div>
               )}
@@ -113,7 +105,7 @@ export default function SchoolTopbar() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search students, payments..."
+              placeholder={t('Search students, payments...')}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
             />
           </div>

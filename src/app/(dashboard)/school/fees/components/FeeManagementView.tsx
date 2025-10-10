@@ -10,7 +10,6 @@ import {
   CheckCircleIcon,
   DocumentTextIcon,
   PlusIcon,
-  EyeIcon,
   ExclamationTriangleIcon,
   PencilIcon,
   TrashIcon,
@@ -21,16 +20,16 @@ import { useFeesAPI, AcademicYear, FeeCategory, FeeTemplate, PaymentSchedule, St
 import { AutoAssignFees } from './AutoAssignFees';
 
 interface FeeManagementViewProps {
-  onCreateNew: () => void;
+  onCreateNew?: () => void;
 }
 
 export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('academic-year');
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [feeCategories, setFeeCategories] = useState<FeeCategory[]>([]);
-  const [feeTemplates, setFeeTemplates] = useState<FeeTemplate[]>([]);
-  const [paymentSchedules, setPaymentSchedules] = useState<PaymentSchedule[]>([]);
-  const [studentAssignments, setStudentAssignments] = useState<StudentFeeAssignment[]>([]);
+  const [, setFeeTemplates] = useState<FeeTemplate[]>([]);
+  const [, setPaymentSchedules] = useState<PaymentSchedule[]>([]);
+  const [, setStudentAssignments] = useState<StudentFeeAssignment[]>([]);
   const [stats, setStats] = useState({
     academicYears: 0,
     feeCategories: 0,
@@ -48,7 +47,7 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
   const [relatedData, setRelatedData] = useState<{
     feeTemplates: FeeTemplate[];
     paymentSchedules: PaymentSchedule[];
-    academicTerms: any[];
+    academicTerms: unknown[];
   }>({
     feeTemplates: [],
     paymentSchedules: [],
@@ -63,14 +62,12 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
     { id: 'structures', name: 'Fee Structures', icon: AcademicCapIcon },
     { id: 'schedules', name: 'Payment Schedules', icon: ReceiptPercentIcon },
     { id: 'auto-assign', name: 'Auto Assign', icon: UserGroupIcon },
-    { id: 'publish', name: 'Publish Schedule', icon: CheckCircleIcon },
-    { id: 'audit', name: 'Audit Trail', icon: DocumentTextIcon },
   ];
 
   // Load data when component mounts
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAllData = async () => {
     try {
@@ -782,7 +779,7 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
               <h3 className="text-lg font-medium text-gray-900 mt-4">Delete Academic Year</h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete "{deleteConfirm.name}"? This action cannot be undone.
+                  Are you sure you want to delete &quot;{deleteConfirm.name}&quot;? This action cannot be undone.
                 </p>
                 <div className="text-sm text-red-600 mt-3">
                   <p className="font-semibold mb-2">This will permanently delete:</p>

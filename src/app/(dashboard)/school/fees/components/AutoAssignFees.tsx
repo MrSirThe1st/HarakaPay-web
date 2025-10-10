@@ -8,12 +8,15 @@ import {
   DocumentTextIcon,
   CalendarIcon
 } from '@heroicons/react/24/outline';
+import { CONGOLESE_GRADES, CONGOLESE_PROGRAM_TYPES } from '@/lib/congoleseGrades';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AutoAssignFeesProps {
   onAssignmentComplete?: () => void;
 }
 
 export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
+  const { t } = useTranslation();
   const feesAPI = useFeesAPI();
   const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [feeTemplates, setFeeTemplates] = useState<any[]>([]);
@@ -244,7 +247,7 @@ export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
         {/* Grade Level Filter (Optional) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Grade Level (Optional)
+            {t('Grade Level (Optional)')}
           </label>
           <select
             value={formData.grade_level}
@@ -252,27 +255,19 @@ export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             disabled={loading}
           >
-            <option value="">All Grade Levels</option>
-            <option value="Kindergarten">Kindergarten</option>
-            <option value="Grade 1">Grade 1</option>
-            <option value="Grade 2">Grade 2</option>
-            <option value="Grade 3">Grade 3</option>
-            <option value="Grade 4">Grade 4</option>
-            <option value="Grade 5">Grade 5</option>
-            <option value="Grade 6">Grade 6</option>
-            <option value="Grade 7">Grade 7</option>
-            <option value="Grade 8">Grade 8</option>
-            <option value="Grade 9">Grade 9</option>
-            <option value="Grade 10">Grade 10</option>
-            <option value="Grade 11">Grade 11</option>
-            <option value="Grade 12">Grade 12</option>
+            <option value="">{t('All Grade Levels')}</option>
+            {CONGOLESE_GRADES.map((grade) => (
+              <option key={grade.value} value={grade.value}>
+                {grade.label}
+              </option>
+            ))}
           </select>
         </div>
 
         {/* Program Type Filter (Optional) - Note: This filters the template, not students */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Program Type (Optional)
+            {t('Program Type Filter (Optional)')}
           </label>
           <select
             value={formData.program_type}
@@ -280,13 +275,15 @@ export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             disabled={loading}
           >
-            <option value="">All Program Types</option>
-            <option value="primary">Primary</option>
-            <option value="secondary">Secondary</option>
-            <option value="kindergarten">Kindergarten</option>
+            <option value="">{t('All Program Types')}</option>
+            {CONGOLESE_PROGRAM_TYPES.map((program) => (
+              <option key={program.value} value={program.value}>
+                {program.label}
+              </option>
+            ))}
           </select>
           <p className="text-xs text-gray-500 mt-1">
-            Note: This filters fee templates, not students. Students don't have program types.
+            {t('Note: This filters fee templates, not students. Students don\'t have program types.')}
           </p>
         </div>
 
