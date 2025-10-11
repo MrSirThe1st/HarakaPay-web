@@ -2,13 +2,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   CalendarIcon,
   ClipboardDocumentListIcon,
   AcademicCapIcon,
   ReceiptPercentIcon,
   CheckCircleIcon,
-  DocumentTextIcon,
   PlusIcon,
   ExclamationTriangleIcon,
   PencilIcon,
@@ -23,11 +23,12 @@ interface FeeManagementViewProps {
   onCreateNew?: () => void;
 }
 
-export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
+export function FeeManagementView({}: FeeManagementViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>('academic-year');
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [feeCategories, setFeeCategories] = useState<FeeCategory[]>([]);
-  const [, setFeeTemplates] = useState<FeeTemplate[]>([]);
+  const [feeTemplates, setFeeTemplates] = useState<FeeTemplate[]>([]);
   const [, setPaymentSchedules] = useState<PaymentSchedule[]>([]);
   const [, setStudentAssignments] = useState<StudentFeeAssignment[]>([]);
   const [stats, setStats] = useState({
@@ -47,7 +48,7 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
   const [relatedData, setRelatedData] = useState<{
     feeTemplates: FeeTemplate[];
     paymentSchedules: PaymentSchedule[];
-    academicTerms: unknown[];
+    academicTerms: Array<{ id: string; name: string; start_date: string; end_date: string }>;
   }>({
     feeTemplates: [],
     paymentSchedules: [],
@@ -371,6 +372,59 @@ export function FeeManagementView({ onCreateNew }: FeeManagementViewProps) {
         </div>
       </div>
 
+      {/* Fee Templates Display */}
+      <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-medium text-gray-900">Fee Templates</h2>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {feeTemplates.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
+                    No fee templates found.
+                  </td>
+                </tr>
+              ) : (
+                feeTemplates.map((template) => (
+                  <tr 
+                    key={template.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => router.push(`/school/fees/${template.id}`)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{template.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{template.grade_level}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{template.program_type}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      ${template.total_amount.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        template.status === 'published' ? 'bg-green-100 text-green-800' :
+                        template.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {template.status.charAt(0).toUpperCase() + template.status.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Tabbed Interface */}
       <div className="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
