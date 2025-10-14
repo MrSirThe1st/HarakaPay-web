@@ -5,7 +5,8 @@ import {
   UserGroupIcon, 
   CreditCardIcon, 
   ChatBubbleLeftRightIcon, 
-  AcademicCapIcon 
+  AcademicCapIcon,
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -71,7 +72,7 @@ export default function SchoolDashboard() {
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
             {t('Quick Actions')}
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-gray-300">
               <div>
                 <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
@@ -102,6 +103,23 @@ export default function SchoolDashboard() {
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
                   {t('Handle student payments and fees')}
+                </p>
+              </div>
+            </button>
+
+            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-green-500 rounded-lg border border-gray-200 hover:border-gray-300">
+              <div>
+                <span className="rounded-lg inline-flex p-3 bg-orange-50 text-orange-700 ring-4 ring-white">
+                  <ShoppingBagIcon className="h-6 w-6" />
+                </span>
+              </div>
+              <div className="mt-8">
+                <h3 className="text-lg font-medium">
+                  <span className="absolute inset-0" aria-hidden="true" />
+                  {t('Manage Store')}
+                </h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  {t('Manage store items and orders')}
                 </p>
               </div>
             </button>

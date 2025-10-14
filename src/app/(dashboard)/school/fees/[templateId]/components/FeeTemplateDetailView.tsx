@@ -3,8 +3,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftIcon, PencilIcon, TrashIcon, ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PencilIcon, TrashIcon, ExclamationTriangleIcon, CheckCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { useFeesAPI, FeeTemplate } from '@/hooks/useFeesAPI';
+import { TemplateAutoAssign } from './TemplateAutoAssign';
 
 interface FeeTemplateDetailViewProps {
   templateId: string;
@@ -17,6 +18,7 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [showAutoAssign, setShowAutoAssign] = useState(false);
 
   const feesAPI = useFeesAPI();
 
@@ -138,6 +140,13 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
         </div>
         <div className="flex space-x-3">
           <button
+            onClick={() => setShowAutoAssign(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <UserGroupIcon className="h-4 w-4 mr-2" />
+            Auto Assign
+          </button>
+          <button
             onClick={() => console.log('Edit template:', template)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
@@ -196,7 +205,7 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Total Amount</dt>
-              <dd className="mt-1 text-sm font-medium text-gray-900">${template.total_amount.toLocaleString()}</dd>
+              <dd className="mt-1 text-sm font-medium text-gray-900">${template.total_amount?.toLocaleString() || '0'}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Status</dt>
@@ -206,17 +215,17 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
                   template.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
-                  {template.status.charAt(0).toUpperCase() + template.status.slice(1)}
+                  {template.status ? template.status.charAt(0).toUpperCase() + template.status.slice(1) : 'Unknown'}
                 </span>
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Created</dt>
-              <dd className="mt-1 text-sm text-gray-900">{new Date(template.created_at).toLocaleDateString()}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{template.created_at ? new Date(template.created_at).toLocaleDateString() : 'N/A'}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-              <dd className="mt-1 text-sm text-gray-900">{new Date(template.updated_at).toLocaleDateString()}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{template.updated_at ? new Date(template.updated_at).toLocaleDateString() : 'N/A'}</dd>
             </div>
           </dl>
         </div>
@@ -239,22 +248,22 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {template.fee_template_categories.map((templateCategory, index) => (
+                {template.fee_template_categories?.map((templateCategory, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {templateCategory.fee_categories.name}
+                      {templateCategory.fee_categories?.name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {templateCategory.fee_categories.description}
+                      {templateCategory.fee_categories?.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ${templateCategory.amount.toLocaleString()}
+                      ${templateCategory.amount?.toLocaleString() || '0'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        templateCategory.fee_categories.is_mandatory ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        templateCategory.fee_categories?.is_mandatory ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                       }`}>
-                        {templateCategory.fee_categories.is_mandatory ? 'Mandatory' : 'Optional'}
+                        {templateCategory.fee_categories?.is_mandatory ? 'Mandatory' : 'Optional'}
                       </span>
                     </td>
                   </tr>
@@ -306,6 +315,18 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
             </div>
           </div>
         </div>
+      )}
+
+      {/* Auto Assign Modal */}
+      {showAutoAssign && template && (
+        <TemplateAutoAssign
+          template={template}
+          onClose={() => setShowAutoAssign(false)}
+          onAssignmentComplete={() => {
+            // Optionally refresh template data or show success message
+            setSuccess('Fees assigned successfully!');
+          }}
+        />
       )}
     </div>
   );

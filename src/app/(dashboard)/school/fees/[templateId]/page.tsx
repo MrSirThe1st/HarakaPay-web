@@ -2,12 +2,13 @@
 import { FeeTemplateDetailView } from './components/FeeTemplateDetailView';
 
 interface FeeTemplatePageProps {
-  params: {
+  params: Promise<{
     templateId: string;
-  };
+  }>;
 }
 
-export default function FeeTemplatePage({ params }: FeeTemplatePageProps) {
-  return <FeeTemplateDetailView templateId={params.templateId} />;
+export default async function FeeTemplatePage({ params }: FeeTemplatePageProps) {
+  const { templateId } = await params;
+  return <FeeTemplateDetailView templateId={templateId} />;
 }
 

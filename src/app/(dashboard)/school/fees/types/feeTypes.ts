@@ -161,6 +161,6 @@ export interface WizardData {
   };
 }
 
-export type ActiveTab = 'academic-year' | 'categories' | 'structures' | 'schedules' | 'auto-assign' | 'publish' | 'audit';
+export type ActiveTab = 'publish' | 'audit';
 export type ViewMode = 'wizard' | 'management';
 export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;

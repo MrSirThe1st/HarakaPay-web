@@ -115,6 +115,53 @@ export interface Database {
           updated_at?: string;
         };
       };
+      receipt_templates: {
+        Row: {
+          id: string;
+          school_id: string;
+          template_name: string;
+          template_type: string;
+          show_logo: boolean;
+          logo_position: string;
+          visible_fields: Json;
+          style_config: Json;
+          is_default: boolean;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          template_name: string;
+          template_type: string;
+          show_logo?: boolean;
+          logo_position?: string;
+          visible_fields?: Json;
+          style_config?: Json;
+          is_default?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          template_name?: string;
+          template_type?: string;
+          show_logo?: boolean;
+          logo_position?: string;
+          visible_fields?: Json;
+          style_config?: Json;
+          is_default?: boolean;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string;
+        };
+      };
       academic_years: {
         Row: {
           id: string;
@@ -457,6 +504,278 @@ export interface Database {
           updated_at?: string;
         };
       };
+      store_categories: {
+        Row: {
+          id: string;
+          school_id: string;
+          name: string;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          name: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          name?: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      store_items: {
+        Row: {
+          id: string;
+          school_id: string;
+          category_id: string;
+          name: string;
+          description: string | null;
+          item_type: "sale" | "hire";
+          price: number;
+          stock_quantity: number;
+          low_stock_threshold: number;
+          is_available: boolean;
+          images: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          category_id: string;
+          name: string;
+          description?: string | null;
+          item_type: "sale" | "hire";
+          price: number;
+          stock_quantity?: number;
+          low_stock_threshold?: number;
+          is_available?: boolean;
+          images?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          category_id?: string;
+          name?: string;
+          description?: string | null;
+          item_type?: "sale" | "hire";
+          price?: number;
+          stock_quantity?: number;
+          low_stock_threshold?: number;
+          is_available?: boolean;
+          images?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      hire_settings: {
+        Row: {
+          id: string;
+          item_id: string;
+          duration_type: "daily" | "weekly" | "monthly" | "per_term" | "per_year" | "custom";
+          min_duration_days: number;
+          max_duration_days: number;
+          deposit_amount: number | null;
+          late_fee_per_day: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          duration_type: "daily" | "weekly" | "monthly" | "per_term" | "per_year" | "custom";
+          min_duration_days: number;
+          max_duration_days: number;
+          deposit_amount?: number | null;
+          late_fee_per_day?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          duration_type?: "daily" | "weekly" | "monthly" | "per_term" | "per_year" | "custom";
+          min_duration_days?: number;
+          max_duration_days?: number;
+          deposit_amount?: number | null;
+          late_fee_per_day?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      store_orders: {
+        Row: {
+          id: string;
+          order_number: string;
+          school_id: string;
+          parent_id: string;
+          student_id: string;
+          order_type: "purchase" | "hire";
+          total_amount: number;
+          status: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+          payment_status: "pending" | "paid" | "refunded";
+          payment_method: string | null;
+          payment_reference: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_number?: string;
+          school_id: string;
+          parent_id: string;
+          student_id: string;
+          order_type: "purchase" | "hire";
+          total_amount: number;
+          status?: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+          payment_status?: "pending" | "paid" | "refunded";
+          payment_method?: string | null;
+          payment_reference?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_number?: string;
+          school_id?: string;
+          parent_id?: string;
+          student_id?: string;
+          order_type?: "purchase" | "hire";
+          total_amount?: number;
+          status?: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+          payment_status?: "pending" | "paid" | "refunded";
+          payment_method?: string | null;
+          payment_reference?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      store_order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          item_id: string;
+          quantity: number;
+          unit_price: number;
+          subtotal: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          item_id: string;
+          quantity: number;
+          unit_price: number;
+          subtotal: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          item_id?: string;
+          quantity?: number;
+          unit_price?: number;
+          subtotal?: number;
+          created_at?: string;
+        };
+      };
+      hire_records: {
+        Row: {
+          id: string;
+          order_item_id: string;
+          hire_start_date: string;
+          hire_end_date: string;
+          expected_return_date: string;
+          actual_return_date: string | null;
+          deposit_paid: number;
+          deposit_returned: boolean;
+          late_fees: number;
+          status: "active" | "returned" | "overdue" | "lost";
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_item_id: string;
+          hire_start_date: string;
+          hire_end_date: string;
+          expected_return_date: string;
+          actual_return_date?: string | null;
+          deposit_paid?: number;
+          deposit_returned?: boolean;
+          late_fees?: number;
+          status?: "active" | "returned" | "overdue" | "lost";
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_item_id?: string;
+          hire_start_date?: string;
+          hire_end_date?: string;
+          expected_return_date?: string;
+          actual_return_date?: string | null;
+          deposit_paid?: number;
+          deposit_returned?: boolean;
+          late_fees?: number;
+          status?: "active" | "returned" | "overdue" | "lost";
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      stock_requests: {
+        Row: {
+          id: string;
+          item_id: string;
+          parent_id: string;
+          student_id: string;
+          requested_quantity: number;
+          message: string | null;
+          status: "pending" | "acknowledged" | "fulfilled" | "cancelled";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          parent_id: string;
+          student_id: string;
+          requested_quantity: number;
+          message?: string | null;
+          status?: "pending" | "acknowledged" | "fulfilled" | "cancelled";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          parent_id?: string;
+          student_id?: string;
+          requested_quantity?: number;
+          message?: string | null;
+          status?: "pending" | "acknowledged" | "fulfilled" | "cancelled";
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -512,6 +831,12 @@ export interface Database {
       notification_type: "info" | "success" | "warning" | "error";
       workflow_status: "pending" | "approved" | "rejected" | "cancelled";
       relationship_type: "parent" | "guardian" | "emergency_contact";
+      item_type: "sale" | "hire";
+      duration_type: "daily" | "weekly" | "monthly" | "per_term" | "per_year" | "custom";
+      order_type: "purchase" | "hire";
+      order_status: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+      hire_status: "active" | "returned" | "overdue" | "lost";
+      request_status: "pending" | "acknowledged" | "fulfilled" | "cancelled";
     };
     CompositeTypes: {
       [_ in never]: never;

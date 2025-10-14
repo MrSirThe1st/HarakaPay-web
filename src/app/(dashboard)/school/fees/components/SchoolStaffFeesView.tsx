@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { PlusIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, EyeIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { FeeStructureWizard } from './FeeStructureWizard';
 import { FeeManagementView } from './FeeManagementView';
 import { ViewMode } from '../types/feeTypes';
@@ -22,6 +22,10 @@ export function SchoolStaffFeesView() {
 
   const handleWizardCancel = () => {
     setViewMode('management');
+  };
+
+  const handleManageReceipts = () => {
+    window.location.href = '/school/fees/receipts';
   };
 
   return (
@@ -48,13 +52,22 @@ export function SchoolStaffFeesView() {
             </button>
           )}
           {viewMode === 'management' && (
-            <button
-              onClick={handleCreateNew}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              {t('Create New Fee Structure')}
-            </button>
+            <>
+              <button
+                onClick={handleManageReceipts}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
+                {t('Manage Receipts')}
+              </button>
+              <button
+                onClick={handleCreateNew}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <PlusIcon className="h-4 w-4 mr-2" />
+                {t('Create New Fee Structure')}
+              </button>
+            </>
           )}
         </div>
       </div>

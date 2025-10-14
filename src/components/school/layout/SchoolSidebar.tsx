@@ -10,7 +10,8 @@ import {
   ChatBubbleLeftRightIcon, 
   Cog6ToothIcon,
   UsersIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -19,6 +20,7 @@ const navigation = [
   { name: 'Students', href: '/school/students', icon: UserGroupIcon },
   { name: 'Staff', href: '/school/staff', icon: UsersIcon },
   { name: 'Fees', href: '/school/fees', icon: CurrencyDollarIcon },
+  { name: 'Store', href: '/school/store', icon: ShoppingBagIcon },
   { name: 'Payments', href: '/school/payments', icon: CreditCardIcon },
   { name: 'Communications', href: '/school/communications', icon: ChatBubbleLeftRightIcon },
   { name: 'Settings', href: '/school/settings', icon: Cog6ToothIcon },
