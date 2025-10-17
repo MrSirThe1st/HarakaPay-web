@@ -7,7 +7,8 @@ import { ReceiptTemplate, ReceiptTemplateForm } from '@/types/receipt';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const adminClient = createAdminClient();
 
     // Get current user
@@ -58,7 +59,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const adminClient = createAdminClient();
 
     // Get current user

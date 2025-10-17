@@ -7,7 +7,8 @@ import { FeeCategory } from '@/types/receipt';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
     const adminClient = createAdminClient();
 
     // Get current user

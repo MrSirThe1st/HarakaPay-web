@@ -202,190 +202,101 @@ ALTER TABLE stock_requests ENABLE ROW LEVEL SECURITY;
 
 -- Store categories policies
 CREATE POLICY "School staff can manage store categories" ON store_categories
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.school_id = store_categories.school_id
-            AND profiles.role IN ('school_admin', 'school_staff')
-        )
-    );
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.user_id = auth.uid() 
+        AND profiles.school_id = store_categories.school_id
+        AND profiles.role IN ('school_admin', 'school_staff')
+        AND profiles.is_active = true
+    )
+);
+
+CREATE POLICY "Platform admins can manage all store categories" ON store_categories
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.user_id = auth.uid() 
+        AND profiles.role IN ('super_admin', 'platform_admin', 'support_admin')
+        AND profiles.is_active = true
+    )
+);
 
 CREATE POLICY "Parents can view store categories" ON store_categories
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role = 'parent'
-        )
-    );
+FOR SELECT USING (
+    EXISTS (
+        SELECT 1 FROM parents 
+        WHERE parents.user_id = auth.uid()
+    )
+);
+
+CREATE POLICY "Service role full access" ON store_categories
+FOR ALL USING (auth.role() = 'service_role');
 
 -- Store items policies
 CREATE POLICY "School staff can manage store items" ON store_items
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.school_id = store_items.school_id
-            AND profiles.role IN ('school_admin', 'school_staff')
-        )
-    );
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.user_id = auth.uid() 
+        AND profiles.school_id = store_items.school_id
+        AND profiles.role IN ('school_admin', 'school_staff')
+        AND profiles.is_active = true
+    )
+);
+
+CREATE POLICY "Platform admins can manage all store items" ON store_items
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.user_id = auth.uid() 
+        AND profiles.role IN ('super_admin', 'platform_admin', 'support_admin')
+        AND profiles.is_active = true
+    )
+);
 
 CREATE POLICY "Parents can view available store items" ON store_items
-    FOR SELECT USING (
-        is_available = true AND
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role = 'parent'
-        )
-    );
+FOR SELECT USING (
+    is_available = true AND
+    EXISTS (
+        SELECT 1 FROM parents 
+        WHERE parents.user_id = auth.uid()
+    )
+);
 
--- Hire settings policies
-CREATE POLICY "School staff can manage hire settings" ON hire_settings
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles p
-            JOIN store_items si ON si.id = hire_settings.item_id
-            WHERE p.user_id = auth.uid() 
-            AND p.school_id = si.school_id
-            AND p.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "Parents can view hire settings" ON hire_settings
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role = 'parent'
-        )
-    );
+CREATE POLICY "Service role full access" ON store_items
+FOR ALL USING (auth.role() = 'service_role');
 
 -- Store orders policies
 CREATE POLICY "School staff can manage store orders" ON store_orders
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.school_id = store_orders.school_id
-            AND profiles.role IN ('school_admin', 'school_staff')
-        )
-    );
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.user_id = auth.uid() 
+        AND profiles.school_id = store_orders.school_id
+        AND profiles.role IN ('school_admin', 'school_staff')
+        AND profiles.is_active = true
+    )
+);
+
+CREATE POLICY "Platform admins can manage all store orders" ON store_orders
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.user_id = auth.uid() 
+        AND profiles.role IN ('super_admin', 'platform_admin', 'support_admin')
+        AND profiles.is_active = true
+    )
+);
 
 CREATE POLICY "Parents can manage their own orders" ON store_orders
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role = 'parent'
-            AND profiles.id = store_orders.parent_id
-        )
-    );
+FOR ALL USING (
+    EXISTS (
+        SELECT 1 FROM parents 
+        WHERE parents.user_id = auth.uid()
+        AND parents.id = store_orders.parent_id
+    )
+);
 
--- Store order items policies
-CREATE POLICY "School staff can manage order items" ON store_order_items
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles p
-            JOIN store_orders so ON so.id = store_order_items.order_id
-            WHERE p.user_id = auth.uid() 
-            AND p.school_id = so.school_id
-            AND p.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "Parents can view their order items" ON store_order_items
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM profiles p
-            JOIN store_orders so ON so.id = store_order_items.order_id
-            WHERE p.user_id = auth.uid() 
-            AND p.role = 'parent'
-            AND p.id = so.parent_id
-        )
-    );
-
--- Hire records policies
-CREATE POLICY "School staff can manage hire records" ON hire_records
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles p
-            JOIN store_order_items soi ON soi.id = hire_records.order_item_id
-            JOIN store_orders so ON so.id = soi.order_id
-            WHERE p.user_id = auth.uid() 
-            AND p.school_id = so.school_id
-            AND p.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "Parents can view their hire records" ON hire_records
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM profiles p
-            JOIN store_order_items soi ON soi.id = hire_records.order_item_id
-            JOIN store_orders so ON so.id = soi.order_id
-            WHERE p.user_id = auth.uid() 
-            AND p.role = 'parent'
-            AND p.id = so.parent_id
-        )
-    );
-
--- Stock requests policies
-CREATE POLICY "School staff can manage stock requests" ON stock_requests
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles p
-            JOIN store_items si ON si.id = stock_requests.item_id
-            WHERE p.user_id = auth.uid() 
-            AND p.school_id = si.school_id
-            AND p.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "Parents can manage their stock requests" ON stock_requests
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role = 'parent'
-            AND profiles.id = stock_requests.parent_id
-        )
-    );
-
--- Create storage bucket for store item images
-INSERT INTO storage.buckets (id, name, public) VALUES ('store-item-images', 'store-item-images', true);
-
--- Storage policies for store item images
-CREATE POLICY "School staff can upload store item images" ON storage.objects
-    FOR INSERT WITH CHECK (
-        bucket_id = 'store-item-images' AND
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "School staff can update store item images" ON storage.objects
-    FOR UPDATE USING (
-        bucket_id = 'store-item-images' AND
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "School staff can delete store item images" ON storage.objects
-    FOR DELETE USING (
-        bucket_id = 'store-item-images' AND
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.user_id = auth.uid() 
-            AND profiles.role IN ('school_admin', 'school_staff')
-        )
-    );
-
-CREATE POLICY "Anyone can view store item images" ON storage.objects
-    FOR SELECT USING (bucket_id = 'store-item-images');
+CREATE POLICY "Service role full access" ON store_orders
+FOR ALL USING (auth.role() = 'service_role');

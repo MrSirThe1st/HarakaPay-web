@@ -192,10 +192,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create the profile
+    // Create the profile using UPSERT to handle race conditions
     const { data: profile, error: profileInsertError } = await adminClient
       .from('profiles')
-      .insert({
+      .upsert({
         user_id: profileData.user_id,
         first_name: profileData.first_name,
         last_name: profileData.last_name,
@@ -206,6 +206,9 @@ export async function POST(request: NextRequest) {
         avatar_url: null,
         permissions: {}, // Empty permissions object for parents
         is_active: true
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
       })
       .select()
       .single();
@@ -220,10 +223,10 @@ export async function POST(request: NextRequest) {
 
     console.log('Parent profile created successfully:', profile.id);
 
-    // Create the parent record
+    // Create the parent record using UPSERT to handle race conditions
     const { data: parent, error: parentInsertError } = await adminClient
       .from('parents')
-      .insert({
+      .upsert({
         user_id: profileData.user_id,
         first_name: profileData.first_name,
         last_name: profileData.last_name,
@@ -231,6 +234,9 @@ export async function POST(request: NextRequest) {
         email: profileData.email,
         address: profileData.address || null,
         is_active: true
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
       })
       .select()
       .single();

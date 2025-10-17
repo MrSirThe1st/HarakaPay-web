@@ -4,8 +4,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeftIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { ReceiptConfigPanel } from '../components/ReceiptConfigPanel';
-import { ReceiptPreview } from '../components/ReceiptPreview';
+import { ReceiptConfigPanel } from '../../components/ReceiptConfigPanel';
+import { ReceiptPreview } from '../../components/ReceiptPreview';
 import { useReceiptsAPI } from '@/hooks/useReceiptsAPI';
 import { 
   ReceiptTemplateForm, 
