@@ -268,64 +268,6 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
             </div>
           </div>
         </div>
-
-        {/* Payment Schedule Preview */}
-        {totalAmount > 0 && paymentSchedule.scheduleType && (
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <div className="flex items-center mb-4">
-              <CurrencyDollarIcon className="h-5 w-5 text-blue-600 mr-2" />
-              <h3 className="text-lg font-semibold text-blue-900">Payment Schedule Preview</h3>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-blue-800">Academic Year:</span>
-                <span className="font-medium text-blue-900">{academicYear.name}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-blue-800">Term Structure:</span>
-                <span className="font-medium text-blue-900">{academicYear.termStructure}</span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-blue-800">Payment Schedule:</span>
-                <span className="font-medium text-blue-900">
-                  {paymentSchedule.scheduleType === 'upfront' && 'Annual Upfront'}
-                  {paymentSchedule.scheduleType === 'per-term' && 'Per Term'}
-                  {paymentSchedule.scheduleType === 'monthly' && 'Monthly Installments'}
-                  {paymentSchedule.scheduleType === 'custom' && 'Custom Schedule'}
-                </span>
-              </div>
-              
-              {paymentSchedule.installments.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Payment Breakdown:</h4>
-                  <div className="space-y-2">
-                    {paymentSchedule.installments.map((installment, index) => (
-                      <div key={index} className="flex justify-between items-center bg-white bg-opacity-50 rounded px-3 py-2">
-                        <span className="text-sm text-blue-700">Payment {installment.installmentNumber}</span>
-                        <span className="font-medium text-blue-900">${installment.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {paymentSchedule.scheduleType === 'upfront' && paymentSchedule.discountPercentage && paymentSchedule.discountPercentage > 0 && (
-                <div className="mt-4 p-3 bg-green-100 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-green-800">Early Payment Discount:</span>
-                    <span className="font-medium text-green-900">{paymentSchedule.discountPercentage}%</span>
-                  </div>
-                  <div className="text-xs text-green-700 mt-1">
-                    Final amount: ${(totalAmount * (1 - (paymentSchedule.discountPercentage || 0) / 100)).toLocaleString()}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
