@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
         style_config: body.style_config,
         is_default: false,
         is_active: true,
-        created_by: profile.id,
+        created_by: profile.user_id || null,  // Use profile.user_id or null if not available
       })
       .select()
       .single();

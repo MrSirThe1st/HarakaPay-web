@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Simple in-memory cache for students data
+const studentsCache = new Map<string, {
+  data: StudentsResponse;
+  timestamp: number;
+}>();
 
 export interface Student {
   id: string;
@@ -73,18 +79,30 @@ export function useStudents(initialFilters: Partial<StudentFilters> = {}) {
     ...initialFilters
   });
 
-  const fetchStudents = useCallback(async () => {
+  const fetchStudents = useCallback(async (currentFilters = filters) => {
+    // Create cache key from filters
+    const cacheKey = JSON.stringify(currentFilters);
+    const cached = studentsCache.get(cacheKey);
+    
+    // Check if we have cached data (no time expiration)
+    if (cached) {
+      setStudents(cached.data.students);
+      setStats(cached.data.stats);
+      setPagination(cached.data.pagination);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const searchParams = new URLSearchParams();
       
-      if (filters.search) searchParams.set('search', filters.search);
-      if (filters.grade && filters.grade !== 'all') searchParams.set('grade', filters.grade);
-      if (filters.status && filters.status !== 'all') searchParams.set('status', filters.status);
-      searchParams.set('page', filters.page.toString());
-      searchParams.set('limit', filters.limit.toString());
+      if (currentFilters.search) searchParams.set('search', currentFilters.search);
+      if (currentFilters.grade && currentFilters.grade !== 'all') searchParams.set('grade', currentFilters.grade);
+      if (currentFilters.status && currentFilters.status !== 'all') searchParams.set('status', currentFilters.status);
+      searchParams.set('page', currentFilters.page.toString());
+      searchParams.set('limit', currentFilters.limit.toString());
 
       const response = await fetch(`/api/students?${searchParams.toString()}`);
       const result = await response.json();
@@ -97,6 +115,12 @@ export function useStudents(initialFilters: Partial<StudentFilters> = {}) {
         throw new Error(result.error || 'Failed to fetch students');
       }
 
+      // Cache the result (persists until manually cleared)
+      studentsCache.set(cacheKey, {
+        data: result.data,
+        timestamp: Date.now()
+      });
+
       setStudents(result.data.students);
       setStats(result.data.stats);
       setPagination(result.data.pagination);
@@ -106,23 +130,31 @@ export function useStudents(initialFilters: Partial<StudentFilters> = {}) {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
-
-  const updateFilters = useCallback((newFilters: Partial<StudentFilters>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters,
-      page: 1 // Reset to first page when filters change
-    }));
   }, []);
 
+  const updateFilters = useCallback((newFilters: Partial<StudentFilters>) => {
+    setFilters(prev => {
+      const updatedFilters = {
+        ...prev,
+        ...newFilters,
+        page: 1 // Reset to first page when filters change
+      };
+      // Trigger fetch with new filters
+      fetchStudents(updatedFilters);
+      return updatedFilters;
+    });
+  }, [fetchStudents]);
+
   const refreshStudents = useCallback(() => {
+    // Clear cache before refreshing
+    studentsCache.clear();
     fetchStudents();
   }, [fetchStudents]);
 
   useEffect(() => {
+    // Only fetch on initial mount, not on every filter change
     fetchStudents();
-  }, [fetchStudents]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     students,

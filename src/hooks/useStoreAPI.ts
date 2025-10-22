@@ -1,5 +1,6 @@
 // src/hooks/useStoreAPI.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   StoreCategory, 
   StoreItem, 
@@ -76,48 +77,85 @@ export function useStoreAPI() {
   // Store Categories API
   const categories = {
     getAll: async (page = 1, limit = 50) => {
-      return apiCallWithLoading<{
-        categories: StoreCategory[];
-        pagination: StorePaginationData;
-        stats: StoreStatsData;
-      }>(`/api/school/store/categories?page=${page}&limit=${limit}`);
+      const cacheKey = createCacheKey('store:categories', { page, limit });
+      return cachedApiCall(
+        cacheKey,
+        () => apiCallWithLoading<{
+          categories: StoreCategory[];
+          pagination: StorePaginationData;
+          stats: StoreStatsData;
+        }>(`/api/school/store/categories?page=${page}&limit=${limit}`)
+      );
     },
 
     create: async (data: StoreCategoryFormData) => {
-      return apiCallWithLoading<{ category: StoreCategory }>('/api/school/store/categories', {
+      const result = await apiCallWithLoading<{ category: StoreCategory }>('/api/school/store/categories', {
         method: 'POST',
         body: JSON.stringify(data),
       });
+      
+      // Clear cache after creation
+      if (result.success) {
+        apiCache.clearPattern('store:categories');
+      }
+      
+      return result;
     },
 
     update: async (id: string, data: StoreCategoryFormData) => {
-      return apiCallWithLoading<{ category: StoreCategory }>(`/api/school/store/categories/${id}`, {
+      const result = await apiCallWithLoading<{ category: StoreCategory }>(`/api/school/store/categories/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
       });
+      
+      // Clear cache after update
+      if (result.success) {
+        apiCache.clearPattern('store:categories');
+      }
+      
+      return result;
     },
 
     delete: async (id: string) => {
-      return apiCallWithLoading<null>(`/api/school/store/categories/${id}`, {
+      const result = await apiCallWithLoading<null>(`/api/school/store/categories/${id}`, {
         method: 'DELETE',
       });
+      
+      // Clear cache after deletion
+      if (result.success) {
+        apiCache.clearPattern('store:categories');
+      }
+      
+      return result;
     },
   };
 
   // Store Items API
   const items = {
     getAll: async (page = 1, limit = 50, filters?: StoreItemFilters) => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...filters,
-      });
-      
-      return apiCallWithLoading<{
-        items: StoreItem[];
-        pagination: StorePaginationData;
-        stats: StoreStatsData;
-      }>(`/api/school/store/items?${params}`);
+      const cacheKey = createCacheKey('store:items', { page, limit, ...filters });
+      return cachedApiCall(
+        cacheKey,
+        () => {
+          const params = new URLSearchParams();
+          params.set('page', page.toString());
+          params.set('limit', limit.toString());
+          
+          if (filters) {
+            if (filters.categoryId) params.set('categoryId', filters.categoryId);
+            if (filters.itemType) params.set('itemType', filters.itemType);
+            if (filters.isAvailable !== undefined) params.set('isAvailable', filters.isAvailable.toString());
+            if (filters.lowStock !== undefined) params.set('lowStock', filters.lowStock.toString());
+            if (filters.search) params.set('search', filters.search);
+          }
+          
+          return apiCallWithLoading<{
+            items: StoreItem[];
+            pagination: StorePaginationData;
+            stats: StoreStatsData;
+          }>(`/api/school/store/items?${params}`);
+        }
+      );
     },
 
     getById: async (id: string) => {
@@ -184,17 +222,31 @@ export function useStoreAPI() {
   // Store Orders API
   const orders = {
     getAll: async (page = 1, limit = 50, filters?: StoreOrderFilters) => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...filters,
-      });
-      
-      return apiCallWithLoading<{
-        orders: StoreOrder[];
-        pagination: StorePaginationData;
-        stats: StoreStatsData;
-      }>(`/api/school/store/orders?${params}`);
+      const cacheKey = createCacheKey('store:orders', { page, limit, ...filters });
+      return cachedApiCall(
+        cacheKey,
+        () => {
+          const params = new URLSearchParams();
+          params.set('page', page.toString());
+          params.set('limit', limit.toString());
+          
+          if (filters) {
+            if (filters.status) params.set('status', filters.status);
+            if (filters.paymentStatus) params.set('paymentStatus', filters.paymentStatus);
+            if (filters.orderType) params.set('orderType', filters.orderType);
+            if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+            if (filters.dateTo) params.set('dateTo', filters.dateTo);
+            if (filters.parentId) params.set('parentId', filters.parentId);
+            if (filters.studentId) params.set('studentId', filters.studentId);
+          }
+          
+          return apiCallWithLoading<{
+            orders: StoreOrder[];
+            pagination: StorePaginationData;
+            stats: StoreStatsData;
+          }>(`/api/school/store/orders?${params}`);
+        }
+      );
     },
 
     getById: async (id: string) => {
@@ -225,17 +277,28 @@ export function useStoreAPI() {
   // Stock Requests API
   const stockRequests = {
     getAll: async (page = 1, limit = 50, filters?: StockRequestFilters) => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...filters,
-      });
-      
-      return apiCallWithLoading<{
-        requests: StockRequest[];
-        pagination: StorePaginationData;
-        stats: StoreStatsData;
-      }>(`/api/school/store/stock-requests?${params}`);
+      const cacheKey = createCacheKey('store:stock-requests', { page, limit, ...filters });
+      return cachedApiCall(
+        cacheKey,
+        () => {
+          const params = new URLSearchParams();
+          params.set('page', page.toString());
+          params.set('limit', limit.toString());
+          
+          if (filters) {
+            if (filters.status) params.set('status', filters.status);
+            if (filters.itemId) params.set('itemId', filters.itemId);
+            if (filters.parentId) params.set('parentId', filters.parentId);
+            if (filters.studentId) params.set('studentId', filters.studentId);
+          }
+          
+          return apiCallWithLoading<{
+            requests: StockRequest[];
+            pagination: StorePaginationData;
+            stats: StoreStatsData;
+          }>(`/api/school/store/stock-requests?${params}`);
+        }
+      );
     },
 
     create: async (data: StockRequestFormData) => {
@@ -256,17 +319,25 @@ export function useStoreAPI() {
   // Hire Records API
   const hireRecords = {
     getAll: async (page = 1, limit = 50, status?: string) => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...(status && { status }),
-      });
-      
-      return apiCallWithLoading<{
-        records: HireRecord[];
-        pagination: StorePaginationData;
-        stats: StoreStatsData;
-      }>(`/api/school/store/hire-records?${params}`);
+      const cacheKey = createCacheKey('store:hire-records', { page, limit, status });
+      return cachedApiCall(
+        cacheKey,
+        () => {
+          const params = new URLSearchParams();
+          params.set('page', page.toString());
+          params.set('limit', limit.toString());
+          
+          if (status) {
+            params.set('status', status);
+          }
+          
+          return apiCallWithLoading<{
+            records: HireRecord[];
+            pagination: StorePaginationData;
+            stats: StoreStatsData;
+          }>(`/api/school/store/hire-records?${params}`);
+        }
+      );
     },
 
     processReturn: async (recordId: string, actualReturnDate: string, notes?: string, depositReturned?: boolean, lateFees?: number) => {

@@ -1,7 +1,8 @@
 // src/app/(dashboard)/admin/dashboard/components/AdminDashboard.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   BuildingOfficeIcon, 
   UsersIcon, 
@@ -25,15 +26,24 @@ export function AdminDashboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      const cacheKey = createCacheKey('admin:dashboard-stats');
+      
       try {
         setLoading(true);
-        const response = await fetch('/api/dashboard/stats');
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard stats');
-        }
+        const data = await cachedApiCall(
+          cacheKey,
+          async () => {
+            const response = await fetch('/api/dashboard/stats');
+            
+            if (!response.ok) {
+              throw new Error('Failed to fetch dashboard stats');
+            }
+            
+            return response.json();
+          }
+        );
         
-        const data = await response.json();
         setStats(data.stats);
       } catch (err) {
         console.error('Error fetching stats:', err);
@@ -44,7 +54,7 @@ export function AdminDashboard() {
     };
 
     fetchStats();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

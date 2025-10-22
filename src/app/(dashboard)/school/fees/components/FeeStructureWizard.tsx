@@ -232,6 +232,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         }
 
         academicYearId = academicYearResponse.data.academicYear.id;
+        console.log('Created academic year with ID:', academicYearId);
       }
 
       // Step 2: Create Fee Categories (if they don't exist)
@@ -264,40 +265,59 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
 
       const categoryIds = await Promise.all(categoryPromises);
 
-      // Step 3: Create Fee Template first
+      // Step 3: Create Fee Structure first
       const totalAmount = wizardData.selectedCategories.reduce((sum, cat) => sum + cat.amount, 0);
       
-      const feeTemplateResponse = await feesAPI.feeTemplates.create({
+      console.log('Creating fee structure with:', {
+        academicYearId,
+        categoryIds,
+        totalAmount,
+        wizardData: {
+          gradeLevel: wizardData.gradeProgram.gradeLevel,
+          academicYearName: wizardData.academicYear.name
+        }
+      });
+      
+      const feeStructureResponse = await feesAPI.feeStructures.create({
         name: `${wizardData.gradeProgram.gradeLevel} Fees - ${wizardData.academicYear.name}`,
         academic_year_id: academicYearId,
         grade_level: wizardData.gradeProgram.gradeLevel,
-        program_type: wizardData.gradeProgram.programType,
+        applies_to: 'school',
         total_amount: totalAmount,
-        status: 'published',
-        categories: wizardData.selectedCategories.map((category, index) => ({
+        is_active: true,
+        is_published: false,
+        items: wizardData.selectedCategories.map((category, index) => ({
           category_id: categoryIds[index],
-          amount: category.amount
+          amount: category.amount,
+          is_mandatory: category.isMandatory,
+          is_recurring: category.supportsRecurring,
+          payment_modes: category.categoryType === 'tuition' ? ['installment', 'one_time'] : ['one_time']
         }))
       });
 
-      if (!feeTemplateResponse.success || !feeTemplateResponse.data) {
-        throw new Error('Failed to create fee template');
+      if (!feeStructureResponse.success || !feeStructureResponse.data) {
+        throw new Error('Failed to create fee structure');
       }
 
-      const templateId = feeTemplateResponse.data.feeTemplate.id;
+      const structureId = feeStructureResponse.data.feeStructure.id;
 
-      // Step 4: Create Payment Schedule (only if there are installments)
-      let paymentScheduleResponse = null;
+      // Step 4: Create Payment Plans for tuition (always create both installment and one-time)
+      let tuitionInstallmentPlanResponse = null;
+      let tuitionOneTimePlanResponse = null;
+      
+      // Create installment plan if there are installments
       if (wizardData.paymentSchedule.installments.length > 0) {
-        console.log('Creating tuition payment schedule with installments:', wizardData.paymentSchedule.installments);
+        console.log('Creating tuition installment plan:', wizardData.paymentSchedule.installments);
         
-        paymentScheduleResponse = await feesAPI.paymentSchedules.create({
-          name: `${wizardData.gradeProgram.gradeLevel} Payment Schedule`,
-          schedule_type: wizardData.paymentSchedule.scheduleType,
+        tuitionInstallmentPlanResponse = await feesAPI.paymentPlans.create({
+          structure_id: structureId,
+          name: `${wizardData.gradeProgram.gradeLevel} Monthly Installment Plan`,
+          type: wizardData.paymentSchedule.scheduleType as 'monthly' | 'per-term' | 'upfront',
           discount_percentage: wizardData.paymentSchedule.discountPercentage || 0,
-          template_id: templateId,
+          grace_period_days: 7, // 7 days grace period
+          late_fee_rule: { type: 'percentage', amount: 5 }, // 5% late fee
           installments: wizardData.paymentSchedule.installments.map((inst) => ({
-            description: `Installment ${inst.installmentNumber}`,
+            installment_number: inst.installmentNumber,
             amount: inst.amount,
             percentage: inst.percentage,
             due_date: inst.dueDate,
@@ -305,27 +325,54 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           }))
         });
 
-        if (!paymentScheduleResponse.success || !paymentScheduleResponse.data) {
-          throw new Error('Failed to create payment schedule');
+        if (!tuitionInstallmentPlanResponse.success || !tuitionInstallmentPlanResponse.data) {
+          throw new Error('Failed to create tuition installment plan');
         }
         
-        console.log('Tuition payment schedule created successfully:', paymentScheduleResponse.data);
-      } else {
-        console.log('No tuition installments to create payment schedule for');
+        console.log('Tuition installment plan created successfully:', tuitionInstallmentPlanResponse.data);
       }
 
-      // Step 5: Create Additional Fees Payment Schedule (if applicable)
-      let additionalPaymentScheduleResponse = null;
-      if (wizardData.additionalPaymentSchedule && wizardData.additionalPaymentSchedule.installments.length > 0) {
-        console.log('Creating additional fees payment schedule with installments:', wizardData.additionalPaymentSchedule.installments);
+      // Always create one-time plan for tuition
+      const tuitionOneTimeAmount = wizardData.selectedCategories
+        .filter(cat => cat.categoryType === 'tuition')
+        .reduce((sum, cat) => sum + cat.amount, 0);
+      
+      if (tuitionOneTimeAmount > 0) {
+        console.log('Creating tuition one-time plan for amount:', tuitionOneTimeAmount);
         
-        additionalPaymentScheduleResponse = await feesAPI.paymentSchedules.create({
-          name: `${wizardData.gradeProgram.gradeLevel} Additional Fees Payment Schedule`,
-          schedule_type: wizardData.additionalPaymentSchedule.scheduleType,
+        tuitionOneTimePlanResponse = await feesAPI.paymentPlans.create({
+          structure_id: structureId,
+          name: `${wizardData.gradeProgram.gradeLevel} One-Time Payment Plan`,
+          type: 'upfront',
+          discount_percentage: 0,
+          grace_period_days: 7,
+          late_fee_rule: { type: 'percentage', amount: 5 },
+          installments: [{
+            installment_number: 1,
+            amount: tuitionOneTimeAmount,
+            percentage: 0,
+            due_date: wizardData.academicYear.startDate
+          }]
+        });
+
+        if (!tuitionOneTimePlanResponse.success || !tuitionOneTimePlanResponse.data) {
+          throw new Error('Failed to create tuition one-time plan');
+        }
+        
+        console.log('Tuition one-time plan created successfully:', tuitionOneTimePlanResponse.data);
+      }
+
+      // Step 5: Create Additional Fees Payment Plan (if applicable)
+      let additionalPaymentPlanResponse = null;
+      if (wizardData.additionalPaymentSchedule && wizardData.additionalPaymentSchedule.installments.length > 0) {
+        console.log('Creating additional fees payment plan with installments:', wizardData.additionalPaymentSchedule.installments);
+        
+        additionalPaymentPlanResponse = await feesAPI.paymentPlans.create({
+          structure_id: structureId,
+          type: wizardData.additionalPaymentSchedule.scheduleType as 'monthly' | 'per-term' | 'upfront',
           discount_percentage: wizardData.additionalPaymentSchedule.discountPercentage || 0,
-          template_id: templateId,
           installments: wizardData.additionalPaymentSchedule.installments.map((inst) => ({
-            description: `Additional Fees Installment ${inst.installmentNumber}`,
+            installment_number: inst.installmentNumber,
             amount: inst.amount,
             percentage: inst.percentage,
             due_date: inst.dueDate,
@@ -333,13 +380,13 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           }))
         });
 
-        if (!additionalPaymentScheduleResponse.success || !additionalPaymentScheduleResponse.data) {
-          throw new Error('Failed to create additional fees payment schedule');
+        if (!additionalPaymentPlanResponse.success || !additionalPaymentPlanResponse.data) {
+          throw new Error('Failed to create additional fees payment plan');
         }
         
-        console.log('Additional fees payment schedule created successfully:', additionalPaymentScheduleResponse.data);
+        console.log('Additional fees payment plan created successfully:', additionalPaymentPlanResponse.data);
       } else {
-        console.log('No additional fees installments to create payment schedule for');
+        console.log('No additional fees installments to create payment plan for');
       }
 
       setSaveSuccess(true);

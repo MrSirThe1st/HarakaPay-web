@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   BuildingOfficeIcon, 
   MapPinIcon, 
@@ -42,24 +43,32 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const fetchSchools = useCallback(async () => {
+    const cacheKey = createCacheKey('admin:schools');
+    
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/schools', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+      const result = await cachedApiCall(
+        cacheKey,
+        async () => {
+          const response = await fetch('/api/schools', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch schools');
-      }
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch schools');
+          }
 
-      const result = await response.json();
+          return response.json();
+        }
+      );
+
       console.log('Schools API response:', result);
       setSchools(result.schools || []);
     } catch (err) {
@@ -73,7 +82,7 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
   // Initial load
   useEffect(() => {
     fetchSchools();
-  }, [fetchSchools]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Menu functions
   const toggleMenu = useCallback((schoolId: string) => {

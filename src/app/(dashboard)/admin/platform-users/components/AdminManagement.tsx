@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   UsersIcon, 
   EllipsisVerticalIcon,
@@ -47,24 +48,32 @@ export function AdminManagement() {
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
 
   const fetchAdmins = useCallback(async () => {
+    const cacheKey = createCacheKey('admin:platform-users');
+    
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/admin/list', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+      const result = await cachedApiCall(
+        cacheKey,
+        async () => {
+          const response = await fetch('/api/admin/list', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch admins');
-      }
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch admins');
+          }
 
-      const result = await response.json();
+          return response.json();
+        }
+      );
+
       setAdmins(result.admins || []);
     } catch (err) {
       console.error('Admins fetch error:', err);
@@ -77,7 +86,7 @@ export function AdminManagement() {
   // Initial load
   useEffect(() => {
     fetchAdmins();
-  }, [fetchAdmins]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close menu when clicking outside
   useEffect(() => {

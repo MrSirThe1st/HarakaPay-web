@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Simple in-memory cache for staff data
+const staffCache = new Map<string, {
+  data: StaffResponse;
+  timestamp: number;
+}>();
 
 export interface Staff {
   id: string;
@@ -59,16 +65,28 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     ...initialFilters
   });
 
-  const fetchStaff = useCallback(async () => {
+  const fetchStaff = useCallback(async (currentFilters = filters) => {
+    // Create cache key from filters
+    const cacheKey = JSON.stringify(currentFilters);
+    const cached = staffCache.get(cacheKey);
+    
+    // Check if we have cached data (no time expiration)
+    if (cached) {
+      setStaff(cached.data.staff);
+      setStats(cached.data.stats);
+      setPagination(cached.data.pagination);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const searchParams = new URLSearchParams();
       
-      if (filters.search) searchParams.set('search', filters.search);
-      searchParams.set('page', filters.page.toString());
-      searchParams.set('limit', filters.limit.toString());
+      if (currentFilters.search) searchParams.set('search', currentFilters.search);
+      searchParams.set('page', currentFilters.page.toString());
+      searchParams.set('limit', currentFilters.limit.toString());
 
       const response = await fetch(`/api/school/staff?${searchParams.toString()}`);
       const result = await response.json();
@@ -81,6 +99,12 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
         throw new Error(result.error || 'Failed to fetch staff');
       }
 
+      // Cache the result (persists until manually cleared)
+      staffCache.set(cacheKey, {
+        data: result.data,
+        timestamp: Date.now()
+      });
+
       setStaff(result.data.staff);
       setStats(result.data.stats);
       setPagination(result.data.pagination);
@@ -90,17 +114,24 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
-
-  const updateFilters = useCallback((newFilters: Partial<StaffFilters>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...newFilters,
-      page: 1 // Reset to first page when filters change
-    }));
   }, []);
 
+  const updateFilters = useCallback((newFilters: Partial<StaffFilters>) => {
+    setFilters(prev => {
+      const updatedFilters = {
+        ...prev,
+        ...newFilters,
+        page: 1 // Reset to first page when filters change
+      };
+      // Trigger fetch with new filters
+      fetchStaff(updatedFilters);
+      return updatedFilters;
+    });
+  }, [fetchStaff]);
+
   const refreshStaff = useCallback(() => {
+    // Clear cache before refreshing
+    staffCache.clear();
     fetchStaff();
   }, [fetchStaff]);
 
@@ -198,8 +229,9 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
   }, [refreshStaff]);
 
   useEffect(() => {
+    // Only fetch on initial mount, not on every filter change
     fetchStaff();
-  }, [fetchStaff]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     staff,

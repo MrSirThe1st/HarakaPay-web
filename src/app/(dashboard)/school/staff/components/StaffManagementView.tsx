@@ -1,7 +1,7 @@
 // src/app/(dashboard)/school/staff/components/StaffManagementView.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   UserGroupIcon, 
   PlusIcon, 
@@ -43,40 +43,40 @@ export function StaffManagementView() {
     deleteStaff
   } = useStaff();
 
-  const handleSearch = (search: string) => {
+  const handleSearch = useCallback((search: string) => {
     updateFilters({ search });
-  };
+  }, [updateFilters]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     updateFilters({ page });
-  };
+  }, [updateFilters]);
 
-  const handleViewStaff = (staff: Staff) => {
+  const handleViewStaff = useCallback((staff: Staff) => {
     setSelectedStaff(staff);
     setShowViewStaff(true);
-  };
+  }, []);
 
-  const handleEditStaff = (staff: Staff) => {
+  const handleEditStaff = useCallback((staff: Staff) => {
     setSelectedStaff(staff);
     setShowEditStaff(true);
-  };
+  }, []);
 
-  const handleDeleteStaff = (staff: Staff) => {
+  const handleDeleteStaff = useCallback((staff: Staff) => {
     setSelectedStaff(staff);
     setShowDeleteStaff(true);
-  };
+  }, []);
 
-  const handleAddStaffSuccess = () => {
+  const handleAddStaffSuccess = useCallback(() => {
     refreshStaff();
-  };
+  }, [refreshStaff]);
 
-  const handleEditStaffSuccess = () => {
+  const handleEditStaffSuccess = useCallback(() => {
     refreshStaff();
-  };
+  }, [refreshStaff]);
 
-  const handleDeleteStaffSuccess = () => {
+  const handleDeleteStaffSuccess = useCallback(() => {
     refreshStaff();
-  };
+  }, [refreshStaff]);
 
   return (
     <div className="space-y-6">

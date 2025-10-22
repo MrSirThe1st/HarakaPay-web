@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 import { hasRoleLevel, type UserRole } from "@/lib/roleUtils";
+import { apiCache, createCacheKey, cachedApiCall } from "@/lib/apiCache";
 
 interface UserProfile {
   id: string;
@@ -39,23 +40,30 @@ export function useDualAuth() {
   const router = useRouter();
   const supabase = createClient(); // Regular client for auth only
 
-  // Fetch user profile using server-side API (no RLS issues)
+  // Fetch user profile using server-side API with caching
   const fetchUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
-      // Use server-side API to get profile (bypasses RLS)
-      const response = await fetch('/api/auth/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      });
+      // Use cached API call to prevent duplicate requests
+      const profile = await cachedApiCall(
+        createCacheKey('auth:profile', { userId }),
+        async () => {
+          const response = await fetch('/api/auth/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Profile API error:', errorData);
+            throw new Error(`Failed to fetch profile: ${errorData.error || response.statusText}`);
+          }
+          
+          const { profile } = await response.json();
+          return profile;
+        }
+      );
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Profile API error:', errorData);
-        throw new Error(`Failed to fetch profile: ${errorData.error || response.statusText}`);
-      }
-      
-      const { profile } = await response.json();
       return profile;
       
     } catch (error) {
@@ -173,50 +181,53 @@ export function useDualAuth() {
     router.push('/login');
   };
 
-  // Role checking functions - now safe because they don't query database
-  const isSuperAdmin = authState.profile?.role === "super_admin";
-  const isPlatformAdmin = authState.profile?.role === "platform_admin";
-  const isSupportAdmin = authState.profile?.role === "support_admin";
-  const isSchoolAdmin = authState.profile?.role === "school_admin";
-  const isSchoolStaff = authState.profile?.role === "school_staff";
-  
-  // Panel access checking
-  const canAccessAdminPanel = isSuperAdmin || isPlatformAdmin || isSupportAdmin;
-  const canAccessSchoolPanel = isSchoolAdmin || isSchoolStaff;
-  
-  // Permission checking
-  const hasRole = (role: UserRole) => authState.profile?.role === role;
-  const hasAnyRole = (roles: UserRole[]) => roles.includes(authState.profile?.role as UserRole);
-  const hasHigherRoleThan = (role: UserRole) => {
-    if (!authState.profile?.role) return false;
-    return hasRoleLevel(authState.profile.role, role);
-  };
+  // Memoized role checking functions to prevent unnecessary re-renders
+  const roleChecks = useMemo(() => {
+    const profile = authState.profile;
+    const isSuperAdmin = profile?.role === "super_admin";
+    const isPlatformAdmin = profile?.role === "platform_admin";
+    const isSupportAdmin = profile?.role === "support_admin";
+    const isSchoolAdmin = profile?.role === "school_admin";
+    const isSchoolStaff = profile?.role === "school_staff";
+    
+    // Panel access checking
+    const canAccessAdminPanel = isSuperAdmin || isPlatformAdmin || isSupportAdmin;
+    const canAccessSchoolPanel = isSchoolAdmin || isSchoolStaff;
+    
+    // Authentication status
+    const isAuthenticated = !!authState.user && !!profile;
 
-  // Authentication status
-  const isAuthenticated = !!authState.user && !!authState.profile;
+    return {
+      isSuperAdmin,
+      isPlatformAdmin,
+      isSupportAdmin,
+      isSchoolAdmin,
+      isSchoolStaff,
+      canAccessAdminPanel,
+      canAccessSchoolPanel,
+      isAuthenticated
+    };
+  }, [authState.profile, authState.user]);
+
+  // Memoized permission checking functions
+  const permissionChecks = useMemo(() => ({
+    hasRole: (role: UserRole) => authState.profile?.role === role,
+    hasAnyRole: (roles: UserRole[]) => roles.includes(authState.profile?.role as UserRole),
+    hasHigherRoleThan: (role: UserRole) => {
+      if (!authState.profile?.role) return false;
+      return hasRoleLevel(authState.profile.role, role);
+    }
+  }), [authState.profile?.role]);
 
   return {
     ...authState,
     signIn,
     signOut,
     
-    // Authentication status
-    isAuthenticated,
+    // Spread memoized role checks
+    ...roleChecks,
     
-    // Role checking functions
-    isSuperAdmin,
-    isPlatformAdmin,
-    isSupportAdmin,
-    isSchoolAdmin,
-    isSchoolStaff,
-    
-    // Panel access
-    canAccessAdminPanel,
-    canAccessSchoolPanel,
-    
-    // Permission checking
-    hasRole,
-    hasAnyRole,
-    hasHigherRoleThan,
+    // Spread memoized permission checks
+    ...permissionChecks,
   };
 }

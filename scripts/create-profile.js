@@ -18,7 +18,7 @@ INSERT INTO profiles (
   is_active,
   permissions
 ) VALUES (
-  'YOUR_USER_ID_HERE', -- Replace with your actual user ID
+  '37bb895f-c8b4-47eb-8279-e46ade78c300', 
   'Your First Name',
   'Your Last Name',
   'super_admin',

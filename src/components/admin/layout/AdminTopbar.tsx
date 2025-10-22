@@ -20,8 +20,8 @@ export default function AdminTopbar() {
     <div className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left side - Mobile menu button and search */}
-          <div className="flex items-center">
+          {/* Left side - Platform branding and mobile menu */}
+          <div className="flex items-center space-x-4">
             {/* Mobile menu button */}
             <button
               type="button"
@@ -35,7 +35,20 @@ export default function AdminTopbar() {
               )}
             </button>
 
+            {/* Platform Branding */}
+            <div className="flex items-center space-x-3">
+              {/* Platform Logo */}
+              <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">H</span>
+              </div>
 
+              {/* Platform Name */}
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-gray-900">
+                  HarakaPay Platform
+                </h1>
+              </div>
+            </div>
           </div>
 
           {/* Right side - Notifications and profile */}

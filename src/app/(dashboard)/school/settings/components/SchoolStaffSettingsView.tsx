@@ -18,6 +18,7 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { createClient } from '@/lib/supabaseClient';
 import { Database } from '@/types/supabase';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 
 type School = Database['public']['Tables']['schools']['Row'];
 type AcademicYear = Database['public']['Tables']['academic_years']['Row'];
@@ -96,32 +97,34 @@ export function SchoolStaffSettingsView() {
     try {
       setLoading(true);
       
-      // Load school data
-      const schoolResponse = await fetch('/api/schools/settings');
-      if (schoolResponse.ok) {
-        const { school } = await schoolResponse.json();
-        if (school) {
-          setSchool(school);
-          setSchoolForm({
-            name: school.name || '',
-            address: school.address || '',
-            contact_email: school.contact_email || '',
-            contact_phone: school.contact_phone || '',
-            registration_number: school.registration_number || '',
-            currency: school.currency || 'USD',
-            payment_provider: school.payment_provider || '',
-            logo_url: school.logo_url || '',
-          });
-        }
+      // Load school data with caching
+      const schoolData = await cachedApiCall(
+        createCacheKey('school:settings'),
+        () => fetch('/api/schools/settings').then(res => res.json())
+      );
+      
+      if (schoolData.school) {
+        setSchool(schoolData.school);
+        setSchoolForm({
+          name: schoolData.school.name || '',
+          address: schoolData.school.address || '',
+          contact_email: schoolData.school.contact_email || '',
+          contact_phone: schoolData.school.contact_phone || '',
+          registration_number: schoolData.school.registration_number || '',
+          currency: schoolData.school.currency || 'USD',
+          payment_provider: schoolData.school.payment_provider || '',
+          logo_url: schoolData.school.logo_url || '',
+        });
       }
 
-      // Load academic years
-      const academicYearsResponse = await fetch('/api/academic-years');
-      if (academicYearsResponse.ok) {
-        const { academic_years } = await academicYearsResponse.json();
-        if (academic_years) {
-          setAcademicYears(academic_years);
-        }
+      // Load academic years with caching
+      const academicYearsData = await cachedApiCall(
+        createCacheKey('academic-years'),
+        () => fetch('/api/academic-years').then(res => res.json())
+      );
+      
+      if (academicYearsData.academic_years) {
+        setAcademicYears(academicYearsData.academic_years);
       }
 
     } catch (error) {
@@ -150,6 +153,9 @@ export function SchoolStaffSettingsView() {
         throw new Error(error.error || 'Failed to update school');
       }
 
+      // Clear cache after successful update
+      apiCache.clearPattern('school:settings');
+      
       await loadSchoolData();
       setEditingSchool(false);
     } catch (error) {
@@ -178,6 +184,9 @@ export function SchoolStaffSettingsView() {
         throw new Error(error.error || 'Failed to create academic year');
       }
 
+      // Clear cache after successful creation
+      apiCache.clearPattern('academic-years');
+      
       await loadSchoolData();
       setAcademicYearForm({ name: '', start_date: '', end_date: '' });
       setEditingAcademicYear(false);
@@ -200,7 +209,7 @@ export function SchoolStaffSettingsView() {
       formData.append('file', file);
       
       // Upload via API route
-      const response = await fetch('/api/school/logo-upload', {
+      const response = await fetch('/api/school/receipt-logo-upload', {
         method: 'POST',
         body: formData,
       });
@@ -212,6 +221,9 @@ export function SchoolStaffSettingsView() {
       }
 
       if (result.success) {
+        // Clear cache after successful logo upload
+        apiCache.clearPattern('school:settings');
+        
         setSchoolForm(prev => ({ ...prev, logo_url: result.data.logo_url }));
         await loadSchoolData();
       } else {

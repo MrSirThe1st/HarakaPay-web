@@ -1,5 +1,6 @@
 // src/hooks/useReceiptsAPI.ts
 import { useState, useCallback } from 'react';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { ReceiptTemplate, ReceiptTemplateForm, FeeCategory } from '@/types/receipt';
 
 interface APIResponse<T> {
@@ -50,29 +51,37 @@ export function useReceiptsAPI() {
   };
 
   const getAll = useCallback(async (): Promise<APIResponse<ReceiptsAPIResponse>> => {
-    return handleRequest<ReceiptsAPIResponse>(() => 
-      fetch('/api/school/receipts', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+    const cacheKey = createCacheKey('receipts:all');
+    return cachedApiCall(
+      cacheKey,
+      () => handleRequest<ReceiptsAPIResponse>(() => 
+        fetch('/api/school/receipts', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      )
     );
   }, []);
 
   const getById = useCallback(async (id: string): Promise<APIResponse<ReceiptAPIResponse>> => {
-    return handleRequest<ReceiptAPIResponse>(() => 
-      fetch(`/api/school/receipts/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+    const cacheKey = createCacheKey('receipts:by-id', { id });
+    return cachedApiCall(
+      cacheKey,
+      () => handleRequest<ReceiptAPIResponse>(() => 
+        fetch(`/api/school/receipts/${id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      )
     );
   }, []);
 
   const create = useCallback(async (template: ReceiptTemplateForm): Promise<APIResponse<ReceiptAPIResponse>> => {
-    return handleRequest<ReceiptAPIResponse>(() => 
+    const result = await handleRequest<ReceiptAPIResponse>(() => 
       fetch('/api/school/receipts', {
         method: 'POST',
         headers: {
@@ -81,10 +90,17 @@ export function useReceiptsAPI() {
         body: JSON.stringify(template),
       })
     );
+    
+    // Clear cache after creation
+    if (result.success) {
+      apiCache.clearPattern('receipts');
+    }
+    
+    return result;
   }, []);
 
   const update = useCallback(async (id: string, template: ReceiptTemplateForm): Promise<APIResponse<ReceiptAPIResponse>> => {
-    return handleRequest<ReceiptAPIResponse>(() => 
+    const result = await handleRequest<ReceiptAPIResponse>(() => 
       fetch(`/api/school/receipts/${id}`, {
         method: 'PUT',
         headers: {
@@ -93,10 +109,17 @@ export function useReceiptsAPI() {
         body: JSON.stringify(template),
       })
     );
+    
+    // Clear cache after update
+    if (result.success) {
+      apiCache.clearPattern('receipts');
+    }
+    
+    return result;
   }, []);
 
   const deleteTemplate = useCallback(async (id: string): Promise<APIResponse<null>> => {
-    return handleRequest<null>(() => 
+    const result = await handleRequest<null>(() => 
       fetch(`/api/school/receipts/${id}`, {
         method: 'DELETE',
         headers: {
@@ -104,16 +127,27 @@ export function useReceiptsAPI() {
         },
       })
     );
+    
+    // Clear cache after deletion
+    if (result.success) {
+      apiCache.clearPattern('receipts');
+    }
+    
+    return result;
   }, []);
 
   const getAvailableCategories = useCallback(async (): Promise<APIResponse<CategoriesAPIResponse>> => {
-    return handleRequest<CategoriesAPIResponse>(() => 
-      fetch('/api/school/receipts/categories', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+    const cacheKey = createCacheKey('receipts:categories');
+    return cachedApiCall(
+      cacheKey,
+      () => handleRequest<CategoriesAPIResponse>(() => 
+        fetch('/api/school/receipts/categories', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      )
     );
   }, []);
 

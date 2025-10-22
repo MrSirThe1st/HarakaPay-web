@@ -8,20 +8,20 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
-import { FeeTemplate } from '@/hooks/useFeesAPI';
+import { FeeStructure } from '@/hooks/useFeesAPI';
 
 interface TemplateAutoAssignProps {
-  template: FeeTemplate;
+  structure: FeeStructure;
   onClose: () => void;
   onAssignmentComplete?: () => void;
 }
 
-export function TemplateAutoAssign({ template, onClose, onAssignmentComplete }: TemplateAutoAssignProps) {
+export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }: TemplateAutoAssignProps) {
   const { t } = useTranslation();
   const feesAPI = useFeesAPI();
 
-  // Safety check - don't render if template is not available
-  if (!template) {
+  // Safety check - don't render if structure is not available
+  if (!structure) {
     return (
       <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
         <div className="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">

@@ -32,16 +32,9 @@ export default function SchoolSidebar() {
 
   return (
     <div className="w-64 bg-white shadow-lg h-full">
-      {/* Header */}
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold">{t('School Portal')}</h1>
-      </div>
-      
+
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
-        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
-          {t('Navigation')}
-        </div>
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           return (

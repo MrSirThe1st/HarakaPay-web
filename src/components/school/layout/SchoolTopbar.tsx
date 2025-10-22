@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   BellIcon, 
   MagnifyingGlassIcon, 
@@ -10,19 +11,21 @@ import {
 } from '@heroicons/react/24/outline';
 import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSchoolInfo } from '@/hooks/useSchoolInfo';
 
 export default function SchoolTopbar() {
   const { t } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { signOut } = useDualAuth();
+  const { schoolInfo, loading: schoolLoading } = useSchoolInfo();
 
   return (
     <div className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left side - Mobile menu button and search */}
-          <div className="flex items-center">
+          {/* Left side - School branding and mobile menu */}
+          <div className="flex items-center space-x-4">
             {/* Mobile menu button */}
             <button
               type="button"
@@ -36,7 +39,35 @@ export default function SchoolTopbar() {
               )}
             </button>
 
-           
+            {/* School Branding */}
+            <div className="flex items-center space-x-3">
+              {/* School Logo */}
+              {schoolInfo?.logo_url ? (
+                <div className="flex-shrink-0 relative">
+                  <Image
+                    src={schoolInfo.logo_url}
+                    alt={`${schoolInfo.name} logo`}
+                    width={42}
+                    height={42}
+                    className="rounded-full object-cover"
+                    unoptimized={true}
+                  />
+                </div>
+              ) : (
+                <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {schoolLoading ? '...' : schoolInfo?.name?.charAt(0).toUpperCase() || 'S'}
+                  </span>
+                </div>
+              )}
+
+              {/* School Name */}
+              <div className="hidden sm:block">
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {schoolLoading ? 'Loading...' : schoolInfo?.name || 'School Name'}
+                </h1>
+              </div>
+            </div>
           </div>
 
           {/* Right side - Notifications and profile */}

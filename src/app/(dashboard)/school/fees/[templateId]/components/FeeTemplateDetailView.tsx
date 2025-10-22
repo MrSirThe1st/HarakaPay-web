@@ -4,16 +4,16 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, PencilIcon, TrashIcon, ExclamationTriangleIcon, CheckCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
-import { useFeesAPI, FeeTemplate } from '@/hooks/useFeesAPI';
+import { useFeesAPI, FeeStructure } from '@/hooks/useFeesAPI';
 import { TemplateAutoAssign } from './TemplateAutoAssign';
 
-interface FeeTemplateDetailViewProps {
+interface FeeStructureDetailViewProps {
   templateId: string;
 }
 
-export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps) {
+export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewProps) {
   const router = useRouter();
-  const [template, setTemplate] = useState<FeeTemplate | null>(null);
+  const [structure, setStructure] = useState<FeeStructure | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -23,45 +23,70 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
   const feesAPI = useFeesAPI();
 
   useEffect(() => {
-    loadTemplate();
+    loadStructure();
   }, [templateId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadTemplate = async () => {
+  const loadStructure = async () => {
     try {
       setIsLoading(true);
-      const response = await feesAPI.feeTemplates.getById(templateId);
+      const response = await feesAPI.feeStructures.getById(templateId);
       if (response.success && response.data) {
-        setTemplate(response.data.feeTemplate);
+        setStructure(response.data.feeStructure);
       } else {
-        setError('Failed to load fee template');
+        setError('Failed to load fee structure');
       }
     } catch (error) {
-      console.error('Error loading fee template:', error);
-      setError('An error occurred while loading the fee template');
+      console.error('Error loading fee structure:', error);
+      setError('An error occurred while loading the fee structure');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePublishToggle = async () => {
+    if (!structure) return;
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await feesAPI.feeStructures.update(structure.id, {
+        is_published: !structure.is_published
+      });
+      
+      if (response.success && response.data) {
+        setStructure(response.data.feeStructure);
+        setSuccess(`Fee structure ${structure.is_published ? 'unpublished' : 'published'} successfully`);
+      } else {
+        setError(response.error || 'Failed to update fee structure');
+      }
+    } catch (error) {
+      setError('An error occurred while updating the fee structure');
+      console.error('Error updating fee structure:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!template) return;
+    if (!structure) return;
     
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await feesAPI.feeTemplates.delete(template.id);
+      const response = await feesAPI.feeStructures.delete(structure.id);
       if (response.success) {
-        setSuccess('Fee template deleted successfully');
+        setSuccess('Fee structure deleted successfully');
         setTimeout(() => {
           router.push('/school/fees');
         }, 1500);
       } else {
-        setError(response.error || 'Failed to delete fee template');
+        setError(response.error || 'Failed to delete fee structure');
       }
     } catch (error) {
-      setError('An error occurred while deleting the fee template');
-      console.error('Error deleting fee template:', error);
+      setError('An error occurred while deleting the fee structure');
+      console.error('Error deleting fee structure:', error);
     } finally {
       setIsLoading(false);
       setDeleteConfirm(false);
@@ -73,7 +98,7 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-          <p className="mt-2 text-sm text-gray-500">Loading fee template...</p>
+          <p className="mt-2 text-sm text-gray-500">Loading fee structure...</p>
         </div>
       </div>
     );
@@ -106,10 +131,10 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
     );
   }
 
-  if (!template) {
+  if (!structure) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <p className="text-gray-500">Fee template not found.</p>
+        <p className="text-gray-500">Fee structure not found.</p>
         <button
           onClick={() => router.push('/school/fees')}
           className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
@@ -134,7 +159,7 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
             Back
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{structure.name}</h1>
             <p className="text-sm text-gray-600">Fee Template Details</p>
           </div>
         </div>
@@ -147,11 +172,14 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
             Auto Assign
           </button>
           <button
-            onClick={() => console.log('Edit template:', template)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            onClick={() => handlePublishToggle()}
+            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white ${
+              structure.is_published 
+                ? 'bg-yellow-600 hover:bg-yellow-700' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            <PencilIcon className="h-4 w-4 mr-2" />
-            Edit
+            {structure.is_published ? 'Unpublish' : 'Publish'}
           </button>
           <button
             onClick={() => setDeleteConfirm(true)}
@@ -180,59 +208,57 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
         </div>
       )}
 
-      {/* Template Information */}
+      {/* Structure Information */}
       <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Template Information</h2>
+          <h2 className="text-lg font-medium text-gray-900">Structure Information</h2>
         </div>
         <div className="px-6 py-4">
           <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
             <div>
-              <dt className="text-sm font-medium text-gray-500">Template Name</dt>
-              <dd className="mt-1 text-sm text-gray-900">{template.name}</dd>
+              <dt className="text-sm font-medium text-gray-500">Structure Name</dt>
+              <dd className="mt-1 text-sm text-gray-900">{structure.name}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Academic Year</dt>
-              <dd className="mt-1 text-sm text-gray-900">{template.academic_years?.name || 'N/A'}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{structure.academic_years?.name || 'N/A'}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Grade Level</dt>
-              <dd className="mt-1 text-sm text-gray-900">{template.grade_level}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{structure.grade_level}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Program Type</dt>
-              <dd className="mt-1 text-sm text-gray-900">{template.program_type}</dd>
+              <dt className="text-sm font-medium text-gray-500">Applies To</dt>
+              <dd className="mt-1 text-sm text-gray-900">{structure.applies_to}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Total Amount</dt>
-              <dd className="mt-1 text-sm font-medium text-gray-900">${template.total_amount?.toLocaleString() || '0'}</dd>
+              <dd className="mt-1 text-sm font-medium text-gray-900">${structure.total_amount?.toLocaleString() || '0'}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Status</dt>
               <dd className="mt-1">
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                  template.status === 'published' ? 'bg-green-100 text-green-800' :
-                  template.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
+                  structure.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {template.status ? template.status.charAt(0).toUpperCase() + template.status.slice(1) : 'Unknown'}
+                  {structure.is_published ? 'Published' : 'Draft'}
                 </span>
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Created</dt>
-              <dd className="mt-1 text-sm text-gray-900">{template.created_at ? new Date(template.created_at).toLocaleDateString() : 'N/A'}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{structure.created_at ? new Date(structure.created_at).toLocaleDateString() : 'N/A'}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-              <dd className="mt-1 text-sm text-gray-900">{template.updated_at ? new Date(template.updated_at).toLocaleDateString() : 'N/A'}</dd>
+              <dd className="mt-1 text-sm text-gray-900">{structure.updated_at ? new Date(structure.updated_at).toLocaleDateString() : 'N/A'}</dd>
             </div>
           </dl>
         </div>
       </div>
 
       {/* Fee Categories */}
-      {template.fee_template_categories && template.fee_template_categories.length > 0 && (
+      {structure.fee_structure_items && structure.fee_structure_items.length > 0 && (
         <div className="mt-6 bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">Fee Categories</h2>
@@ -248,22 +274,22 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {template.fee_template_categories?.map((templateCategory, index) => (
+                {structure.fee_structure_items?.map((structureItem, index) => (
                   <tr key={index}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {templateCategory.fee_categories?.name || 'N/A'}
+                      {structureItem.fee_categories?.name || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {templateCategory.fee_categories?.description || 'N/A'}
+                      {structureItem.fee_categories?.description || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ${templateCategory.amount?.toLocaleString() || '0'}
+                      ${structureItem.amount?.toLocaleString() || '0'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        templateCategory.fee_categories?.is_mandatory ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        structureItem.is_mandatory ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                       }`}>
-                        {templateCategory.fee_categories?.is_mandatory ? 'Mandatory' : 'Optional'}
+                        {structureItem.is_mandatory ? 'Mandatory' : 'Optional'}
                       </span>
                     </td>
                   </tr>
@@ -285,14 +311,14 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
               <h3 className="text-lg font-medium text-gray-900 mt-4">Delete Fee Template</h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500">
-                  Are you sure you want to delete &quot;{template.name}&quot;? This action cannot be undone.
+                  Are you sure you want to delete &quot;{structure.name}&quot;? This action cannot be undone.
                 </p>
                 <div className="text-sm text-red-600 mt-3">
                   <p className="font-semibold mb-2">This will permanently delete:</p>
                   <ul className="list-disc list-inside space-y-1 text-left">
-                    <li>All fee template categories</li>
-                    <li>All payment schedules linked to this template</li>
-                    <li>All student fee assignments using this template</li>
+                    <li>All fee structure items</li>
+                    <li>All payment plans linked to this structure</li>
+                    <li>All student fee assignments using this structure</li>
                   </ul>
                 </div>
               </div>
@@ -318,12 +344,12 @@ export function FeeTemplateDetailView({ templateId }: FeeTemplateDetailViewProps
       )}
 
       {/* Auto Assign Modal */}
-      {showAutoAssign && template && (
+      {showAutoAssign && structure && (
         <TemplateAutoAssign
-          template={template}
+          structure={structure}
           onClose={() => setShowAutoAssign(false)}
           onAssignmentComplete={() => {
-            // Optionally refresh template data or show success message
+            // Optionally refresh structure data or show success message
             setSuccess('Fees assigned successfully!');
           }}
         />

@@ -1,14 +1,11 @@
 // src/app/api/school/receipt-logo-upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-    const adminClient = createAdminClient();
+    const supabase = await createClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -20,7 +17,7 @@ export async function POST(request: NextRequest) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as string)
       .single();
 
     if (profileError || !profile) {
@@ -28,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!(profile as any).school_id || !['school_admin', 'school_staff'].includes((profile as any).role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -62,10 +59,11 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${profile.school_id}/receipt-logos/${timestamp}-${randomString}.${fileExtension}`;
+    const fileName = `${(profile as any).school_id}/receipt-logos/${timestamp}-${randomString}.${fileExtension}`;
 
-    // Upload file to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // Upload file to Supabase storage using admin client to bypass RLS
+    const adminClient = createAdminClient();
+    const { data: uploadData, error: uploadError } = await adminClient.storage
       .from('school-logos')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -77,10 +75,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Failed to upload file' }, { status: 500 });
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    // Get public URL using admin client
+    const { data: urlData } = adminClient.storage
       .from('school-logos')
       .getPublicUrl(fileName);
+
+    // Update the school's logo_url in the database
+    const { error: updateError } = await adminClient
+      .from('schools')
+      .update({ logo_url: fileName })
+      .eq('id', profile.school_id);
+
+    if (updateError) {
+      console.error('Error updating school logo_url:', updateError);
+      // Don't fail the request, but log the error
+    }
 
     const response = {
       success: true,
@@ -100,8 +109,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = await createClient();
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -113,7 +121,7 @@ export async function DELETE(request: NextRequest) {
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id as string)
       .single();
 
     if (profileError || !profile) {
@@ -121,7 +129,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!(profile as any).school_id || !['school_admin', 'school_staff'].includes((profile as any).role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -132,18 +140,30 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify the file belongs to the school
-    if (!fileName.startsWith(`${profile.school_id}/`)) {
+    if (!fileName.startsWith(`${(profile as any).school_id}/`)) {
       return NextResponse.json({ success: false, error: 'Unauthorized file access' }, { status: 403 });
     }
 
-    // Delete file from storage
-    const { error: deleteError } = await supabase.storage
+    // Delete file from storage using admin client
+    const adminClient = createAdminClient();
+    const { error: deleteError } = await adminClient.storage
       .from('school-logos')
       .remove([fileName]);
 
     if (deleteError) {
       console.error('Error deleting file:', deleteError);
       return NextResponse.json({ success: false, error: 'Failed to delete file' }, { status: 500 });
+    }
+
+    // Remove the logo_url from the school's database record
+    const { error: updateError } = await adminClient
+      .from('schools')
+      .update({ logo_url: null })
+      .eq('id', profile.school_id);
+
+    if (updateError) {
+      console.error('Error removing logo_url from database:', updateError);
+      // Don't fail the request, but log the error
     }
 
     return NextResponse.json({ 

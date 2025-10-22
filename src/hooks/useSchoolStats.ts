@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Database } from '@/types/supabase';
+import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 
 type School = Database['public']['Tables']['schools']['Row'];
 
@@ -69,24 +70,32 @@ export function useSchoolStats() {
   };
 
   const fetchStats = useCallback(async () => {
+    const cacheKey = createCacheKey('admin:school-stats');
+    
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/schools', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for authentication
-      });
+      const result = await cachedApiCall(
+        cacheKey,
+        async () => {
+          const response = await fetch('/api/schools', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch schools');
-      }
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to fetch schools');
+          }
 
-      const result = await response.json();
+          return response.json();
+        }
+      );
+
       const schools: School[] = result.schools || [];
       const calculatedStats = calculateStats(schools);
       setStats(calculatedStats);
@@ -97,14 +106,20 @@ export function useSchoolStats() {
     }
   }, []);
 
-  useEffect(() => {
+  const refetch = useCallback(() => {
+    // Clear cache before refetching
+    apiCache.clearPattern('admin:school-stats');
     fetchStats();
   }, [fetchStats]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     stats,
     loading,
     error,
-    refetch: fetchStats,
+    refetch,
   };
 }
