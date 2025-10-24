@@ -59,7 +59,7 @@ export interface FeeStructure {
   name: string;
   academic_year_id: string;
   grade_level: string;
-  applies_to: 'school' | 'class';
+  applies_to: 'school' | string;
   total_amount: number;
   is_active: boolean;
   is_published: boolean;
@@ -96,15 +96,11 @@ export interface PaymentPlan {
   type: 'monthly' | 'per-term' | 'upfront' | 'custom';
   discount_percentage: number;
   installments: Array<{
-    installment_number: number;
+    label: string;
     amount: number;
     due_date: string;
-    percentage: number;
-    term_id?: string;
-    is_active: boolean;
   }>;
-  grace_period_days: number;
-  late_fee_rule: Record<string, any>;
+  currency: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -112,20 +108,25 @@ export interface PaymentPlan {
 }
 
 // Keep PaymentSchedule for backward compatibility
-export interface PaymentSchedule extends PaymentPlan {
+export interface PaymentSchedule {
+  id: string;
+  school_id: string;
+  template_id?: string;
+  structure_id?: string;
   name: string;
   schedule_type: 'upfront' | 'per-term' | 'monthly' | 'custom';
-  template_id?: string;
-  school_id: string;
-  payment_installments?: Array<{
-    id: string;
+  discount_percentage: number;
+  installments: Array<{
     installment_number: number;
-    description: string;
     amount: number;
-    percentage: number;
     due_date: string;
+    percentage: number;
     term_id?: string;
   }>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
 }
 
 export interface StudentFeeAssignment {
@@ -342,7 +343,7 @@ export function useFeesAPI() {
       );
     },
 
-    create: async (data: Partial<FeeStructure> & { items: Array<{ category_id: string; amount: number; is_mandatory: boolean; is_recurring: boolean; payment_mode: string }> }) => {
+    create: async (data: Partial<FeeStructure> & { items: Array<{ category_id: string; amount: number; is_mandatory: boolean; is_recurring: boolean; payment_modes: string[] }> }) => {
       const result = await apiCall<{ feeStructure: FeeStructure }>('/api/school/fees/structures', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -465,12 +466,11 @@ export function useFeesAPI() {
     create: async (data: Partial<PaymentPlan> & { 
       structure_id: string;
       installments: Array<{
-        installment_number: number;
+        label: string;
         amount: number;
         due_date: string;
-        percentage: number;
-        term_id?: string;
-      }>
+      }>;
+      currency?: string;
     }) => {
       const result = await apiCall<{ paymentPlan: PaymentPlan }>('/api/school/fees/payment-plans', {
         method: 'POST',

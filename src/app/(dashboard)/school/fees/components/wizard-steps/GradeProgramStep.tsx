@@ -14,10 +14,12 @@ interface GradeProgramStepProps {
   data: {
     gradeLevel: string;
     programType: string;
+    appliesTo: 'school' | string[];
   };
   onChange: (data: {
     gradeLevel: string;
     programType: string;
+    appliesTo: 'school' | string[];
   }) => void;
 }
 
@@ -29,6 +31,7 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
   const handleChange = (newData: {
     gradeLevel: string;
     programType: string;
+    appliesTo: 'school' | string[];
   }) => {
     console.log('GradeProgramStep onChange called with:', newData);
     onChange(newData);
@@ -37,7 +40,8 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
   const handleProgramSelect = (program: typeof CONGOLESE_PROGRAM_TYPES[0]) => {
     handleChange({
       ...data,
-      programType: program.value
+      programType: program.value,
+      appliesTo: data.appliesTo
     });
     setIsProgramDropdownOpen(false);
   };
@@ -45,7 +49,8 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
   const handleGradeSelect = (grade: string) => {
     handleChange({
       ...data,
-      gradeLevel: grade
+      gradeLevel: grade,
+      appliesTo: data.appliesTo
     });
     setIsGradeDropdownOpen(false);
   };
@@ -158,7 +163,7 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
                   type="text"
                   placeholder={t("Or enter custom grade")}
                   value={data.gradeLevel && !selectedGrade ? data.gradeLevel : ''}
-                  onChange={(e) => handleChange({ ...data, gradeLevel: e.target.value })}
+                  onChange={(e) => handleChange({ ...data, gradeLevel: e.target.value, appliesTo: data.appliesTo })}
                   className="h-12"
                 />
               </div>
@@ -166,6 +171,52 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
             <p className="text-xs text-gray-500">
               {t('Select from the Congolese education system or enter a custom grade level')}
             </p>
+          </div>
+
+          {/* Applies To Selection */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-700">
+              {t('This fee structure applies to:')}
+            </Label>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="appliesTo"
+                  value="school"
+                  checked={data.appliesTo === 'school'}
+                  onChange={(e) => handleChange({ ...data, appliesTo: e.target.value as 'school' })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {t('Entire School')}
+                  </span>
+                  <p className="text-xs text-gray-500">
+                    {t('All students in the school')}
+                  </p>
+                </div>
+              </label>
+              
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="appliesTo"
+                  value="grade"
+                  checked={data.appliesTo !== 'school'}
+                  onChange={(e) => handleChange({ ...data, appliesTo: [data.gradeLevel] })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-900">
+                    {t('Specific Grade Level')}
+                  </span>
+                  <p className="text-xs text-gray-500">
+                    {t('Only students in the selected grade level')}
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
       </div>

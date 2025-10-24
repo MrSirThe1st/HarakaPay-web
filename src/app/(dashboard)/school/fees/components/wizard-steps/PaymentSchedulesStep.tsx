@@ -254,7 +254,7 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
   const scheduleTypes = getScheduleTypes(academicYear.termStructure, academicYear, t);
   const selectedSchedule = scheduleTypes.find(s => s.value === paymentSchedule.scheduleType);
 
-  const generateInstallments = (scheduleType: string, baseAmount: number) => {
+  const generateInstallments = React.useCallback((scheduleType: string, baseAmount: number) => {
     let installments: {
       installmentNumber: number;
       amount: number;
@@ -341,7 +341,29 @@ export function PaymentSchedulesStep({ paymentSchedule, additionalPaymentSchedul
     }
     
     return installments;
-  };
+  }, [academicYear.startDate, academicYear.endDate, academicYear.termStructure]);
+
+  // Generate installments for tuition payment schedule when component mounts or schedule type changes
+  React.useEffect(() => {
+    if (tuitionBaseTotal > 0 && paymentSchedule.installments.length === 0 && paymentSchedule.scheduleType !== 'custom') {
+      const generatedInstallments = generateInstallments(paymentSchedule.scheduleType, tuitionBaseTotal);
+      onChange({
+        ...paymentSchedule,
+        installments: generatedInstallments
+      }, initialAdditionalSchedule);
+    }
+  }, [tuitionBaseTotal, paymentSchedule.scheduleType, paymentSchedule.installments.length, generateInstallments, onChange, paymentSchedule, initialAdditionalSchedule]);
+
+  // Regenerate installments when schedule type changes
+  React.useEffect(() => {
+    if (tuitionBaseTotal > 0 && paymentSchedule.scheduleType !== 'custom' && paymentSchedule.scheduleType !== 'upfront') {
+      const generatedInstallments = generateInstallments(paymentSchedule.scheduleType, tuitionBaseTotal);
+      onChange({
+        ...paymentSchedule,
+        installments: generatedInstallments
+      }, initialAdditionalSchedule);
+    }
+  }, [paymentSchedule.scheduleType, tuitionBaseTotal, generateInstallments, onChange, paymentSchedule, initialAdditionalSchedule]);
 
 
   const handleTuitionScheduleChange = (scheduleType: string) => {

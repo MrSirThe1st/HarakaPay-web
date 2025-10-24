@@ -47,6 +47,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       gradeLevel: '',
       programType: 'primary'
     },
+    appliesTo: 'school', // New field: 'school' or array of grade levels
     selectedCategories: [],
     paymentSchedule: {
       scheduleType: 'per-term',
@@ -228,6 +229,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
 
         if (!academicYearResponse.success || !academicYearResponse.data) {
           console.error('Academic year creation failed:', academicYearResponse.error);
+          console.error('Full response:', academicYearResponse);
           throw new Error(academicYearResponse.error || 'Failed to create academic year');
         }
 
@@ -253,7 +255,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           description: `${category.categoryName} fees`,
           is_mandatory: category.isMandatory,
           is_recurring: category.supportsRecurring,
-          category_type: 'custom'
+          category_type: category.categoryType
         });
 
         if (!categoryResponse.success || !categoryResponse.data) {
@@ -282,7 +284,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         name: `${wizardData.gradeProgram.gradeLevel} Fees - ${wizardData.academicYear.name}`,
         academic_year_id: academicYearId,
         grade_level: wizardData.gradeProgram.gradeLevel,
-        applies_to: 'school',
+        applies_to: wizardData.appliesTo === 'school' ? 'school' : wizardData.gradeProgram.gradeLevel,
         total_amount: totalAmount,
         is_active: true,
         is_published: false,
@@ -291,7 +293,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           amount: category.amount,
           is_mandatory: category.isMandatory,
           is_recurring: category.supportsRecurring,
-          payment_modes: category.categoryType === 'tuition' ? ['installment', 'one_time'] : ['one_time']
+          payment_modes: category.categoryType === 'tuition' ? ['per-term', 'one_time'] : ['one_time']
         }))
       });
 
@@ -306,22 +308,19 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       let tuitionOneTimePlanResponse = null;
       
       // Create installment plan if there are installments
-      if (wizardData.paymentSchedule.installments.length > 0) {
+      if (wizardData.paymentSchedule.installments && wizardData.paymentSchedule.installments.length > 0) {
         console.log('Creating tuition installment plan:', wizardData.paymentSchedule.installments);
         
         tuitionInstallmentPlanResponse = await feesAPI.paymentPlans.create({
           structure_id: structureId,
-          name: `${wizardData.gradeProgram.gradeLevel} Monthly Installment Plan`,
+          name: `${wizardData.paymentSchedule.scheduleType} Payment Plan`,
           type: wizardData.paymentSchedule.scheduleType as 'monthly' | 'per-term' | 'upfront',
           discount_percentage: wizardData.paymentSchedule.discountPercentage || 0,
-          grace_period_days: 7, // 7 days grace period
-          late_fee_rule: { type: 'percentage', amount: 5 }, // 5% late fee
-          installments: wizardData.paymentSchedule.installments.map((inst) => ({
-            installment_number: inst.installmentNumber,
+          currency: 'USD',
+          installments: wizardData.paymentSchedule.installments.map((inst, index) => ({
+            label: wizardData.paymentSchedule.scheduleType === 'per-term' ? `Term ${index + 1}` : `Month ${index + 1}`,
             amount: inst.amount,
-            percentage: inst.percentage,
-            due_date: inst.dueDate,
-            term_id: inst.termId
+            due_date: inst.dueDate
           }))
         });
 
@@ -342,15 +341,13 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         
         tuitionOneTimePlanResponse = await feesAPI.paymentPlans.create({
           structure_id: structureId,
-          name: `${wizardData.gradeProgram.gradeLevel} One-Time Payment Plan`,
+          name: "One-Time Payment Plan",
           type: 'upfront',
           discount_percentage: 0,
-          grace_period_days: 7,
-          late_fee_rule: { type: 'percentage', amount: 5 },
+          currency: 'USD',
           installments: [{
-            installment_number: 1,
+            label: "Full Payment",
             amount: tuitionOneTimeAmount,
-            percentage: 0,
             due_date: wizardData.academicYear.startDate
           }]
         });
@@ -369,14 +366,14 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         
         additionalPaymentPlanResponse = await feesAPI.paymentPlans.create({
           structure_id: structureId,
+          name: "Additional Fees Payment Plan",
           type: wizardData.additionalPaymentSchedule.scheduleType as 'monthly' | 'per-term' | 'upfront',
           discount_percentage: wizardData.additionalPaymentSchedule.discountPercentage || 0,
-          installments: wizardData.additionalPaymentSchedule.installments.map((inst) => ({
-            installment_number: inst.installmentNumber,
+          currency: 'USD',
+          installments: wizardData.additionalPaymentSchedule.installments.map((inst, index) => ({
+            label: wizardData.additionalPaymentSchedule!.scheduleType === 'per-term' ? `Term ${index + 1}` : `Month ${index + 1}`,
             amount: inst.amount,
-            percentage: inst.percentage,
-            due_date: inst.dueDate,
-            term_id: inst.termId
+            due_date: inst.dueDate
           }))
         });
 
@@ -567,8 +564,12 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           
           {wizardStep === 2 && (
             <GradeProgramStep 
-              data={wizardData.gradeProgram}
-              onChange={(data) => setWizardData(prev => ({ ...prev, gradeProgram: data }))}
+              data={{...wizardData.gradeProgram, appliesTo: wizardData.appliesTo}}
+              onChange={(data) => setWizardData(prev => ({ 
+                ...prev, 
+                gradeProgram: { gradeLevel: data.gradeLevel, programType: data.programType },
+                appliesTo: data.appliesTo
+              }))}
             />
           )}
           

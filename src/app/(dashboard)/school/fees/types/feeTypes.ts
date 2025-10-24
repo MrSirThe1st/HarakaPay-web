@@ -128,6 +128,7 @@ export interface WizardData {
     gradeLevel: string;
     programType: string;
   };
+  appliesTo: 'school' | string[]; // New field: 'school' or array of grade levels
   selectedCategories: {
     categoryId: string;
     categoryName: string;

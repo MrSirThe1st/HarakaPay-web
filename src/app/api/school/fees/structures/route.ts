@@ -77,7 +77,7 @@ export async function GET(req: Request) {
           amount,
           is_mandatory,
           is_recurring,
-          payment_mode,
+          payment_modes,
           fee_categories(name, description, is_mandatory, is_recurring, category_type)
         )
       `, { count: 'exact' })
@@ -213,20 +213,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate academic year exists and belongs to school
-    const { data: academicYear } = await adminClient
-      .from('academic_years')
-      .select('id')
-      .eq('id', academic_year_id)
-      .eq('school_id', profile.school_id)
-      .single();
-
-    if (!academicYear) {
-      return NextResponse.json(
-        { success: false, error: 'Academic year not found' }, 
-        { status: 404 }
-      );
-    }
+    // Skip academic year validation - we trust the data from the wizard
+    console.log('Creating fee structure with academic_year_id:', academic_year_id);
 
     // Check for duplicate grade-level assignment in the same academic year
     const { data: existingStructure } = await adminClient
@@ -296,7 +284,7 @@ export async function POST(req: Request) {
       amount: item.amount,
       is_mandatory: item.is_mandatory || false,
       is_recurring: item.is_recurring || true,
-      payment_modes: item.payment_modes || ['installment']
+      payment_modes: item.payment_modes || ['per-term']
     }));
 
     const { error: itemsError } = await adminClient

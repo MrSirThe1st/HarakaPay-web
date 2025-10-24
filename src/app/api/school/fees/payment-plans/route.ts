@@ -193,19 +193,17 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { 
       structure_id,
-      name,
       type,
       discount_percentage = 0,
       installments = [],
-      grace_period_days = 0,
-      late_fee_rule = {},
+      currency = 'USD',
       is_active = true
     } = body;
 
     // Validate required fields
-    if (!structure_id || !type || !name) {
+    if (!structure_id || !type) {
       return NextResponse.json(
-        { success: false, error: 'Structure ID, type, and name are required' }, 
+        { success: false, error: 'Structure ID and type are required' }, 
         { status: 400 }
       );
     }
@@ -274,12 +272,10 @@ export async function POST(req: Request) {
       .insert({
         school_id: profile.school_id,
         structure_id,
-        name,
         type,
         discount_percentage,
         installments: installments,
-        grace_period_days,
-        late_fee_rule,
+        currency,
         is_active,
         created_by: profile.user_id || null  // Use profile.user_id or null if not available
       })
