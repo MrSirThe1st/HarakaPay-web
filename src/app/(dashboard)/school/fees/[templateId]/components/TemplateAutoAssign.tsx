@@ -13,10 +13,10 @@ import { FeeStructure } from '@/hooks/useFeesAPI';
 interface TemplateAutoAssignProps {
   structure: FeeStructure;
   onClose: () => void;
-  onAssignmentComplete?: () => void;
+  onActivationComplete?: () => void;
 }
 
-export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }: TemplateAutoAssignProps) {
+export function TemplateAutoAssign({ structure, onClose, onActivationComplete }: TemplateAutoAssignProps) {
   const { t } = useTranslation();
   const feesAPI = useFeesAPI();
 
@@ -38,77 +38,29 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
       </div>
     );
   }
-  const [paymentSchedules, setPaymentSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [assigning, setAssigning] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Form state - pre-populated with template data
-  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([]);
-
-  // Load payment schedules for this template
+  // No need to load payment plans separately - they'll be fetched by the API
   useEffect(() => {
-    if (template?.id) {
-      loadPaymentSchedules();
-    }
-  }, [template?.id]);
-
-  const loadPaymentSchedules = async () => {
-    setLoading(true);
-    try {
-      const schedulesResponse = await feesAPI.paymentSchedules.getAll();
-      if (schedulesResponse.success && schedulesResponse.data) {
-        // Filter schedules for this template
-        const templateSchedules = schedulesResponse.data.paymentSchedules.filter(
-          schedule => schedule.template_id === template.id
-        );
-        setPaymentSchedules(templateSchedules);
-      }
-    } catch (error) {
-      console.error('Error loading payment schedules:', error);
-      setError('Failed to load payment schedules');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleScheduleToggle = (scheduleId: string) => {
-    setSelectedSchedules(prev => {
-      const newSchedules = prev.includes(scheduleId)
-        ? prev.filter(id => id !== scheduleId)
-        : [...prev, scheduleId];
-      
-      return newSchedules;
-    });
-    setError(null);
-    setSuccess(null);
-    setPreviewData(null);
-  };
+    // Component is ready to use
+  }, [structure?.id]);
 
   const handlePreview = async () => {
-    if (selectedSchedules.length === 0) {
-      setError('Please select at least one payment schedule');
-      return;
-    }
-
-    setAssigning(true);
+    setActivating(true);
     setError(null);
 
     try {
       const requestData = {
-        academic_year_id: template?.academic_year_id || '',
-        grade_level: template?.grade_level || '',
-        program_type: template?.program_type || '',
-        template_id: template?.id || '',
-        schedule_ids: selectedSchedules,
         dry_run: true
       };
       
       console.log('Preview request data:', requestData);
       
-      const response = await fetch('/api/school/fees/auto-assign', {
+      const response = await fetch(`/api/school/fees/structures/${structure.id}/activate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,40 +71,30 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to preview assignments');
+        throw new Error(data.error || 'Failed to preview activation');
       }
 
       setPreviewData(data.data);
     } catch (error) {
       console.error('Preview error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to preview assignments');
+      setError(error instanceof Error ? error.message : 'Failed to preview activation');
     } finally {
-      setAssigning(false);
+      setActivating(false);
     }
   };
 
-  const handleAssign = async () => {
-    if (selectedSchedules.length === 0) {
-      setError('Please select at least one payment schedule');
-      return;
-    }
-
-    setAssigning(true);
+  const handleActivate = async () => {
+    setActivating(true);
     setError(null);
 
     try {
       const requestData = {
-        academic_year_id: template?.academic_year_id || '',
-        grade_level: template?.grade_level || '',
-        program_type: template?.program_type || '',
-        template_id: template?.id || '',
-        schedule_ids: selectedSchedules,
-        dry_run: false
+        // No payment plan selection needed - API will use all available plans
       };
       
-      console.log('Assign request data:', requestData);
+      console.log('Activate request data:', requestData);
       
-      const response = await fetch('/api/school/fees/auto-assign', {
+      const response = await fetch(`/api/school/fees/structures/${structure.id}/activate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,18 +105,15 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to assign fees');
+        throw new Error(data.error || 'Failed to activate fee structure');
       }
 
       setSuccess(data.message);
       setPreviewData(null);
-      
-      // Reset selected schedules
-      setSelectedSchedules([]);
 
       // Notify parent component
-      if (onAssignmentComplete) {
-        onAssignmentComplete();
+      if (onActivationComplete) {
+        onActivationComplete();
       }
 
       // Close modal after a short delay
@@ -182,10 +121,10 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
         onClose();
       }, 2000);
     } catch (error) {
-      console.error('Assignment error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to assign fees');
+      console.error('Activation error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to activate fee structure');
     } finally {
-      setAssigning(false);
+      setActivating(false);
     }
   };
 
@@ -200,9 +139,9 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
                 <UserGroupIcon className="h-8 w-8 text-blue-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-xl font-semibold text-gray-900">Auto Assign Fees</h3>
+                <h3 className="text-xl font-semibold text-gray-900">Activate Fee Structure</h3>
                 <p className="text-sm text-gray-600">
-                  Assign &quot;{template?.name || 'Template'}&quot; to students
+                  Activate &quot;{structure?.name || 'Fee Structure'}&quot; for students
                 </p>
               </div>
             </div>
@@ -214,25 +153,25 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
             </button>
           </div>
 
-          {/* Template Info */}
+          {/* Structure Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h4 className="text-sm font-semibold text-blue-900 mb-2">Template Information</h4>
+            <h4 className="text-sm font-semibold text-blue-900 mb-2">Fee Structure Information</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="text-blue-700 font-medium">Name:</span>
-                <span className="text-blue-600 ml-1">{template?.name || 'N/A'}</span>
+                <span className="text-blue-600 ml-1">{structure?.name || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Grade:</span>
-                <span className="text-blue-600 ml-1">{template?.grade_level || 'N/A'}</span>
+                <span className="text-blue-600 ml-1">{structure?.grade_level || 'N/A'}</span>
               </div>
               <div>
-                <span className="text-blue-700 font-medium">Program:</span>
-                <span className="text-blue-600 ml-1">{template?.program_type || 'N/A'}</span>
+                <span className="text-blue-700 font-medium">Applies To:</span>
+                <span className="text-blue-600 ml-1">{structure?.applies_to || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Total:</span>
-                <span className="text-blue-600 ml-1">${template?.total_amount?.toLocaleString() || '0'}</span>
+                <span className="text-blue-600 ml-1">${structure?.total_amount?.toLocaleString() || '0'}</span>
               </div>
             </div>
           </div>
@@ -260,38 +199,14 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
             </div>
           )}
 
-          {/* Payment Schedule Selection */}
+          {/* Payment Plans Info */}
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Schedules * (Select one or more)
-              </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                {paymentSchedules.length === 0 ? (
-                  <p className="text-sm text-gray-500">No payment schedules available for this template</p>
-                ) : (
-                  paymentSchedules.map((schedule) => (
-                    <label key={schedule.id} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <input
-                        type="checkbox"
-                        checked={selectedSchedules.includes(schedule.id)}
-                        onChange={() => handleScheduleToggle(schedule.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        disabled={loading}
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{schedule.name}</div>
-                        <div className="text-xs text-gray-500 capitalize">{schedule.schedule_type.replace('-', ' ')}</div>
-                      </div>
-                    </label>
-                  ))
-                )}
-              </div>
-              {selectedSchedules.length > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {selectedSchedules.length} schedule(s) selected
-                </p>
-              )}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-green-900 mb-2">Payment Plans</h4>
+              <p className="text-sm text-green-700">
+                All payment plans created for this fee structure will be automatically included when activating.
+                Students will be assigned to the primary payment plan by default.
+              </p>
             </div>
           </div>
 
@@ -299,27 +214,27 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
           <div className="mt-6 flex flex-col sm:flex-row gap-4">
             <button
               onClick={handlePreview}
-              disabled={assigning || loading || selectedSchedules.length === 0}
+              disabled={activating || loading}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <InformationCircleIcon className="h-4 w-4 mr-2" />
-              Preview Assignment
+              Preview Activation
             </button>
             
             <button
-              onClick={handleAssign}
-              disabled={assigning || loading || !previewData || previewData.summary.total_assignments === 0}
+              onClick={handleActivate}
+              disabled={activating || loading || !previewData || previewData.activated_students === 0}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {assigning ? (
+              {activating ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Assigning...
+                  Activating...
                 </>
               ) : (
                 <>
                   <CheckCircleIcon className="h-4 w-4 mr-2" />
-                  Assign Fees ({previewData?.summary?.total_assignments || 0} assignments)
+                  Activate Structure ({previewData?.activated_students || 0} students)
                 </>
               )}
             </button>
@@ -328,50 +243,34 @@ export function TemplateAutoAssign({ structure, onClose, onAssignmentComplete }:
           {/* Preview Results */}
           {previewData && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="text-sm font-semibold text-blue-900 mb-3">Assignment Preview</h4>
+              <h4 className="text-sm font-semibold text-blue-900 mb-3">Activation Preview</h4>
               
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{previewData.summary.total_students}</div>
-                  <div className="text-xs text-blue-600">Total Students</div>
+                  <div className="text-2xl font-bold text-blue-600">{previewData.total_eligible_students}</div>
+                  <div className="text-xs text-blue-600">Total Eligible</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{previewData.summary.new_assignments}</div>
-                  <div className="text-xs text-green-600">New Assignments</div>
+                  <div className="text-2xl font-bold text-green-600">{previewData.activated_students}</div>
+                  <div className="text-xs text-green-600">Will Be Activated</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{previewData.summary.total_assignments}</div>
-                  <div className="text-xs text-purple-600">Total Assignments</div>
+                  <div className="text-2xl font-bold text-orange-600">{previewData.already_activated}</div>
+                  <div className="text-xs text-orange-600">Already Activated</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{previewData.summary.existing_assignments}</div>
-                  <div className="text-xs text-orange-600">Already Assigned</div>
+                  <div className="text-2xl font-bold text-purple-600">{previewData.academic_year_activated ? 'Yes' : 'No'}</div>
+                  <div className="text-xs text-purple-600">Academic Year</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-600">{previewData.summary.schedules_count}</div>
-                  <div className="text-xs text-gray-600">Schedules</div>
+                  <div className="text-2xl font-bold text-indigo-600">{previewData.payment_plans_used || 0}</div>
+                  <div className="text-xs text-indigo-600">Payment Plans</div>
                 </div>
               </div>
 
-              {previewData.assignments.length > 0 && (
-                <div className="max-h-60 overflow-y-auto">
-                  <h5 className="text-xs font-semibold text-blue-800 mb-2">Students to be assigned:</h5>
-                  <div className="space-y-1">
-                    {previewData.assignments.slice(0, 10).map((assignment: any, index: number) => (
-                      <div key={index} className="text-xs text-blue-700 flex justify-between items-center">
-                        <div>
-                          <span className="font-medium">{assignment.student_name} ({assignment.student_id_display})</span>
-                          <span className="text-blue-600 ml-2">- {assignment.schedule_name}</span>
-                        </div>
-                        <span className="font-medium">${assignment.template_total_amount?.toLocaleString() || 'N/A'}</span>
-                      </div>
-                    ))}
-                    {previewData.assignments.length > 10 && (
-                      <div className="text-xs text-blue-600 italic">
-                        ... and {previewData.assignments.length - 10} more assignments
-                      </div>
-                    )}
-                  </div>
+              {previewData.message && (
+                <div className="text-sm text-blue-800 bg-blue-100 p-3 rounded-lg">
+                  {previewData.message}
                 </div>
               )}
             </div>

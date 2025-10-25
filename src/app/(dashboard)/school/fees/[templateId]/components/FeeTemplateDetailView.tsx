@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftIcon, PencilIcon, TrashIcon, ExclamationTriangleIcon, CheckCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, TrashIcon, ExclamationTriangleIcon, CheckCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { useFeesAPI, FeeStructure } from '@/hooks/useFeesAPI';
 import { TemplateAutoAssign } from './TemplateAutoAssign';
 
@@ -18,7 +18,7 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [showAutoAssign, setShowAutoAssign] = useState(false);
+  const [showAutoActivate, setShowAutoActivate] = useState(false);
 
   const feesAPI = useFeesAPI();
 
@@ -165,11 +165,11 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
         </div>
         <div className="flex space-x-3">
           <button
-            onClick={() => setShowAutoAssign(true)}
+            onClick={() => setShowAutoActivate(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
             <UserGroupIcon className="h-4 w-4 mr-2" />
-            Auto Assign
+            Activate Structure
           </button>
           <button
             onClick={() => handlePublishToggle()}
@@ -343,14 +343,15 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
         </div>
       )}
 
-      {/* Auto Assign Modal */}
-      {showAutoAssign && structure && (
+      {/* Auto Activate Modal */}
+      {showAutoActivate && structure && (
         <TemplateAutoAssign
           structure={structure}
-          onClose={() => setShowAutoAssign(false)}
-          onAssignmentComplete={() => {
-            // Optionally refresh structure data or show success message
-            setSuccess('Fees assigned successfully!');
+          onClose={() => setShowAutoActivate(false)}
+          onActivationComplete={() => {
+            // Refresh structure data to show updated status
+            loadStructure();
+            setSuccess('Fee structure activated successfully!');
           }}
         />
       )}

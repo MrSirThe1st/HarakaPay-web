@@ -118,50 +118,31 @@ export interface AuditTrail {
 }
 
 export interface WizardData {
-  academicYear: {
-    name: string;
-    startDate: string;
-    endDate: string;
-    termStructure: string;
+  academicContext: {
+    academicYear: string; // e.g., "2024-2025"
+    gradeLevel: string | string[]; // Single or multiple grades
+    structureName: string;
+    appliesTo: 'school' | 'grade';
+    currency: string; // From school settings
   };
-  gradeProgram: {
-    gradeLevel: string;
-    programType: string;
-  };
-  appliesTo: 'school' | string[]; // New field: 'school' or array of grade levels
-  selectedCategories: {
+  feeItems: {
     categoryId: string;
     categoryName: string;
     amount: number;
     isMandatory: boolean;
-    supportsRecurring: boolean;
-    supportsOneTime: boolean;
-    categoryType: 'tuition' | 'additional';
+    paymentModes: Array<'installment' | 'one_time' | 'termly' | 'monthly'>;
   }[];
-  paymentSchedule: {
-    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
+  paymentPlans: {
+    type: 'monthly' | 'termly' | 'one_time' | 'installment';
+    discountPercentage: number;
     installments: {
-      installmentNumber: number;
+      label: string;
       amount: number;
       dueDate: string;
-      percentage: number;
-      termId?: string;
     }[];
-    discountPercentage?: number;
-  };
-  additionalPaymentSchedule?: {
-    scheduleType: 'upfront' | 'per-term' | 'monthly' | 'custom';
-    installments: {
-      installmentNumber: number;
-      amount: number;
-      dueDate: string;
-      percentage: number;
-      termId?: string;
-    }[];
-    discountPercentage?: number;
-  };
+  }[];
 }
 
 export type ActiveTab = 'publish' | 'audit';
 export type ViewMode = 'wizard' | 'management';
-export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
+export type WizardStep = 1 | 2 | 3 | 4;

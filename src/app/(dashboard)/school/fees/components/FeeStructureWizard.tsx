@@ -1,23 +1,20 @@
 // src/app/(dashboard)/school/fees/components/FeeStructureWizard.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CalendarIcon,
-  AcademicCapIcon,
-  CheckCircleIcon,
-  ReceiptPercentIcon,
-  DocumentDuplicateIcon,
   ClipboardDocumentListIcon,
+  ReceiptPercentIcon,
+  CreditCardIcon,
+  CheckCircleIcon,
   EyeIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { WizardData, WizardStep } from '../types/feeTypes';
-import { AcademicYearStep } from './wizard-steps/AcademicYearStep';
-import { GradeProgramStep } from './wizard-steps/GradeProgramStep';
-import { CategoriesStep } from './wizard-steps/CategoriesStep';
-import { AmountsStep } from './wizard-steps/AmountsStep';
-import { PaymentSchedulesStep } from './wizard-steps/PaymentSchedulesStep';
+import { SelectAcademicContextStep } from './wizard-steps/SelectAcademicContextStep';
+import { FeeItemsStep } from './wizard-steps/FeeItemsStep';
+import { DefinePaymentPlansStep } from './wizard-steps/DefinePaymentPlansStep';
 import { PublishStep } from './wizard-steps/PublishStep';
 import { useFeesAPI } from '@/hooks/useFeesAPI';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -37,72 +34,68 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
   const feesAPI = useFeesAPI();
   
   const [wizardData, setWizardData] = useState<WizardData>({
-    academicYear: {
-      name: '',
-      startDate: '',
-      endDate: '',
-      termStructure: '3 Terms'
-    },
-    gradeProgram: {
+    academicContext: {
+      academicYear: '',
       gradeLevel: '',
-      programType: 'primary'
+      structureName: '',
+      appliesTo: 'school',
+      currency: 'USD'
     },
-    appliesTo: 'school', // New field: 'school' or array of grade levels
-    selectedCategories: [],
-    paymentSchedule: {
-      scheduleType: 'per-term',
-      installments: [],
-      discountPercentage: 0
-    },
-    additionalPaymentSchedule: {
-      scheduleType: 'upfront',
-      installments: [],
-      discountPercentage: 0
-    }
+    feeItems: [],
+    paymentPlans: []
   });
+
+  // Fetch school currency on mount
+  useEffect(() => {
+    const loadSchoolCurrency = async () => {
+      try {
+        const res = await fetch('/api/schools/settings');
+        const data = await res.json();
+        if (data.school?.currency) {
+          setWizardData(prev => ({
+            ...prev,
+            academicContext: {
+              ...prev.academicContext,
+              currency: data.school.currency
+            }
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading school currency:', error);
+        // Default to USD if fetch fails
+      }
+    };
+    loadSchoolCurrency();
+  }, []);
 
   const wizardSteps = [
     { 
       id: 1, 
-      title: t('Academic Year'), 
-      description: t('Choose year & terms'),
+      title: t('Academic Context'), 
+      description: t('Year, grade & scope'),
       icon: CalendarIcon,
-      completed: wizardData.academicYear.name !== '' && wizardData.academicYear.startDate !== '' && wizardData.academicYear.endDate !== ''
+      completed: wizardData.academicContext.academicYear !== '' && wizardData.academicContext.structureName !== ''
     },
     { 
       id: 2, 
-      title: t('Grade/Program'), 
-      description: t('Select level'),
-      icon: AcademicCapIcon,
-      completed: wizardData.gradeProgram.gradeLevel !== ''
+      title: t('Fee Items'), 
+      description: t('Categories & amounts'),
+      icon: ReceiptPercentIcon,
+      completed: wizardData.feeItems.length > 0
     },
     { 
       id: 3, 
-      title: t('Categories'), 
-      description: t('Add fee types'),
-      icon: ClipboardDocumentListIcon,
-      completed: wizardData.selectedCategories.length > 0
+      title: t('Payment Plans'), 
+      description: t('Define installments'),
+      icon: CreditCardIcon,
+      completed: wizardData.paymentPlans.length > 0
     },
     { 
       id: 4, 
-      title: t('Amounts'), 
-      description: t('Enter amounts'),
-      icon: ReceiptPercentIcon,
-      completed: wizardData.selectedCategories.length > 0 && wizardData.selectedCategories.every(cat => cat.amount > 0)
-    },
-    { 
-      id: 5, 
-      title: t('Payment Schedule'), 
-      description: t('Define schedule'),
-      icon: ReceiptPercentIcon,
-      completed: wizardData.paymentSchedule.installments.length > 0
-    },
-    { 
-      id: 6, 
       title: t('Review & Save'), 
-      description: t('Save template'),
+      description: t('Confirm & finalize'),
       icon: CheckCircleIcon,
-      completed: false // Only completed when actually saved
+      completed: false
     }
   ];
 
@@ -113,47 +106,38 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
   const nextWizardStep = () => {
     // Validate current step before proceeding
     if (wizardStep === 1) {
-      console.log('Validating step 1:', {
-        name: wizardData.academicYear.name,
-        startDate: wizardData.academicYear.startDate,
-        endDate: wizardData.academicYear.endDate,
-        termStructure: wizardData.academicYear.termStructure
-      });
-      
-      if (!wizardData.academicYear.name || !wizardData.academicYear.startDate || !wizardData.academicYear.endDate) {
-        const missingFields = [];
-        if (!wizardData.academicYear.name) missingFields.push('Name');
-        if (!wizardData.academicYear.startDate) missingFields.push('Start Date');
-        if (!wizardData.academicYear.endDate) missingFields.push('End Date');
-        
-        alert(`Please fill in: ${missingFields.join(', ')}`);
+      if (!wizardData.academicContext.academicYear || !wizardData.academicContext.structureName) {
+        alert(t('Please fill in all required fields in the Academic Context step'));
+        return;
+      }
+      if (wizardData.academicContext.appliesTo === 'grade' && 
+          (!wizardData.academicContext.gradeLevel || 
+           (Array.isArray(wizardData.academicContext.gradeLevel) && wizardData.academicContext.gradeLevel.length === 0))) {
+        alert(t('Please select at least one grade when choosing "Specific Grades"'));
         return;
       }
     }
     
     if (wizardStep === 2) {
-      if (!wizardData.gradeProgram.gradeLevel || !wizardData.gradeProgram.programType) {
-        alert('Please fill in all required fields in the Grade/Program step');
+      if (wizardData.feeItems.length === 0) {
+        alert(t('Please add at least one fee item'));
+        return;
+      }
+      const itemsWithoutAmounts = wizardData.feeItems.filter(item => !item.amount || item.amount <= 0);
+      if (itemsWithoutAmounts.length > 0) {
+        alert(t('Please set amounts for all fee items'));
         return;
       }
     }
     
     if (wizardStep === 3) {
-      if (wizardData.selectedCategories.length === 0) {
-        alert('Please select at least one fee category');
+      if (wizardData.paymentPlans.length === 0) {
+        alert(t('Please create at least one payment plan'));
         return;
       }
     }
     
-    if (wizardStep === 4) {
-      const categoriesWithoutAmounts = wizardData.selectedCategories.filter(cat => !cat.amount || cat.amount <= 0);
-      if (categoriesWithoutAmounts.length > 0) {
-        alert('Please set amounts for all selected categories');
-        return;
-      }
-    }
-    
-    if (wizardStep < 6) {
+    if (wizardStep < 4) {
       setWizardStep((wizardStep + 1) as WizardStep);
     }
   };
@@ -164,226 +148,195 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
     }
   };
 
+  const calculateStartDate = (academicYear: string) => {
+    const year = academicYear.split('-')[0];
+    return `${year}-09-01`;
+  };
+
+  const calculateEndDate = (academicYear: string) => {
+    const year = academicYear.split('-')[1];
+    return `${year}-06-30`;
+  };
+
   const handleSaveFeeStructure = async () => {
     setIsSaving(true);
     setSaveError(null);
     
     try {
-      console.log('Publishing fee structure with wizard data:', wizardData);
-      console.log('Payment schedule installments:', wizardData.paymentSchedule.installments);
-      console.log('Additional payment schedule installments:', wizardData.additionalPaymentSchedule?.installments);
-      // Debug: Log the wizard data
-      console.log('Wizard data being sent:', wizardData);
+      console.log('Finalizing fee structure with wizard data:', wizardData);
       
-      // Validate required fields before sending
-      if (!wizardData.academicYear.name || !wizardData.academicYear.startDate || !wizardData.academicYear.endDate || !wizardData.academicYear.termStructure) {
-        console.error('Missing required fields:', {
-          name: wizardData.academicYear.name,
-          startDate: wizardData.academicYear.startDate,
-          endDate: wizardData.academicYear.endDate,
-          termStructure: wizardData.academicYear.termStructure
-        });
-        throw new Error('Please fill in all required fields in the Academic Year step');
-      }
+      // Step 1: Create Academic Year
+      // Since we use hardcoded academic years, we'll always create them with our predefined structure
+      const academicYearData = {
+        name: wizardData.academicContext.academicYear,
+        start_date: calculateStartDate(wizardData.academicContext.academicYear),
+        end_date: calculateEndDate(wizardData.academicContext.academicYear),
+        term_structure: '3 Trimesters', // Default for Congo
+        is_active: false
+      };
+      
+      console.log('Creating academic year:', academicYearData);
+      
+      const academicYearResponse = await feesAPI.academicYears.create(academicYearData);
+      console.log('Academic year creation response:', academicYearResponse);
 
-      if (!wizardData.gradeProgram.gradeLevel || !wizardData.gradeProgram.programType) {
-        throw new Error('Please fill in all required fields in the Grade/Program step');
-      }
-
-      if (wizardData.selectedCategories.length === 0) {
-        throw new Error('Please select at least one fee category');
-      }
-
-      // Check if all categories have amounts set
-      const categoriesWithoutAmounts = wizardData.selectedCategories.filter(cat => !cat.amount || cat.amount <= 0);
-      if (categoriesWithoutAmounts.length > 0) {
-        throw new Error('Please set amounts for all selected categories');
-      }
-      
-      // Step 1: Create Academic Year (or find existing one)
-      let academicYearId;
-      
-      // First, check if academic year already exists
-      const existingYearsResponse = await feesAPI.academicYears.getAll();
-      const existingYear = existingYearsResponse.success && existingYearsResponse.data?.academicYears.find(
-        year => year.name === wizardData.academicYear.name
-      );
-      
-      if (existingYear) {
-        academicYearId = existingYear.id;
-        console.log('Using existing academic year:', existingYear);
-      } else {
-        const academicYearData = {
-          name: wizardData.academicYear.name,
-          start_date: wizardData.academicYear.startDate,
-          end_date: wizardData.academicYear.endDate,
-          term_structure: wizardData.academicYear.termStructure,
-          is_active: false // Don't auto-activate, let user manage this manually
-        };
+      if (!academicYearResponse.success || !academicYearResponse.data) {
+        console.error('Academic year creation failed:', academicYearResponse.error);
         
-        console.log('Creating new academic year:', academicYearData);
-        
-        const academicYearResponse = await feesAPI.academicYears.create(academicYearData);
-
-        console.log('Academic year API response:', academicYearResponse);
-
-        if (!academicYearResponse.success || !academicYearResponse.data) {
-          console.error('Academic year creation failed:', academicYearResponse.error);
-          console.error('Full response:', academicYearResponse);
-          throw new Error(academicYearResponse.error || 'Failed to create academic year');
+        // Check if it's a permission error
+        if (academicYearResponse.error?.includes('Only school admins can create academic years')) {
+          throw new Error('You need school admin permissions to create academic years. Please contact your administrator to create the academic year first.');
         }
-
-        academicYearId = academicYearResponse.data.academicYear.id;
-        console.log('Created academic year with ID:', academicYearId);
+        
+        throw new Error(academicYearResponse.error || 'Failed to create academic year');
       }
+
+      const academicYearId = academicYearResponse.data.academicYear.id;
+      console.log('Created academic year with ID:', academicYearId);
 
       // Step 2: Create Fee Categories (if they don't exist)
-      const categoryPromises = wizardData.selectedCategories.map(async (category) => {
+      console.log('Creating fee categories for items:', wizardData.feeItems);
+      
+      const categoryPromises = wizardData.feeItems.map(async (item) => {
+        console.log(`Processing category: ${item.categoryName}`);
+        
         // Check if category already exists
         const existingCategories = await feesAPI.feeCategories.getAll();
-        const existingCategory = existingCategories.data?.feeCategories.find(
-          cat => cat.name === category.categoryName
+        console.log('Existing categories:', existingCategories);
+        
+        const existingCategory = existingCategories.success && existingCategories.data?.feeCategories.find(
+          cat => cat.name === item.categoryName
         );
 
         if (existingCategory) {
+          console.log(`Using existing category: ${item.categoryName} (ID: ${existingCategory.id})`);
           return existingCategory.id;
         }
 
         // Create new category
-        const categoryResponse = await feesAPI.feeCategories.create({
-          name: category.categoryName,
-          description: `${category.categoryName} fees`,
-          is_mandatory: category.isMandatory,
-          is_recurring: category.supportsRecurring,
-          category_type: category.categoryType
-        });
+        const categoryData = {
+          name: item.categoryName,
+          description: `${item.categoryName} fees`,
+          is_mandatory: item.isMandatory,
+          is_recurring: !item.paymentModes.includes('one_time'), // Auto-determine from payment modes
+          category_type: item.categoryName.toLowerCase().includes('tuition') ? 'tuition' : 'additional'
+        };
+        
+        console.log(`Creating new category: ${item.categoryName}`, categoryData);
+        
+        const categoryResponse = await feesAPI.feeCategories.create(categoryData);
+        console.log(`Category creation response for ${item.categoryName}:`, categoryResponse);
 
         if (!categoryResponse.success || !categoryResponse.data) {
-          throw new Error(`Failed to create category: ${category.categoryName}`);
+          console.error(`Failed to create category: ${item.categoryName}`, categoryResponse.error);
+          
+          // Check if it's a duplicate name error (409) or permission error
+          if (categoryResponse.error?.includes('already exists')) {
+            // Try to find the existing category again
+            const retryExistingCategories = await feesAPI.feeCategories.getAll();
+            const retryExistingCategory = retryExistingCategories.success && retryExistingCategories.data?.feeCategories.find(
+              cat => cat.name === item.categoryName
+            );
+            
+            if (retryExistingCategory) {
+              console.log(`Found existing category after duplicate error: ${item.categoryName} (ID: ${retryExistingCategory.id})`);
+              return retryExistingCategory.id;
+            }
+          }
+          
+          if (categoryResponse.error?.includes('Only school admins can create fee categories')) {
+            throw new Error('You need school admin permissions to create fee categories. Please contact your administrator to create the required categories first.');
+          }
+          
+          throw new Error(`Failed to create category: ${item.categoryName} - ${categoryResponse.error}`);
         }
 
+        console.log(`Successfully created category: ${item.categoryName} (ID: ${categoryResponse.data.feeCategory.id})`);
         return categoryResponse.data.feeCategory.id;
       });
 
       const categoryIds = await Promise.all(categoryPromises);
+      console.log('All category IDs:', categoryIds);
+      
+      // Validate that all categories were created successfully
+      if (categoryIds.some(id => !id)) {
+        throw new Error('Some fee categories failed to create. Please try again.');
+      }
+      
+      console.log('All categories created successfully, proceeding with fee structure creation');
 
-      // Step 3: Create Fee Structure first
-      const totalAmount = wizardData.selectedCategories.reduce((sum, cat) => sum + cat.amount, 0);
+      // Step 3: Create Fee Structure
+      const totalAmount = wizardData.feeItems.reduce((sum, item) => sum + item.amount, 0);
       
-      console.log('Creating fee structure with:', {
-        academicYearId,
-        categoryIds,
-        totalAmount,
-        wizardData: {
-          gradeLevel: wizardData.gradeProgram.gradeLevel,
-          academicYearName: wizardData.academicYear.name
-        }
-      });
+      const gradeLevelString = Array.isArray(wizardData.academicContext.gradeLevel) 
+        ? wizardData.academicContext.gradeLevel.join(',')
+        : wizardData.academicContext.gradeLevel;
       
-      const feeStructureResponse = await feesAPI.feeStructures.create({
-        name: `${wizardData.gradeProgram.gradeLevel} Fees - ${wizardData.academicYear.name}`,
+      const feeStructureData = {
+        name: wizardData.academicContext.structureName,
         academic_year_id: academicYearId,
-        grade_level: wizardData.gradeProgram.gradeLevel,
-        applies_to: wizardData.appliesTo === 'school' ? 'school' : wizardData.gradeProgram.gradeLevel,
+        grade_level: gradeLevelString,
+        applies_to: wizardData.academicContext.appliesTo,
         total_amount: totalAmount,
-        is_active: true,
-        is_published: false,
-        items: wizardData.selectedCategories.map((category, index) => ({
+        is_active: false, // Always inactive by default
+        is_published: true, // User clicked "Finalize"
+        items: wizardData.feeItems.map((item, index) => ({
           category_id: categoryIds[index],
-          amount: category.amount,
-          is_mandatory: category.isMandatory,
-          is_recurring: category.supportsRecurring,
-          payment_modes: category.categoryType === 'tuition' ? ['per-term', 'one_time'] : ['one_time']
+          amount: item.amount,
+          is_mandatory: item.isMandatory,
+          is_recurring: !item.paymentModes.includes('one_time'), // Auto-determine from payment modes
+          payment_modes: item.paymentModes
         }))
-      });
+      };
+      
+      console.log('Creating fee structure with data:', feeStructureData);
+      console.log('Academic year ID being used:', academicYearId);
+      
+      const feeStructureResponse = await feesAPI.feeStructures.create(feeStructureData);
+      console.log('Fee structure creation response:', feeStructureResponse);
 
       if (!feeStructureResponse.success || !feeStructureResponse.data) {
-        throw new Error('Failed to create fee structure');
+        console.error('Fee structure creation failed:', feeStructureResponse.error);
+        throw new Error(feeStructureResponse.error || 'Failed to create fee structure');
       }
 
       const structureId = feeStructureResponse.data.feeStructure.id;
 
-      // Step 4: Create Payment Plans for tuition (always create both installment and one-time)
-      let tuitionInstallmentPlanResponse = null;
-      let tuitionOneTimePlanResponse = null;
-      
-      // Create installment plan if there are installments
-      if (wizardData.paymentSchedule.installments && wizardData.paymentSchedule.installments.length > 0) {
-        console.log('Creating tuition installment plan:', wizardData.paymentSchedule.installments);
+      // Step 4: Create Payment Plans
+      for (const plan of wizardData.paymentPlans) {
+        console.log('Creating payment plan:', plan);
         
-        tuitionInstallmentPlanResponse = await feesAPI.paymentPlans.create({
+        // Map our internal types to API types
+        const apiType: 'monthly' | 'per-term' | 'upfront' | 'custom' = 
+          plan.type === 'installment' ? 'custom' : 
+          plan.type === 'one_time' ? 'upfront' : 
+          plan.type === 'termly' ? 'per-term' : 
+          'monthly';
+        
+        const paymentPlanData = {
           structure_id: structureId,
-          name: `${wizardData.paymentSchedule.scheduleType} Payment Plan`,
-          type: wizardData.paymentSchedule.scheduleType as 'monthly' | 'per-term' | 'upfront',
-          discount_percentage: wizardData.paymentSchedule.discountPercentage || 0,
-          currency: 'USD',
-          installments: wizardData.paymentSchedule.installments.map((inst, index) => ({
-            label: wizardData.paymentSchedule.scheduleType === 'per-term' ? `Term ${index + 1}` : `Month ${index + 1}`,
+          type: apiType,
+          discount_percentage: plan.discountPercentage,
+          currency: wizardData.academicContext.currency,
+          installments: plan.installments.map((inst, index) => ({
+            installment_number: index + 1,
+            label: inst.label,
             amount: inst.amount,
             due_date: inst.dueDate
           }))
-        });
+        };
+        
+        console.log('Payment plan data being sent:', paymentPlanData);
+        
+        const paymentPlanResponse = await feesAPI.paymentPlans.create(paymentPlanData);
+        console.log('Payment plan creation response:', paymentPlanResponse);
 
-        if (!tuitionInstallmentPlanResponse.success || !tuitionInstallmentPlanResponse.data) {
-          throw new Error('Failed to create tuition installment plan');
+        if (!paymentPlanResponse.success || !paymentPlanResponse.data) {
+          console.error('Payment plan creation failed:', paymentPlanResponse.error);
+          throw new Error(`Failed to create payment plan: ${plan.type} - ${paymentPlanResponse.error}`);
         }
         
-        console.log('Tuition installment plan created successfully:', tuitionInstallmentPlanResponse.data);
-      }
-
-      // Always create one-time plan for tuition
-      const tuitionOneTimeAmount = wizardData.selectedCategories
-        .filter(cat => cat.categoryType === 'tuition')
-        .reduce((sum, cat) => sum + cat.amount, 0);
-      
-      if (tuitionOneTimeAmount > 0) {
-        console.log('Creating tuition one-time plan for amount:', tuitionOneTimeAmount);
-        
-        tuitionOneTimePlanResponse = await feesAPI.paymentPlans.create({
-          structure_id: structureId,
-          name: "One-Time Payment Plan",
-          type: 'upfront',
-          discount_percentage: 0,
-          currency: 'USD',
-          installments: [{
-            label: "Full Payment",
-            amount: tuitionOneTimeAmount,
-            due_date: wizardData.academicYear.startDate
-          }]
-        });
-
-        if (!tuitionOneTimePlanResponse.success || !tuitionOneTimePlanResponse.data) {
-          throw new Error('Failed to create tuition one-time plan');
-        }
-        
-        console.log('Tuition one-time plan created successfully:', tuitionOneTimePlanResponse.data);
-      }
-
-      // Step 5: Create Additional Fees Payment Plan (if applicable)
-      let additionalPaymentPlanResponse = null;
-      if (wizardData.additionalPaymentSchedule && wizardData.additionalPaymentSchedule.installments.length > 0) {
-        console.log('Creating additional fees payment plan with installments:', wizardData.additionalPaymentSchedule.installments);
-        
-        additionalPaymentPlanResponse = await feesAPI.paymentPlans.create({
-          structure_id: structureId,
-          name: "Additional Fees Payment Plan",
-          type: wizardData.additionalPaymentSchedule.scheduleType as 'monthly' | 'per-term' | 'upfront',
-          discount_percentage: wizardData.additionalPaymentSchedule.discountPercentage || 0,
-          currency: 'USD',
-          installments: wizardData.additionalPaymentSchedule.installments.map((inst, index) => ({
-            label: wizardData.additionalPaymentSchedule!.scheduleType === 'per-term' ? `Term ${index + 1}` : `Month ${index + 1}`,
-            amount: inst.amount,
-            due_date: inst.dueDate
-          }))
-        });
-
-        if (!additionalPaymentPlanResponse.success || !additionalPaymentPlanResponse.data) {
-          throw new Error('Failed to create additional fees payment plan');
-        }
-        
-        console.log('Additional fees payment plan created successfully:', additionalPaymentPlanResponse.data);
-      } else {
-        console.log('No additional fees installments to create payment plan for');
+        console.log('Payment plan created successfully:', paymentPlanResponse.data);
       }
 
       setSaveSuccess(true);
@@ -411,7 +364,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error saving fee structure</h3>
+              <h3 className="text-sm font-medium text-red-800">{t('Error saving fee structure')}</h3>
               <div className="mt-2 text-sm text-red-700">
                 <p>{saveError}</p>
               </div>
@@ -428,9 +381,9 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               <CheckCircleIcon className="h-5 w-5 text-green-400" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800">Fee structure saved successfully!</h3>
+              <h3 className="text-sm font-medium text-green-800">{t('Fee structure saved successfully!')}</h3>
               <div className="mt-2 text-sm text-green-700">
-                <p>Your fee structure has been created and published. Redirecting to management view...</p>
+                <p>{t('Your fee structure has been created and is ready for student assignments. Redirecting to management view...')}</p>
               </div>
             </div>
           </div>
@@ -441,7 +394,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       {isSaving && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-          <p className="mt-2 text-sm text-gray-500">Saving fee structure...</p>
+          <p className="mt-2 text-sm text-gray-500">{t('Saving fee structure...')}</p>
         </div>
       )}
 
@@ -449,12 +402,12 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       <div className="bg-white shadow-sm border border-gray-200 rounded-xl p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Fee Structure Setup</h2>
-            <p className="text-sm text-gray-600 mt-1">Configure your school&apos;s fee structure step by step</p>
+            <h2 className="text-xl font-semibold text-gray-900">{t('Fee Structure Setup')}</h2>
+            <p className="text-sm text-gray-600 mt-1">{t('Configure your school\'s fee structure step by step')}</p>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-green-600">{wizardStep}</div>
-            <div className="text-sm text-gray-500">of {wizardSteps.length}</div>
+            <div className="text-sm text-gray-500">{t('of')} {wizardSteps.length}</div>
           </div>
         </div>
         
@@ -523,11 +476,9 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                 {wizardStep === 1 && <CalendarIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 2 && <ClipboardDocumentListIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 3 && <DocumentDuplicateIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 4 && <AcademicCapIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 5 && <ReceiptPercentIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 6 && <CheckCircleIcon className="w-6 h-6 text-white" />}
+                {wizardStep === 2 && <ReceiptPercentIcon className="w-6 h-6 text-white" />}
+                {wizardStep === 3 && <CreditCardIcon className="w-6 h-6 text-white" />}
+                {wizardStep === 4 && <CheckCircleIcon className="w-6 h-6 text-white" />}
               </div>
             </div>
             <div>
@@ -535,12 +486,10 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
                 {wizardSteps[wizardStep - 1].title}
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                {wizardStep === 1 && "Set up your academic year and define terms"}
-                {wizardStep === 2 && "Select the grade or program level"}
-                {wizardStep === 3 && "Add fee categories for this grade/program"}
-                {wizardStep === 4 && "Enter amounts for each selected category"}
-                {wizardStep === 5 && "Define payment schedule and deadlines"}
-                {wizardStep === 6 && "Review and save your fee template"}
+                {wizardStep === 1 && t('Set up your academic context and structure details')}
+                {wizardStep === 2 && t('Add and configure fee items for this structure')}
+                {wizardStep === 3 && t('Define payment plans and installment schedules')}
+                {wizardStep === 4 && t('Review and finalize your fee structure')}
               </p>
             </div>
           </div>
@@ -549,66 +498,34 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         <div className="p-8">
           {/* Step Content */}
           {wizardStep === 1 && (
-            <AcademicYearStep 
-              data={wizardData.academicYear}
-              onChange={(data) => {
-                console.log('Wizard received academic year data:', data);
-                setWizardData(prev => {
-                  const updated = { ...prev, academicYear: data };
-                  console.log('Updated wizard data:', updated);
-                  return updated;
-                });
-              }}
+            <SelectAcademicContextStep 
+              data={wizardData.academicContext}
+              onChange={(data) => setWizardData(prev => ({ ...prev, academicContext: data }))}
             />
           )}
           
           {wizardStep === 2 && (
-            <GradeProgramStep 
-              data={{...wizardData.gradeProgram, appliesTo: wizardData.appliesTo}}
-              onChange={(data) => setWizardData(prev => ({ 
-                ...prev, 
-                gradeProgram: { gradeLevel: data.gradeLevel, programType: data.programType },
-                appliesTo: data.appliesTo
-              }))}
+            <FeeItemsStep 
+              feeItems={wizardData.feeItems}
+              onChange={(feeItems) => setWizardData(prev => ({ ...prev, feeItems }))}
             />
           )}
           
           {wizardStep === 3 && (
-            <CategoriesStep 
-              selectedCategories={wizardData.selectedCategories}
-              onChange={(categories) => setWizardData(prev => ({ ...prev, selectedCategories: categories }))}
+            <DefinePaymentPlansStep 
+              paymentPlans={wizardData.paymentPlans}
+              feeItems={wizardData.feeItems}
+              academicYear={wizardData.academicContext.academicYear}
+              onChange={(paymentPlans) => setWizardData(prev => ({ ...prev, paymentPlans }))}
             />
           )}
           
           {wizardStep === 4 && (
-            <AmountsStep 
-              selectedCategories={wizardData.selectedCategories}
-              academicYear={wizardData.academicYear}
-              paymentSchedule={wizardData.paymentSchedule}
-              onChange={(categories) => setWizardData(prev => ({ ...prev, selectedCategories: categories }))}
+            <PublishStep 
+              wizardData={wizardData} 
+              onPublish={handleSaveFeeStructure}
+              isSaving={isSaving}
             />
-          )}
-          
-          {wizardStep === 5 && (
-            <PaymentSchedulesStep 
-              paymentSchedule={wizardData.paymentSchedule}
-              additionalPaymentSchedule={wizardData.additionalPaymentSchedule}
-              academicYear={wizardData.academicYear}
-              selectedCategories={wizardData.selectedCategories}
-              onChange={(tuitionSchedule, additionalSchedule) => setWizardData(prev => ({ 
-                ...prev, 
-                paymentSchedule: tuitionSchedule,
-                additionalPaymentSchedule: additionalSchedule || prev.additionalPaymentSchedule
-              }))}
-            />
-          )}
-          
-          {wizardStep === 6 && (
-              <PublishStep 
-                wizardData={wizardData} 
-                onPublish={handleSaveFeeStructure}
-                isSaving={isSaving}
-              />
           )}
         </div>
       </div>
@@ -634,7 +551,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               {t('Previous')}
             </button>
           )}
-          {wizardStep < 6 ? (
+          {wizardStep < 4 ? (
             <button
               onClick={nextWizardStep}
               className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
@@ -646,11 +563,12 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
             </button>
           ) : (
             <button
-              onClick={onComplete}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
+              onClick={handleSaveFeeStructure}
+              disabled={isSaving}
+              className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm disabled:bg-gray-400"
             >
               <CheckCircleIcon className="h-4 w-4 mr-2" />
-              {t('Publish Schedule')}
+              {t('Finalize Structure')}
             </button>
           )}
         </div>

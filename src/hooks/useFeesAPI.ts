@@ -59,7 +59,7 @@ export interface FeeStructure {
   name: string;
   academic_year_id: string;
   grade_level: string;
-  applies_to: 'school' | string;
+  applies_to: 'school' | 'grade' | string;
   total_amount: number;
   is_active: boolean;
   is_published: boolean;
@@ -67,14 +67,30 @@ export interface FeeStructure {
   created_at: string;
   updated_at: string;
   created_by?: string;
-  academic_years?: { name: string };
+  academic_years?: {
+    id: string;
+    name: string;
+    start_date: string;
+    end_date: string;
+    term_structure: string;
+    is_active: boolean;
+  };
   fee_structure_items?: Array<{
     id: string;
     amount: number;
     is_mandatory: boolean;
     is_recurring: boolean;
-    payment_modes: ('one_time' | 'termly' | 'installment')[];
+    payment_modes: ('one_time' | 'termly' | 'installment' | 'monthly')[];
     fee_categories: FeeCategory;
+  }>;
+  payment_plans?: Array<{
+    id: string;
+    type: 'monthly' | 'per-term' | 'upfront' | 'custom';
+    discount_percentage: number;
+    currency: string;
+    installments: any; // JSONB field
+    is_active: boolean;
+    created_at: string;
   }>;
 }
 

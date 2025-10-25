@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 
     const studentIds = linkedStudentsData.map(ls => ls.student_id);
 
-    // Get detailed fee assignments with all related data
+    // Get detailed fee assignments with all related data using NEW fee structure system
     const { data: studentFeeAssignments, error: assignmentsError } = await adminClient
       .from('student_fee_assignments')
       .select(`
@@ -76,6 +76,9 @@ export async function GET(req: NextRequest) {
         paid_amount,
         status,
         academic_year_id,
+        structure_id,
+        payment_plan_id,
+        total_due,
         students!inner(
           id,
           student_id,
@@ -85,48 +88,51 @@ export async function GET(req: NextRequest) {
           school_id,
           schools!inner(name)
         ),
-        payment_schedules!inner(
+        fee_structures!inner(
           id,
           name,
-          schedule_type,
-          discount_percentage,
-          payment_installments(
+          grade_level,
+          applies_to,
+          total_amount,
+          is_active,
+          academic_years!inner(
             id,
-            installment_number,
             name,
-            amount,
-            percentage,
-            due_date,
-            term_id,
-            is_active
+            start_date,
+            end_date,
+            term_structure
           ),
-          fee_templates!inner(
+          fee_structure_items(
             id,
-            name,
-            grade_level,
-            program_type,
-            total_amount,
-            status,
-            fee_template_categories(
-              amount,
-              fee_categories!inner(
-                id,
-                name,
-                description,
-                is_mandatory,
-                is_recurring,
-                supports_one_time,
-                category_type
-              )
+            amount,
+            is_mandatory,
+            is_recurring,
+            payment_modes,
+            fee_categories(
+              id,
+              name,
+              description,
+              is_mandatory,
+              is_recurring,
+              category_type
             )
+          ),
+          payment_plans(
+            id,
+            type,
+            discount_percentage,
+            currency,
+            installments,
+            is_active
           )
         ),
-        academic_years!inner(
+        payment_plans!inner(
           id,
-          name,
-          start_date,
-          end_date,
-          term_structure
+          type,
+          discount_percentage,
+          currency,
+          installments,
+          is_active
         )
       `)
       .in('student_id', studentIds)
@@ -140,16 +146,16 @@ export async function GET(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Process and structure the data by student and category
+    // Process and structure the data by student
     const studentFeesMap: { [key: string]: any } = {};
 
     studentFeeAssignments?.forEach(assignment => {
       const student = assignment.students;
-      const paymentSchedule = assignment.payment_schedules;
-      const feeTemplate = paymentSchedule.fee_templates;
-      const academicYear = assignment.academic_years;
+      const feeStructure = assignment.fee_structures;
+      const paymentPlan = assignment.payment_plans;
+      const academicYear = feeStructure?.academic_years;
 
-      if (!student) return;
+      if (!student || !feeStructure) return;
 
       // Initialize student if not exists
       if (!studentFeesMap[student.id]) {
@@ -163,19 +169,27 @@ export async function GET(req: NextRequest) {
             school_id: student.school_id,
             school_name: student.schools?.name || 'N/A',
           },
-          academic_year: {
-            id: academicYear?.id,
-            name: academicYear?.name,
-            start_date: academicYear?.start_date,
-            end_date: academicYear?.end_date,
-            term_structure: academicYear?.term_structure,
+          fee_template: {
+            id: feeStructure.id,
+            name: feeStructure.name,
+            grade_level: feeStructure.grade_level,
+            applies_to: feeStructure.applies_to,
+            total_amount: feeStructure.total_amount,
+            status: feeStructure.is_active ? 'active' : 'inactive',
+            academic_year: {
+              id: academicYear?.id,
+              name: academicYear?.name,
+              start_date: academicYear?.start_date,
+              end_date: academicYear?.end_date,
+              term_structure: academicYear?.term_structure,
+            }
           },
           fee_categories: [],
           payment_schedules: [],
           summary: {
-            total_amount: 0,
-            paid_amount: 0,
-            outstanding_amount: 0,
+            total_amount: feeStructure.total_amount,
+            paid_amount: assignment.paid_amount || 0,
+            outstanding_amount: (feeStructure.total_amount || 0) - (assignment.paid_amount || 0),
             total_installments: 0,
             paid_installments: 0,
             upcoming_payments: 0
@@ -183,10 +197,10 @@ export async function GET(req: NextRequest) {
         };
       }
 
-      // Process fee categories
-      const categories = feeTemplate?.fee_template_categories || [];
-      categories.forEach(ftc => {
-        const category = ftc.fee_categories;
+      // Process fee categories from fee structure items
+      const feeItems = feeStructure?.fee_structure_items || [];
+      feeItems.forEach(item => {
+        const category = item.fee_categories;
         if (!category) return;
 
         // Check if category already exists for this student
@@ -194,66 +208,63 @@ export async function GET(req: NextRequest) {
           (cat: any) => cat.id === category.id
         );
 
-        if (existingCategory) {
-          // Don't add amounts - each category should show its individual amount
-          // The category already exists, so we skip it to avoid duplication
-          return;
-        } else {
-          // Add new category with its individual amount
+        if (!existingCategory) {
+          // Add new category
           studentFeesMap[student.id].fee_categories.push({
             id: category.id,
             name: category.name,
             description: category.description,
-            amount: ftc.amount,
-            is_mandatory: category.is_mandatory,
-            supports_recurring: category.is_recurring,
-            supports_one_time: category.supports_one_time,
+            amount: item.amount,
+            is_mandatory: item.is_mandatory,
+            supports_recurring: item.is_recurring,
+            supports_one_time: item.payment_modes?.includes('one_time') || false,
             category_type: category.category_type
           });
         }
       });
 
-      // Process payment schedule and installments
-      const installments = paymentSchedule?.payment_installments || [];
-      
-      // For now, we'll assume installments are not paid since we don't have payment tracking yet
-      // In a real implementation, you would join with student_fee_payments table
-      const scheduleData = {
-        id: paymentSchedule?.id,
-        name: paymentSchedule?.name,
-        schedule_type: paymentSchedule?.schedule_type,
-        discount_percentage: paymentSchedule?.discount_percentage,
-        template_name: feeTemplate?.name,
-        installments: installments.map(pi => ({
-          id: pi.id,
-          installment_number: pi.installment_number,
-          name: pi.name,
-          amount: pi.amount,
-          percentage: pi.percentage,
-          due_date: pi.due_date,
-          term_id: pi.term_id,
-          paid: false // TODO: Calculate from student_fee_payments table
-        }))
-      };
+      // Process ALL payment plans from the fee structure (not just the assigned one)
+      const allPaymentPlans = feeStructure?.payment_plans || [];
+      allPaymentPlans.forEach(plan => {
+        // Check if this payment plan is already added for this student
+        const existingPlan = studentFeesMap[student.id].payment_schedules.find(
+          (p: any) => p.id === plan.id
+        );
+        
+        if (!existingPlan) {
+          const installments = Array.isArray(plan.installments) ? plan.installments : [];
+          
+          const scheduleData = {
+            id: plan.id,
+            name: `${plan.type} Plan`,
+            schedule_type: plan.type,
+            discount_percentage: plan.discount_percentage,
+            template_name: feeStructure.name,
+            installments: installments.map((inst: any, index: number) => ({
+              id: `${plan.id}_${index}`,
+              installment_number: inst.installment_number || (index + 1),
+              name: inst.label || `Installment ${index + 1}`,
+              amount: inst.amount || 0,
+              percentage: 0, // Not used in new system
+              due_date: inst.due_date,
+              term_id: null, // Not used in new system
+              paid: false // TODO: Calculate from payment records
+            }))
+          };
 
-      studentFeesMap[student.id].payment_schedules.push(scheduleData);
+          studentFeesMap[student.id].payment_schedules.push(scheduleData);
 
-      // Update summary totals from categories (not installments)
-      const categoryTotal = categories.reduce((sum, ftc) => sum + ftc.amount, 0);
-      const paidAmount = 0; // TODO: Calculate from student_fee_payments table
-      const outstandingAmount = categoryTotal - paidAmount;
-
-      // Don't add to total_amount - we don't want to show totals
-      studentFeesMap[student.id].summary.paid_amount += paidAmount;
-      studentFeesMap[student.id].summary.outstanding_amount += outstandingAmount;
-      studentFeesMap[student.id].summary.total_installments += installments.length;
-      studentFeesMap[student.id].summary.paid_installments += 0; // TODO: Calculate from student_fee_payments table
-      
-      // Count upcoming payments (unpaid installments with future due dates)
-      const now = new Date();
-      studentFeesMap[student.id].summary.upcoming_payments += installments.filter(inst => 
-        new Date(inst.due_date) > now
-      ).length;
+          // Update summary totals
+          studentFeesMap[student.id].summary.total_installments += installments.length;
+          studentFeesMap[student.id].summary.paid_installments += 0; // TODO: Calculate from payment records
+          
+          // Count upcoming payments (unpaid installments with future due dates)
+          const now = new Date();
+          studentFeesMap[student.id].summary.upcoming_payments += installments.filter((inst: any) => 
+            new Date(inst.due_date) > now
+          ).length;
+        }
+      });
     });
 
     // Convert to array and sort by student name

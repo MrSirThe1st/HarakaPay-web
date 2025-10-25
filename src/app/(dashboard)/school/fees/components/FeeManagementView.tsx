@@ -20,10 +20,20 @@ export function FeeManagementView({}: FeeManagementViewProps) {
 
   const feesAPI = useFeesAPI();
 
-  // Load data when component mounts
+  // Load data when component mounts and when it becomes visible again
   useEffect(() => {
     loadAllData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Refresh data when window regains focus (e.g., navigating back from detail view)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadAllData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   const loadAllData = async () => {
     try {
@@ -215,9 +225,9 @@ export function FeeManagementView({}: FeeManagementViewProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        structure.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        structure.is_active ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {structure.is_published ? 'Published' : 'Draft'}
+                        {structure.is_active ? 'Active' : 'Draft'}
                       </span>
                     </td>
                   </tr>
