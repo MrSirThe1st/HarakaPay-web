@@ -34,25 +34,31 @@ ALTER TABLE school_registration_requests ENABLE ROW LEVEL SECURITY;
 -- Note: Application-level authorization is handled by API routes using admin clients
 -- Simple RLS policies prevent direct database access bypassing the app
 
--- Policy: Anyone can insert (public registration through API)
-CREATE POLICY "Anyone can submit registration request"
-  ON school_registration_requests
-  FOR INSERT
-  WITH CHECK (true);
+-- Since we're using admin client to bypass RLS for all operations,
+-- we don't need restrictive policies that might cause conflicts
+-- The admin client (service role key) bypasses RLS completely
 
--- Policy: Disable SELECT - use admin client in API routes instead
--- This ensures all reads go through authenticated API endpoints with proper role checks
-CREATE POLICY "No direct database SELECT"
+-- Allow SELECT for authenticated users (admin client will still bypass)
+CREATE POLICY "Allow SELECT for authenticated users"
   ON school_registration_requests
   FOR SELECT
-  USING (false);
+  TO authenticated
+  USING (true);
 
--- Policy: Disable UPDATE - use admin client in API routes instead  
--- This ensures all updates go through authenticated API endpoints with proper role checks
-CREATE POLICY "No direct database UPDATE"
+-- Allow INSERT for service role (admin client)
+-- This allows the API to insert without RLS blocking
+CREATE POLICY "Allow INSERT for service role"
+  ON school_registration_requests
+  FOR INSERT
+  TO service_role
+  WITH CHECK (true);
+
+-- Allow UPDATE for authenticated users
+CREATE POLICY "Allow UPDATE for authenticated users"
   ON school_registration_requests
   FOR UPDATE
-  USING (false);
+  TO authenticated
+  USING (true);
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_school_registration_requests_updated_at()

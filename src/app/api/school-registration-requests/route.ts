@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabaseServerOnly";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log("Received body:", JSON.stringify(body, null, 2));
 
     // Validate required fields
     const requiredFields = [
@@ -39,6 +40,26 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(body.contact_person_email)) {
       return NextResponse.json(
         { success: false, error: "Invalid contact person email format" },
+        { status: 400 }
+      );
+    }
+    
+    // Validate phone number format if provided
+    const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,15}$/;
+    if (body.contact_person_phone && body.contact_person_phone.trim()) {
+      const cleanPhone = body.contact_person_phone.replace(/\s/g, '');
+      if (!phoneRegex.test(cleanPhone)) {
+        return NextResponse.json(
+          { success: false, error: "Invalid phone number format" },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Validate school_size is a valid positive integer
+    if (isNaN(parseInt(body.school_size)) || parseInt(body.school_size) <= 0) {
+      return NextResponse.json(
+        { success: false, error: "School size must be a valid positive number" },
         { status: 400 }
       );
     }
@@ -113,33 +134,46 @@ export async function POST(request: NextRequest) {
       });
     }
     
+    console.log("Cleaned fee schedules:", cleanedFeeSchedules);
+    console.log("About to insert with status:", "pending");
+    
+    // Build the insert data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const insertData: Record<string, any> = {
+      school_name: body.school_name,
+      school_address: body.school_address,
+      registration_number: body.registration_number,
+      school_email: body.school_email,
+      school_size: typeof body.school_size === 'number' ? body.school_size : parseInt(body.school_size),
+      contact_person_name: body.contact_person_name,
+      contact_person_email: body.contact_person_email,
+      contact_person_phone: body.contact_person_phone || null,
+      existing_system: body.existing_system || null,
+      has_mpesa_account: body.has_mpesa_account || false,
+      // Always set fee_schedules - use empty object if no schedules selected
+      fee_schedules: Object.keys(cleanedFeeSchedules).length > 0 ? cleanedFeeSchedules : {},
+      school_levels: Array.isArray(body.school_levels) ? body.school_levels : [],
+      grade_levels: Array.isArray(body.grade_levels) ? body.grade_levels : [],
+      additional_info: body.additional_info && body.additional_info.trim() ? body.additional_info.trim() : null,
+      status: "pending",
+    };
+    
+    console.log("Insert data:", JSON.stringify(insertData, null, 2));
+
     // Insert the registration request
     const { data, error } = await adminClient
       .from("school_registration_requests")
-      .insert({
-        school_name: body.school_name,
-        school_address: body.school_address,
-        registration_number: body.registration_number,
-        school_email: body.school_email,
-        school_size: body.school_size,
-        contact_person_name: body.contact_person_name,
-        contact_person_email: body.contact_person_email,
-        contact_person_phone: body.contact_person_phone || null,
-        existing_system: body.existing_system || null,
-        has_mpesa_account: body.has_mpesa_account || false,
-        fee_schedules: cleanedFeeSchedules,
-        school_levels: body.school_levels,
-        grade_levels: body.grade_levels,
-        additional_info: body.additional_info || null,
-        status: "pending",
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
       console.error("Error creating registration request:", error);
+      console.error("Error details:", JSON.stringify(error, null, 2));
+      console.error("Error message:", error.message);
+      console.error("Error hint:", error.hint);
       return NextResponse.json(
-        { success: false, error: "Failed to submit registration request" },
+        { success: false, error: `Failed to submit registration request: ${error.message}` },
         { status: 500 }
       );
     }

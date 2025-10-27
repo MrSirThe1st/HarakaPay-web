@@ -70,21 +70,48 @@ export default function RegisterPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.schoolName.trim()) newErrors.schoolName = t("School name is required");
-    if (!formData.schoolAddress.trim()) newErrors.schoolAddress = t("School address is required");
-    if (!formData.registrationNumber.trim()) newErrors.registrationNumber = t("Registration number is required");
+    // School name validation
+    if (!formData.schoolName.trim()) {
+      newErrors.schoolName = t("School name is required");
+    }
+    
+    // School address validation
+    if (!formData.schoolAddress.trim()) {
+      newErrors.schoolAddress = t("School address is required");
+    }
+    
+    // Registration number validation
+    if (!formData.registrationNumber.trim()) {
+      newErrors.registrationNumber = t("Registration number is required");
+    }
+    
+    // School email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.schoolEmail.trim()) {
       newErrors.schoolEmail = t("School email is required");
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.schoolEmail)) {
+    } else if (!emailRegex.test(formData.schoolEmail)) {
       newErrors.schoolEmail = t("Please enter a valid email address");
     }
-    if (!formData.schoolSize.trim()) newErrors.schoolSize = t("School size is required");
-    if (!formData.contactPersonName.trim()) newErrors.contactPersonName = t("Contact person name is required");
+    
+    // School size validation
+    if (!formData.schoolSize.trim()) {
+      newErrors.schoolSize = t("School size is required");
+    } else if (isNaN(parseInt(formData.schoolSize)) || parseInt(formData.schoolSize) <= 0) {
+      newErrors.schoolSize = t("Please enter a valid number of students");
+    }
+    
+    // Contact person name validation
+    if (!formData.contactPersonName.trim()) {
+      newErrors.contactPersonName = t("Contact person name is required");
+    }
+    
+    // Contact person email validation
     if (!formData.contactPersonEmail.trim()) {
       newErrors.contactPersonEmail = t("Contact person email is required");
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactPersonEmail)) {
+    } else if (!emailRegex.test(formData.contactPersonEmail)) {
       newErrors.contactPersonEmail = t("Please enter a valid email address");
     }
+    
 
     // Check at least one fee schedule is selected
     const hasFeeSchedule = Object.entries(formData.feeSchedules).some(
