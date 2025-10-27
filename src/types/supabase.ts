@@ -115,6 +115,74 @@ export interface Database {
           updated_at?: string;
         };
       };
+      school_registration_requests: {
+        Row: {
+          id: string;
+          school_name: string;
+          school_address: string;
+          registration_number: string;
+          contact_person_name: string;
+          contact_person_email: string;
+          school_email: string;
+          contact_person_phone: string | null;
+          school_size: number | null;
+          existing_system: string | null;
+          has_mpesa_account: boolean;
+          fee_schedules: Json;
+          school_levels: Json;
+          grade_levels: Json;
+          additional_info: string | null;
+          status: "pending" | "in_progress" | "approved" | "rejected";
+          reviewed_by: string | null;
+          admin_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_name: string;
+          school_address: string;
+          registration_number: string;
+          contact_person_name: string;
+          contact_person_email: string;
+          school_email: string;
+          contact_person_phone?: string | null;
+          school_size?: number | null;
+          existing_system?: string | null;
+          has_mpesa_account?: boolean;
+          fee_schedules?: Json;
+          school_levels?: Json;
+          grade_levels?: Json;
+          additional_info?: string | null;
+          status?: "pending" | "in_progress" | "approved" | "rejected";
+          reviewed_by?: string | null;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_name?: string;
+          school_address?: string;
+          registration_number?: string;
+          contact_person_name?: string;
+          contact_person_email?: string;
+          school_email?: string;
+          contact_person_phone?: string | null;
+          school_size?: number | null;
+          existing_system?: string | null;
+          has_mpesa_account?: boolean;
+          fee_schedules?: Json;
+          school_levels?: Json;
+          grade_levels?: Json;
+          additional_info?: string | null;
+          status?: "pending" | "in_progress" | "approved" | "rejected";
+          reviewed_by?: string | null;
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       receipt_templates: {
         Row: {
           id: string;

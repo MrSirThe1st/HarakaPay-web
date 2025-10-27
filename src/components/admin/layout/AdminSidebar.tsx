@@ -8,7 +8,8 @@ import {
   Building2, 
   Users, 
   BarChart3, 
-  Settings 
+  Settings,
+  FileCheck
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -16,6 +17,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { name: 'Schools', href: '/admin/schools', icon: Building2 },
+  { name: 'School Requests', href: '/admin/school-requests', icon: FileCheck },
   { name: 'Platform Users', href: '/admin/platform-users', icon: Users },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
   { name: 'Settings', href: '/admin/settings', icon: Settings },

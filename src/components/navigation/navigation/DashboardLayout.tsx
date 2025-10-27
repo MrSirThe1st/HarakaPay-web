@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -19,6 +19,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, profile, loading, canAccessAdminPanel, canAccessSchoolPanel } = useDualAuth();
   const router = useRouter();
 
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!loading && (!user || !profile)) {
+      router.push('/login');
+    }
+  }, [loading, user, profile, router]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -28,8 +35,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   if (!user || !profile) {
-    router.push('/login');
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
   }
 
 
