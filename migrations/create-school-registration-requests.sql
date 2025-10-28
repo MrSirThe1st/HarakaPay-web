@@ -45,12 +45,11 @@ CREATE POLICY "Allow SELECT for authenticated users"
   TO authenticated
   USING (true);
 
--- Allow INSERT for service role (admin client)
+-- Allow INSERT for service role (admin client) and public (unauthenticated)
 -- This allows the API to insert without RLS blocking
-CREATE POLICY "Allow INSERT for service role"
+CREATE POLICY "Allow INSERT for service role and public"
   ON school_registration_requests
   FOR INSERT
-  TO service_role
   WITH CHECK (true);
 
 -- Allow UPDATE for authenticated users
