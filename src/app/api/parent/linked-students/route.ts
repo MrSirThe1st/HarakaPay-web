@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: NextRequest) {
+  console.log("🔥 /api/parent/linked-students - Request received");
+  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
   try {
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
+    console.log("Authorization header:", authHeader ? "Present" : "Missing");
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Missing or invalid authorization header' }, { status: 401 });
     }

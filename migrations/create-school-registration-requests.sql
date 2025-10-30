@@ -9,14 +9,14 @@ CREATE TABLE IF NOT EXISTS school_registration_requests (
   school_email TEXT NOT NULL,
   contact_person_phone TEXT,
   school_size INTEGER,
-  existing_system TEXT,
+  existing_systems TEXT[], -- Array of existing systems
   has_mpesa_account BOOLEAN DEFAULT false,
-  fee_schedules JSONB DEFAULT '[]'::jsonb,
-  school_levels JSONB DEFAULT '[]'::jsonb,
-  grade_levels JSONB DEFAULT '[]'::jsonb,
+  fee_schedules TEXT[], -- Array of fee schedule types
+  school_levels TEXT[], -- Array of school levels
+  grade_levels TEXT[], -- Array of grade levels
   additional_info TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'approved', 'rejected')),
-  reviewed_by UUID REFERENCES profiles(user_id),
+  reviewed_by UUID,
   admin_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -30,23 +30,14 @@ CREATE INDEX IF NOT EXISTS idx_school_registration_requests_reviewed_by ON schoo
 -- Enable Row Level Security
 ALTER TABLE school_registration_requests ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
--- Note: Application-level authorization is handled by API routes using admin clients
--- Simple RLS policies prevent direct database access bypassing the app
-
--- Since we're using admin client to bypass RLS for all operations,
--- we don't need restrictive policies that might cause conflicts
--- The admin client (service role key) bypasses RLS completely
-
--- Allow SELECT for authenticated users (admin client will still bypass)
+-- Allow SELECT for authenticated users
 CREATE POLICY "Allow SELECT for authenticated users"
   ON school_registration_requests
   FOR SELECT
   TO authenticated
   USING (true);
 
--- Allow INSERT for service role (admin client) and public (unauthenticated)
--- This allows the API to insert without RLS blocking
+-- Allow INSERT for service role and public
 CREATE POLICY "Allow INSERT for service role and public"
   ON school_registration_requests
   FOR INSERT
@@ -72,4 +63,3 @@ CREATE TRIGGER update_school_registration_requests_updated_at
   BEFORE UPDATE ON school_registration_requests
   FOR EACH ROW
   EXECUTE FUNCTION update_school_registration_requests_updated_at();
-
