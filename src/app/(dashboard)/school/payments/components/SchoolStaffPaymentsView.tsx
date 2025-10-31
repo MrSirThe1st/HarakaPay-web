@@ -1,7 +1,8 @@
 // src/app/(dashboard)/school/payments/components/SchoolStaffPaymentsView.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { 
   CreditCardIcon, 
   PlusIcon, 
@@ -13,10 +14,133 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 
+interface Payment {
+  id: string;
+  amount: number;
+  payment_date: string | null;
+  payment_method: string;
+  status: string;
+  transaction_reference: string | null;
+  mpesa_conversation_id: string | null;
+  installment_number: number | null;
+  description: string | null;
+  created_at: string;
+  students: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    student_id: string;
+  };
+  parents: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
+
 export function SchoolStaffPaymentsView() {
   const { t } = useTranslation();
+  const supabase = createClientComponentClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Stats
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    successfulCount: 0,
+    pendingCount: 0,
+    failedCount: 0,
+  });
+
+  useEffect(() => {
+    fetchPayments();
+    subscribeToPayments();
+  }, [filterStatus]);
+
+  const fetchPayments = async () => {
+    try {
+      setIsLoading(true);
+
+      let query = supabase
+        .from('payments')
+        .select(`
+          *,
+          students (
+            id,
+            first_name,
+            last_name,
+            student_id
+          ),
+          parents (
+            first_name,
+            last_name
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (filterStatus !== 'all') {
+        query = query.eq('status', filterStatus);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setPayments(data || []);
+      calculateStats(data || []);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const calculateStats = (paymentsData: Payment[]) => {
+    const stats = paymentsData.reduce(
+      (acc, payment) => {
+        if (payment.status === 'completed') {
+          acc.totalRevenue += parseFloat(payment.amount.toString());
+          acc.successfulCount++;
+        } else if (payment.status === 'pending') {
+          acc.pendingCount++;
+        } else if (payment.status === 'failed') {
+          acc.failedCount++;
+        }
+        return acc;
+      },
+      { totalRevenue: 0, successfulCount: 0, pendingCount: 0, failedCount: 0 }
+    );
+
+    setStats(stats);
+  };
+
+  const subscribeToPayments = () => {
+    const subscription = supabase
+      .channel('payments_channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payments' },
+        () => fetchPayments()
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  };
+
+  const filteredPayments = payments.filter((payment) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      payment.students.first_name.toLowerCase().includes(search) ||
+      payment.students.last_name.toLowerCase().includes(search) ||
+      payment.students.student_id.toLowerCase().includes(search) ||
+      payment.transaction_reference?.toLowerCase().includes(search)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -39,7 +163,7 @@ export function SchoolStaffPaymentsView() {
                     {t('Total Revenue')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    $45,231
+                    ${stats.totalRevenue.toFixed(2)}
                   </dd>
                 </dl>
               </div>
@@ -59,7 +183,7 @@ export function SchoolStaffPaymentsView() {
                     {t('Successful')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    234
+                    {stats.successfulCount}
                   </dd>
                 </dl>
               </div>
@@ -79,7 +203,7 @@ export function SchoolStaffPaymentsView() {
                     {t('Pending')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    18
+                    {stats.pendingCount}
                   </dd>
                 </dl>
               </div>
@@ -99,7 +223,7 @@ export function SchoolStaffPaymentsView() {
                     {t('Failed')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    3
+                    {stats.failedCount}
                   </dd>
                 </dl>
               </div>
@@ -121,45 +245,129 @@ export function SchoolStaffPaymentsView() {
                   placeholder={t('Search payments by student name, ID, or reference...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             </div>
 
             {/* Status Filter */}
             <div className="sm:w-48">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">{t('All Status')}</option>
-                <option value="successful">{t('Successful')}</option>
-                <option value="pending">{t('Pending')}</option>
-                <option value="failed">{t('Failed')}</option>
-                <option value="refunded">{t('Refunded')}</option>
-              </select>
+              <div className="relative">
+                <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="pl-10 w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="all">{t('All Status')}</option>
+                  <option value="completed">{t('Completed')}</option>
+                  <option value="pending">{t('Pending')}</option>
+                  <option value="failed">{t('Failed')}</option>
+                </select>
+              </div>
             </div>
-
-            {/* Process Payment Button */}
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              {t('Process Payment')}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Payment List Placeholder */}
-      <div className="bg-white shadow rounded-lg">
+      {/* Payments Table */}
+      <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="px-4 py-5 sm:p-6">
-          <div className="text-center py-12">
-            <CreditCardIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">{t('Payment Management')}</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Interface de liste, traitement et gestion des paiements bientôt disponible...
-            </p>
-          </div>
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            {t('Recent Payments')}
+          </h3>
+          
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <p className="mt-2 text-sm text-gray-500">{t('Loading payments...')}</p>
+            </div>
+          ) : filteredPayments.length === 0 ? (
+            <div className="text-center py-12">
+              <CreditCardIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">{t('No payments found')}</h3>
+              <p className="mt-1 text-sm text-gray-500">{t('Payments will appear here once transactions are made')}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Date')}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Student')}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Parent')}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Amount')}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Method')}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Status')}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t('Transaction')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPayments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(payment.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {payment.students.first_name} {payment.students.last_name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {payment.students.student_id}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {payment.parents ? `${payment.parents.first_name} ${payment.parents.last_name}` : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ${parseFloat(payment.amount.toString()).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {payment.payment_method === 'm_pesa' ? '📱 M-Pesa' : payment.payment_method}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {payment.status === 'completed' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            {t('Completed')}
+                          </span>
+                        )}
+                        {payment.status === 'pending' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <ClockIcon className="h-4 w-4 mr-1" />
+                            {t('Pending')}
+                          </span>
+                        )}
+                        {payment.status === 'failed' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <XCircleIcon className="h-4 w-4 mr-1" />
+                            {t('Failed')}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                        {payment.transaction_reference || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -220,38 +428,6 @@ export function SchoolStaffPaymentsView() {
                 </p>
               </div>
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            {t('Recent Activity')}
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                <span className="text-sm text-gray-600">{t('Payment received from')} John Doe</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">$150.00</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <ClockIcon className="h-5 w-5 text-yellow-500 mr-3" />
-                <span className="text-sm text-gray-600">{t('Payment pending from')} Jane Smith</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">$200.00</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-3" />
-                <span className="text-sm text-gray-600">{t('Payment received from')} Mike Johnson</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">$175.00</span>
-            </div>
           </div>
         </div>
       </div>

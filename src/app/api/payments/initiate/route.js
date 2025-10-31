@@ -25,7 +25,9 @@ export async function POST(request) {
       amount, 
       phoneNumber, 
       paymentPlanId,
-      installmentNumber 
+      installmentNumber,
+      paymentType,
+      selectedMonth
     } = body;
     
     // APPLICATION-LEVEL CHECK: Verify user owns this student
