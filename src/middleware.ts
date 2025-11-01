@@ -87,16 +87,41 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    // Get the session using middleware client
-    const { data: { session }, error } = await supabase.auth.getSession();
+    // Check for bearer token auth (for mobile apps)
+    const authHeader = req.headers.get('authorization');
+    let session = null;
 
-    if (error) {
-      console.error('Auth error in middleware:', error);
-      return NextResponse.redirect(new URL('/login', req.url));
+    if (authHeader?.startsWith('Bearer ')) {
+      // Extract token from Authorization header
+      const token = authHeader.substring(7);
+      const { data: { user }, error: tokenError } = await supabase.auth.getUser(token);
+
+      if (!tokenError && user) {
+        // Create a session-like object for bearer token auth
+        session = { user };
+      }
+    } else {
+      // Fall back to cookie-based session
+      const { data: { session: cookieSession }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('Auth error in middleware:', error);
+        // Only redirect non-API routes
+        if (!pathname.startsWith('/api/')) {
+          return NextResponse.redirect(new URL('/login', req.url));
+        }
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      session = cookieSession;
     }
 
     // If no session, redirect to login for protected routes
     if (!session) {
+      // For API routes, return 401 instead of redirecting
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       return NextResponse.redirect(new URL('/login', req.url));
     }
 

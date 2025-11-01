@@ -18,10 +18,18 @@ export class MpesaClient {
 
   // Encrypt API Key with RSA public key
   encryptApiKey() {
-    const publicKeyBuffer = Buffer.from(this.publicKey, 'base64');
+    // Convert public key to PEM format if needed
+    let publicKeyPem = this.publicKey;
+
+    // If the key doesn't start with -----BEGIN, it might be base64 encoded or just the key content
+    if (!publicKeyPem.includes('-----BEGIN')) {
+      // Assume it's the base64 content without PEM headers, add them
+      publicKeyPem = `-----BEGIN PUBLIC KEY-----\n${publicKeyPem}\n-----END PUBLIC KEY-----`;
+    }
+
     const encrypted = crypto.publicEncrypt(
       {
-        key: publicKeyBuffer,
+        key: publicKeyPem,
         padding: crypto.constants.RSA_PKCS1_PADDING
       },
       Buffer.from(this.apiKey)
@@ -56,10 +64,18 @@ export class MpesaClient {
 
   // Encrypt Session Key for subsequent requests
   encryptSessionKey(sessionKey) {
-    const publicKeyBuffer = Buffer.from(this.publicKey, 'base64');
+    // Convert public key to PEM format if needed
+    let publicKeyPem = this.publicKey;
+
+    // If the key doesn't start with -----BEGIN, it might be base64 encoded or just the key content
+    if (!publicKeyPem.includes('-----BEGIN')) {
+      // Assume it's the base64 content without PEM headers, add them
+      publicKeyPem = `-----BEGIN PUBLIC KEY-----\n${publicKeyPem}\n-----END PUBLIC KEY-----`;
+    }
+
     const encrypted = crypto.publicEncrypt(
       {
-        key: publicKeyBuffer,
+        key: publicKeyPem,
         padding: crypto.constants.RSA_PKCS1_PADDING
       },
       Buffer.from(sessionKey)

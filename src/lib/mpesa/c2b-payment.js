@@ -37,6 +37,19 @@ export async function initiateC2BPayment({
   const thirdPartyConversationID = `${parentId}-${Date.now()}`;
   
   // Step 4: Make C2B Payment Request
+  const paymentPayload = {
+    input_Amount: amount.toString(),
+    input_CustomerMSISDN: customerMSISDN,
+    input_Country: process.env.MPESA_COUNTRY,
+    input_Currency: process.env.MPESA_CURRENCY,
+    input_ServiceProviderCode: process.env.MPESA_SERVICE_PROVIDER_CODE,
+    input_TransactionReference: transactionRef,
+    input_ThirdPartyConversationID: thirdPartyConversationID,
+    input_PurchasedItemsDesc: description
+  };
+
+  console.log('🔄 MPesa: C2B Payment Request Payload:', paymentPayload);
+
   const response = await fetch(
     `${client.baseUrl}/ipg/v2/${client.market}/c2bPayment/singleStage/`,
     {
@@ -46,21 +59,16 @@ export async function initiateC2BPayment({
         'Authorization': `Bearer ${encryptedSessionKey}`,
         'Origin': process.env.MPESA_ORIGIN
       },
-      body: JSON.stringify({
-        input_Amount: amount.toString(),
-        input_CustomerMSISDN: customerMSISDN,
-        input_Country: process.env.MPESA_COUNTRY,
-        input_Currency: process.env.MPESA_CURRENCY,
-        input_ServiceProviderCode: process.env.MPESA_SERVICE_PROVIDER_CODE,
-        input_TransactionReference: transactionRef,
-        input_ThirdPartyConversationID: thirdPartyConversationID,
-        input_PurchasedItemsDesc: description
-      })
+      body: JSON.stringify(paymentPayload)
     }
   );
-  
+
   const data = await response.json();
-  
+
+  console.log('📥 MPesa: C2B Payment Response:', JSON.stringify(data, null, 2));
+  console.log('📥 MPesa: Response Code:', data.output_ResponseCode);
+  console.log('📥 MPesa: Response Description:', data.output_ResponseDesc);
+
   return {
     success: data.output_ResponseCode === 'INS-0',
     transactionId: data.output_TransactionID,
@@ -70,6 +78,7 @@ export async function initiateC2BPayment({
     responseDesc: data.output_ResponseDesc,
     transactionRef,
     amount,
-    customerMSISDN
+    customerMSISDN,
+    rawResponse: data // Include full response for debugging
   };
 }

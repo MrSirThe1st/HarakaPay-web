@@ -337,7 +337,7 @@ export function SchoolStaffPaymentsView() {
                         ${parseFloat(payment.amount.toString()).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {payment.payment_method === 'm_pesa' ? '📱 M-Pesa' : payment.payment_method}
+                        {payment.payment_method === 'mobile_money' ? '📱 M-Pesa' : payment.payment_method}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {payment.status === 'completed' && (
