@@ -8,13 +8,26 @@ export async function initiateC2BPayment({
   feeAssignmentId,   // Reference to student_fee_assignment
   description        // Payment description
 }) {
+  console.log('🔄 MPesa: Starting C2B payment initiation...');
+  console.log('🔄 MPesa: Payment details:', { customerMSISDN, amount, studentId, description });
+  
   const client = new MpesaClient();
   
+  // Check if MPesa credentials are available
+  if (!client.apiKey || !client.publicKey) {
+    console.log('❌ MPesa: Missing credentials');
+    throw new Error('MPesa credentials not configured');
+  }
+  
   // Step 1: Get Session Key
+  console.log('🔄 MPesa: Generating session key...');
   const sessionKey = await client.generateSessionKey();
+  console.log('✅ MPesa: Session key generated:', sessionKey ? '***' : 'FAILED');
   
   // Wait 30 seconds for session to become active (M-Pesa requirement)
+  console.log('⏳ MPesa: Waiting 30 seconds for session activation...');
   await new Promise(resolve => setTimeout(resolve, 30000));
+  console.log('✅ MPesa: Session activation wait complete');
   
   // Step 2: Encrypt Session Key
   const encryptedSessionKey = client.encryptSessionKey(sessionKey);

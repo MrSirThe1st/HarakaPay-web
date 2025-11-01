@@ -6,6 +6,8 @@ import { initiateC2BPayment } from '@/lib/mpesa/c2b-payment';
 
 export async function POST(request) {
   try {
+    console.log('💳 Payment API: Starting payment initiation...');
+    
     // Use service role client (bypasses RLS)
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -16,6 +18,7 @@ export async function POST(request) {
     const supabase = createRouteHandlerClient({ cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
+      console.log('❌ Payment API: Authentication failed');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -29,6 +32,10 @@ export async function POST(request) {
       paymentType,
       selectedMonth
     } = body;
+    
+    console.log('💳 Payment API: Request data:', { 
+      studentId, amount, phoneNumber, paymentPlanId, paymentType, selectedMonth 
+    });
     
     // APPLICATION-LEVEL CHECK: Verify user owns this student
     const { data: parent } = await supabaseAdmin
