@@ -28,8 +28,13 @@ export default function SendNotificationForm() {
 
   // Target audience
   const [sendToAll, setSendToAll] = useState(true);
-  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [selectedGradeLevels, setSelectedGradeLevels] = useState<string[]>([]);
+  const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
+  const [availableGrades, setAvailableGrades] = useState<Array<{
+    value: string;
+    label: string;
+    level: string;
+    order: number;
+  }>>([]);
 
   // Channel
   const [channel, setChannel] = useState<'in_app' | 'push' | 'all'>('in_app');
@@ -39,8 +44,9 @@ export default function SendNotificationForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load templates
+  // Load templates and available levels/grades
   useEffect(() => {
+    // Load templates
     fetch('/api/notifications/templates?activeOnly=true')
       .then(res => res.json())
       .then(data => {
@@ -50,6 +56,16 @@ export default function SendNotificationForm() {
       .catch(err => {
         console.error('Error loading templates:', err);
         setLoadingTemplates(false);
+      });
+
+    // Load available grades from school settings
+    fetch('/api/students/levels')
+      .then(res => res.json())
+      .then(data => {
+        setAvailableGrades(data.grades || []);
+      })
+      .catch(err => {
+        console.error('Error loading grades:', err);
       });
   }, []);
 
@@ -86,8 +102,7 @@ export default function SendNotificationForm() {
       const targetAudience = sendToAll
         ? {}
         : {
-            levels: selectedLevels,
-            gradeLevels: selectedGradeLevels,
+            gradeLevels: selectedGrades,
           };
 
       const response = await fetch('/api/notifications/send', {
@@ -116,8 +131,7 @@ export default function SendNotificationForm() {
         setMessage('');
         setSelectedTemplateId('');
         setSendToAll(true);
-        setSelectedLevels([]);
-        setSelectedGradeLevels([]);
+        setSelectedGrades([]);
         setChannel('in_app');
         setSuccess(null);
       }, 3000);
@@ -216,55 +230,35 @@ export default function SendNotificationForm() {
 
                 {!sendToAll && (
                   <div className="ml-6 space-y-4 border-l-2 pl-4">
-                    {/* Level Filter */}
-                    <div>
-                      <Label className="text-sm">Filter by Level</Label>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        {['Form 1', 'Form 2', 'Form 3', 'Form 4'].map(level => (
-                          <div key={level} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`level-${level}`}
-                              checked={selectedLevels.includes(level)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedLevels([...selectedLevels, level]);
-                                } else {
-                                  setSelectedLevels(selectedLevels.filter(l => l !== level));
-                                }
-                              }}
-                            />
-                            <Label htmlFor={`level-${level}`} className="cursor-pointer text-sm">
-                              {level}
-                            </Label>
-                          </div>
-                        ))}
+                    {availableGrades.length > 0 ? (
+                      <div>
+                        <Label className="text-sm">Filter by Grade</Label>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          {availableGrades.map(grade => (
+                            <div key={grade.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`grade-${grade.value}`}
+                                checked={selectedGrades.includes(grade.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedGrades([...selectedGrades, grade.value]);
+                                  } else {
+                                    setSelectedGrades(selectedGrades.filter(g => g !== grade.value));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={`grade-${grade.value}`} className="cursor-pointer text-sm">
+                                {grade.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Grade Level Filter */}
-                    <div>
-                      <Label className="text-sm">Filter by Grade Level</Label>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        {['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'].map(grade => (
-                          <div key={grade} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`grade-${grade}`}
-                              checked={selectedGradeLevels.includes(grade)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedGradeLevels([...selectedGradeLevels, grade]);
-                                } else {
-                                  setSelectedGradeLevels(selectedGradeLevels.filter(g => g !== grade));
-                                }
-                              }}
-                            />
-                            <Label htmlFor={`grade-${grade}`} className="cursor-pointer text-sm">
-                              {grade}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        No grades configured for this school. Please configure grade levels in school settings.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -275,13 +269,13 @@ export default function SendNotificationForm() {
               <Label htmlFor="channel">Delivery Channel</Label>
               <Select value={channel} onValueChange={(val) => setChannel(val as any)}>
                 <SelectTrigger id="channel">
-                  <SelectValue />
+                  <SelectValue placeholder="Select delivery method" />
+                  <SelectContent>
+                    <SelectItem value="in_app">In-App Only (Shows in notifications page)</SelectItem>
+                    <SelectItem value="push">Push Notification Only (Mobile alert)</SelectItem>
+                    <SelectItem value="all">Both In-App & Push</SelectItem>
+                  </SelectContent>
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in_app">In-App Only (Shows in notifications page)</SelectItem>
-                  <SelectItem value="push">Push Notification Only (Mobile alert)</SelectItem>
-                  <SelectItem value="all">Both In-App & Push</SelectItem>
-                </SelectContent>
               </Select>
             </div>
 
@@ -369,7 +363,7 @@ export default function SendNotificationForm() {
               <div>
                 <div className="text-xs text-gray-500 uppercase mb-1">Audience</div>
                 <div className="text-sm">
-                  {sendToAll ? 'All students' : `${selectedLevels.length + selectedGradeLevels.length} filter(s)`}
+                  {sendToAll ? 'All students' : `${selectedGrades.length} grade(s) selected`}
                 </div>
               </div>
             </div>

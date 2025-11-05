@@ -1,34 +1,47 @@
 // src/app/api/notifications/[id]/read/route.js
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { cookies } from 'next/headers';
+import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
 
 // PUT - Mark notification as read
 export async function PUT(request, { params }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const token = authHeader.split(' ')[1];
+
+    // Verify the token
+    const authClient = createServerAuthClient();
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
+    console.log('Marking notification as read:', { id, userId: user.id });
+
     const adminClient = createAdminClient();
 
     // Mark as read
-    const { error } = await adminClient
+    const { data, error } = await adminClient
       .from('notifications')
       .update({
-        is_read: true,
-        read_at: new Date().toISOString()
+        is_read: true
       })
       .eq('id', id)
-      .eq('user_id', user.id); // Ensure user owns this notification
+      .eq('user_id', user.id) // Ensure user owns this notification
+      .select();
 
-    if (error) throw error;
+    console.log('Update result:', { data, error });
+
+    if (error) {
+      console.error('Database error:', error);
+      throw error;
+    }
 
     return NextResponse.json({
       success: true,
@@ -47,10 +60,18 @@ export async function PUT(request, { params }) {
 // DELETE - Delete notification
 export async function DELETE(request, { params }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const token = authHeader.split(' ')[1];
+
+    // Verify the token
+    const authClient = createServerAuthClient();
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

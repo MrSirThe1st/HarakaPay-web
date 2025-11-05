@@ -2,9 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { BuildingOfficeIcon, XMarkIcon, CheckCircleIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
+import { BuildingOfficeIcon, XMarkIcon, CheckCircleIcon, ClipboardDocumentIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
 import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { createClient } from "@/lib/supabaseClientOnly";
+import { CONGOLESE_GRADES, getAllLevels } from "@/lib/congoleseGrades";
 
 interface CreateSchoolFormProps {
   onClose: () => void;
@@ -23,6 +24,8 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
     contactLastName: "",
   });
 
+  const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,10 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
 
     if (!formData.name.trim()) {
       newErrors.name = "School name is required";
+    }
+
+    if (selectedGrades.length === 0) {
+      newErrors.grades = "Please select at least one grade level";
     }
 
     if (!formData.contactFirstName.trim()) {
@@ -85,8 +92,13 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
         throw new Error('No authentication token available');
       }
 
-      console.log('Submitting school data:', formData);
-      
+      const schoolData = {
+        ...formData,
+        gradeLevels: selectedGrades,
+      };
+
+      console.log('Submitting school data:', schoolData);
+
       const response = await fetch('/api/admin/create-school', {
         method: 'POST',
         headers: {
@@ -94,7 +106,7 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
           'Authorization': `Bearer ${session.access_token}`, // Add auth header
         },
         credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(schoolData),
       });
 
       console.log('Response status:', response.status);
@@ -353,6 +365,99 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Grade Levels Selection */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <AcademicCapIcon className="h-5 w-5 text-gray-700" />
+                <h3 className="text-lg font-medium text-gray-900">Grade Levels</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Select the grade levels that this school offers. This will be used for filtering students and sending notifications.
+              </p>
+
+              {errors.grades && (
+                <p className="text-sm text-red-600">{errors.grades}</p>
+              )}
+
+              {/* Group grades by level */}
+              {getAllLevels().map((levelName) => {
+                const levelGrades = CONGOLESE_GRADES.filter(g => g.level === levelName);
+                const allSelected = levelGrades.every(g => selectedGrades.includes(g.value));
+                const someSelected = levelGrades.some(g => selectedGrades.includes(g.value));
+
+                return (
+                  <div key={levelName} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <input
+                        type="checkbox"
+                        id={`level-${levelName}`}
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someSelected && !allSelected;
+                        }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            // Add all grades from this level
+                            const newGrades = levelGrades.map(g => g.value);
+                            setSelectedGrades(prev => [...new Set([...prev, ...newGrades])]);
+                          } else {
+                            // Remove all grades from this level
+                            const gradesToRemove = levelGrades.map(g => g.value);
+                            setSelectedGrades(prev => prev.filter(g => !gradesToRemove.includes(g)));
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        disabled={isSubmitting}
+                      />
+                      <label htmlFor={`level-${levelName}`} className="font-medium text-gray-900 cursor-pointer">
+                        {levelName}
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 ml-6">
+                      {levelGrades.map((grade) => (
+                        <div key={grade.value} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`grade-${grade.value}`}
+                            checked={selectedGrades.includes(grade.value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedGrades(prev => [...prev, grade.value]);
+                              } else {
+                                setSelectedGrades(prev => prev.filter(g => g !== grade.value));
+                              }
+                              // Clear error when user selects grades
+                              if (errors.grades) {
+                                setErrors(prev => ({ ...prev, grades: "" }));
+                              }
+                            }}
+                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                            disabled={isSubmitting}
+                          />
+                          <label
+                            htmlFor={`grade-${grade.value}`}
+                            className="text-sm text-gray-700 cursor-pointer"
+                            title={grade.description}
+                          >
+                            {grade.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {selectedGrades.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>{selectedGrades.length}</strong> grade level(s) selected
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Contact Person Information */}

@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
           contact_email: email,
           contact_phone: schoolData.contactPhone || null,
           registration_number: schoolData.registrationNumber || null,
+          grade_levels: schoolData.gradeLevels || [],
           status: "approved",
           verification_status: "pending"
         })

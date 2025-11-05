@@ -1,16 +1,22 @@
 // src/app/api/notifications/mark-all-read/route.js
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { cookies } from 'next/headers';
+import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
 
 // POST - Mark all notifications as read for user
 export async function POST(request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const token = authHeader.split(' ')[1];
+
+    // Verify the token
+    const authClient = createServerAuthClient();
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -21,8 +27,7 @@ export async function POST(request) {
     const { error } = await adminClient
       .from('notifications')
       .update({
-        is_read: true,
-        read_at: new Date().toISOString()
+        is_read: true
       })
       .eq('user_id', user.id)
       .eq('is_read', false);
