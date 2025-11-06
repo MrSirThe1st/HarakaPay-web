@@ -88,7 +88,9 @@ export async function POST(request) {
 
     const body = await request.json();
     const {
-      templateId,
+      subject,
+      body: messageBody,
+      category,
       frequency,
       scheduleTime,
       scheduleDays,
@@ -96,15 +98,17 @@ export async function POST(request) {
       targetAudience
     } = body;
 
-    if (!templateId || !frequency || !scheduleTime) {
+    if (!messageBody || !frequency || !scheduleTime) {
       return NextResponse.json({
-        error: 'Template ID, frequency, and schedule time are required'
+        error: 'Message body, frequency, and schedule time are required'
       }, { status: 400 });
     }
 
     const result = await scheduledNotificationService.createScheduledNotification({
       schoolId: profile.school_id,
-      templateId,
+      subject,
+      body: messageBody,
+      category: category || 'general',
       frequency,
       scheduleTime,
       scheduleDays,

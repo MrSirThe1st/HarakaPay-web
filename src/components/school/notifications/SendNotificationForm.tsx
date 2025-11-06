@@ -11,20 +11,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-interface Template {
-  id: string;
-  name: string;
-  title_template: string;
-  message_template: string;
-  category: string;
-}
-
 export default function SendNotificationForm() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [loadingTemplates, setLoadingTemplates] = useState(true);
 
   // Target audience
   const [sendToAll, setSendToAll] = useState(true);
@@ -44,20 +33,8 @@ export default function SendNotificationForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load templates and available levels/grades
+  // Load available levels/grades
   useEffect(() => {
-    // Load templates
-    fetch('/api/notifications/templates?activeOnly=true')
-      .then(res => res.json())
-      .then(data => {
-        setTemplates(data.templates || []);
-        setLoadingTemplates(false);
-      })
-      .catch(err => {
-        console.error('Error loading templates:', err);
-        setLoadingTemplates(false);
-      });
-
     // Load available grades from school settings
     fetch('/api/students/levels')
       .then(res => res.json())
@@ -68,15 +45,6 @@ export default function SendNotificationForm() {
         console.error('Error loading grades:', err);
       });
   }, []);
-
-  const handleTemplateSelect = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    const template = templates.find(t => t.id === templateId);
-    if (template) {
-      setTitle(template.title_template);
-      setMessage(template.message_template);
-    }
-  };
 
   const insertVariable = (variable: string) => {
     setMessage(prev => prev + `{${variable}}`);
@@ -111,7 +79,6 @@ export default function SendNotificationForm() {
         body: JSON.stringify({
           title,
           message,
-          templateId: selectedTemplateId || null,
           targetAudience,
           channel,
         }),
@@ -129,7 +96,6 @@ export default function SendNotificationForm() {
       setTimeout(() => {
         setTitle('');
         setMessage('');
-        setSelectedTemplateId('');
         setSendToAll(true);
         setSelectedGrades([]);
         setChannel('in_app');
@@ -164,27 +130,6 @@ export default function SendNotificationForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Template Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="template">Start with a Template (Optional)</Label>
-              <Select
-                value={selectedTemplateId}
-                onValueChange={handleTemplateSelect}
-                disabled={loadingTemplates}
-              >
-                <SelectTrigger id="template">
-                  <SelectValue placeholder="Choose a template or write custom message" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map(template => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name} ({template.category})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
