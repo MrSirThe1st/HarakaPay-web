@@ -131,8 +131,18 @@ export interface WizardData {
     amount: number;
     isMandatory: boolean;
     paymentModes: Array<'installment' | 'one_time' | 'termly' | 'monthly'>;
+    paymentPlans: {
+      type: 'monthly' | 'termly' | 'one_time' | 'installment';
+      discountPercentage: number;
+      installments: {
+        label: string;
+        amount: number;
+        dueDate: string;
+      }[];
+    }[];
   }[];
-  paymentPlans: {
+  // Deprecated: keeping for backward compatibility during migration
+  paymentPlans?: {
     type: 'monthly' | 'termly' | 'one_time' | 'installment';
     discountPercentage: number;
     installments: {

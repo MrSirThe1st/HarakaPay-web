@@ -25,6 +25,7 @@ interface SelectAcademicContextStepProps {
     appliesTo: 'school' | 'grade';
     currency: string;
   }) => void;
+  schoolGradeLevels?: string[];
 }
 
 // Generate hardcoded academic years
@@ -46,11 +47,19 @@ const generateAcademicYears = () => {
 
 const academicYears = generateAcademicYears();
 
-export function SelectAcademicContextStep({ data, onChange }: SelectAcademicContextStepProps) {
+export function SelectAcademicContextStep({ data, onChange, schoolGradeLevels = [] }: SelectAcademicContextStepProps) {
   const { t } = useTranslation();
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false);
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
+
+  // Use school's grade levels if available, otherwise fallback to all grades
+  const availableGrades = schoolGradeLevels.length > 0
+    ? schoolGradeLevels.map(grade => ({ value: grade, label: grade }))
+    : CONGOLESE_GRADES;
+
+  console.log('🏫 School grade levels received:', schoolGradeLevels);
+  console.log('📋 Available grades to display:', availableGrades.length, availableGrades.map(g => g.value).join(', '));
 
   // Initialize selected grades from data
   useEffect(() => {
@@ -359,7 +368,7 @@ export function SelectAcademicContextStep({ data, onChange }: SelectAcademicCont
 
                   {/* Grade Checkboxes */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                    {CONGOLESE_GRADES.map((grade) => (
+                    {availableGrades.map((grade) => (
                       <label
                         key={grade.value}
                         className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"

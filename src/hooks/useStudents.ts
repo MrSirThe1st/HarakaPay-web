@@ -137,7 +137,8 @@ export function useStudents(initialFilters: Partial<StudentFilters> = {}) {
       const updatedFilters = {
         ...prev,
         ...newFilters,
-        page: 1 // Reset to first page when filters change
+        // Only reset to page 1 if we're changing filters other than page
+        page: 'page' in newFilters ? newFilters.page! : 1
       };
       // Trigger fetch with new filters
       fetchStudents(updatedFilters);

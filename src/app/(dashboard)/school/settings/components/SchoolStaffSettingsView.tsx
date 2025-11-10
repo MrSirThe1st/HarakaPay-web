@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  BuildingOfficeIcon, 
+import Image from 'next/image';
+import {
+  BuildingOfficeIcon,
   AcademicCapIcon,
   CreditCardIcon,
   PhotoIcon,
@@ -96,14 +97,27 @@ export function SchoolStaffSettingsView() {
   const loadSchoolData = async () => {
     try {
       setLoading(true);
-      
+
       // Load school data with caching
       const schoolData = await cachedApiCall(
         createCacheKey('school:settings'),
-        () => fetch('/api/schools/settings').then(res => res.json())
+        async () => {
+          const res = await fetch('/api/schools/settings');
+          if (!res.ok) {
+            throw new Error(`Failed to fetch school settings: ${res.status}`);
+          }
+          const text = await res.text();
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error('Failed to parse school settings response:', text);
+            throw new Error('Invalid JSON response from server');
+          }
+        }
       );
-      
+
       if (schoolData.school) {
+        console.log('School logo URL:', schoolData.school.logo_url);
         setSchool(schoolData.school);
         setSchoolForm({
           name: schoolData.school.name || '',
@@ -120,15 +134,28 @@ export function SchoolStaffSettingsView() {
       // Load academic years with caching
       const academicYearsData = await cachedApiCall(
         createCacheKey('academic-years'),
-        () => fetch('/api/academic-years').then(res => res.json())
+        async () => {
+          const res = await fetch('/api/academic-years');
+          if (!res.ok) {
+            throw new Error(`Failed to fetch academic years: ${res.status}`);
+          }
+          const text = await res.text();
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error('Failed to parse academic years response:', text);
+            throw new Error('Invalid JSON response from server');
+          }
+        }
       );
-      
+
       if (academicYearsData.academic_years) {
         setAcademicYears(academicYearsData.academic_years);
       }
 
     } catch (error) {
       console.error('Error loading school data:', error);
+      alert('Failed to load school settings. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -578,7 +605,11 @@ export function SchoolStaffSettingsView() {
                       <div>
                         <h4 className="text-sm font-medium text-gray-900">{year.name}</h4>
                         <p className="text-sm text-gray-500">
-                          {new Date(year.start_date).toLocaleDateString()} - {new Date(year.end_date).toLocaleDateString()}
+                          {year.start_date && year.end_date ? (
+                            `${new Date(year.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} - ${new Date(year.end_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`
+                          ) : (
+                            t('Date not set')
+                          )}
                         </p>
                       </div>
                       <div className="text-sm text-gray-500">

@@ -80,10 +80,10 @@ export async function POST(request: NextRequest) {
       .from('school-logos')
       .getPublicUrl(fileName);
 
-    // Update the school's logo_url in the database
+    // Update the school's logo_url in the database with the full public URL
     const { error: updateError } = await adminClient
       .from('schools')
-      .update({ logo_url: fileName })
+      .update({ logo_url: urlData.publicUrl })
       .eq('id', profile.school_id);
 
     if (updateError) {

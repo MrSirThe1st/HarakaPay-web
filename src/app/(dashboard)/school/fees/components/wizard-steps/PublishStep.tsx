@@ -19,13 +19,18 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
   const totalFeeAmount = wizardData.feeItems.reduce((sum, item) => sum + item.amount, 0);
   const mandatoryTotal = wizardData.feeItems.filter(item => item.isMandatory).reduce((sum, item) => sum + item.amount, 0);
   const optionalTotal = wizardData.feeItems.filter(item => !item.isMandatory).reduce((sum, item) => sum + item.amount, 0);
-  
+
+  // Calculate total payment plans across all fee items
+  const getTotalPaymentPlansCount = () => {
+    return wizardData.feeItems.reduce((sum, item) => sum + (item.paymentPlans?.length || 0), 0);
+  };
+
   // Calculate payment plan totals
-  const calculatePlanTotal = (plan: WizardData['paymentPlans'][0]) => {
+  const calculatePlanTotal = (plan: { installments: Array<{ amount: number }> }) => {
     return plan.installments.reduce((sum, inst) => sum + inst.amount, 0);
   };
 
-  const getTotalWithDiscount = (plan: WizardData['paymentPlans'][0]) => {
+  const getTotalWithDiscount = (plan: { installments: Array<{ amount: number }>; discountPercentage: number }) => {
     const planTotal = calculatePlanTotal(plan);
     return planTotal / (1 - plan.discountPercentage / 100);
   };
@@ -104,7 +109,7 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
               </div>
               <div className="ml-4">
                 <h4 className="text-sm font-medium text-gray-900">{t('Payment Plans')}</h4>
-                <p className="text-lg font-semibold text-gray-900">{wizardData.paymentPlans.length}</p>
+                <p className="text-lg font-semibold text-gray-900">{getTotalPaymentPlansCount()}</p>
                 <p className="text-xs text-gray-500">{t('Payment options')}</p>
               </div>
             </div>
@@ -278,81 +283,100 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
             )}
           </div>
 
-          {/* Payment Plans Section */}
+          {/* Payment Plans Section - Grouped by Fee Item */}
           <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
             <h4 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
               <CreditCardIcon className="h-6 w-6 mr-3 text-purple-600" />
-              {t('Payment Plans')} ({wizardData.paymentPlans.length})
+              {t('Payment Plans')} ({getTotalPaymentPlansCount()})
             </h4>
-            
-            {wizardData.paymentPlans.length === 0 ? (
+
+            {getTotalPaymentPlansCount() === 0 ? (
               <p className="text-gray-500 text-center py-8">{t('No payment plans configured')}</p>
             ) : (
-              <div className="space-y-6">
-                {wizardData.paymentPlans.map((plan, index) => {
-                  const planTotal = calculatePlanTotal(plan);
-                  const baseTotal = getTotalWithDiscount(plan);
-                  const discountAmount = baseTotal - planTotal;
-                  
-                  return (
-                    <div key={index} className="border border-gray-200 rounded-lg p-6">
-                      {/* Plan Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-2xl">
-                            {plan.type === 'monthly' ? '📅' : 
-                             plan.type === 'termly' ? '📚' : 
-                             plan.type === 'one_time' ? '💰' : '⚙️'}
-                          </span>
-                          <div>
-                            <h5 className="text-lg font-semibold text-gray-900 capitalize">
-                              {plan.type.replace('_', ' ')} {t('Payment Plan')}
-                            </h5>
-                            <p className="text-sm text-gray-600">
-                              {plan.installments.length} {t('installment(s)')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-gray-900">
-                            ${planTotal.toLocaleString()}
-                          </div>
-                          {plan.discountPercentage > 0 && (
-                            <div className="text-sm text-green-600">
-                              {t('Discount')}: {plan.discountPercentage}% (${discountAmount.toLocaleString()})
-                            </div>
-                          )}
-                        </div>
+              <div className="space-y-8">
+                {wizardData.feeItems.map((feeItem, feeItemIndex) => (
+                  feeItem.paymentPlans && feeItem.paymentPlans.length > 0 && (
+                    <div key={feeItemIndex} className="border-l-4 border-purple-500 pl-6">
+                      {/* Fee Item Header */}
+                      <div className="mb-4">
+                        <h5 className="text-lg font-bold text-gray-900">{feeItem.categoryName}</h5>
+                        <p className="text-sm text-gray-600">
+                          Base Amount: <span className="font-semibold">${feeItem.amount.toLocaleString()}</span>
+                          {' • '}
+                          {feeItem.paymentPlans.length} {t('payment plan(s)')}
+                        </p>
                       </div>
 
-                      {/* Installments Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-2 font-medium text-gray-900">{t('Installment')}</th>
-                              <th className="text-right py-2 font-medium text-gray-900">{t('Amount')}</th>
-                              <th className="text-right py-2 font-medium text-gray-900">{t('Due Date')}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {plan.installments.map((installment, instIndex) => (
-                              <tr key={instIndex} className="border-b border-gray-100">
-                                <td className="py-2 text-gray-900">{installment.label}</td>
-                                <td className="py-2 text-right font-medium text-gray-900">
-                                  ${installment.amount.toLocaleString()}
-                                </td>
-                                <td className="py-2 text-right text-gray-600">
-                                  {new Date(installment.dueDate).toLocaleDateString()}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      {/* Plans for this Fee Item */}
+                      <div className="space-y-4">
+                        {feeItem.paymentPlans.map((plan, planIndex) => {
+                          const planTotal = calculatePlanTotal(plan);
+                          const baseTotal = getTotalWithDiscount(plan);
+                          const discountAmount = baseTotal - planTotal;
+
+                          return (
+                            <div key={planIndex} className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                              {/* Plan Header */}
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-2xl">
+                                    {plan.type === 'monthly' ? '📅' :
+                                     plan.type === 'termly' ? '📚' :
+                                     plan.type === 'one_time' ? '💰' : '⚙️'}
+                                  </span>
+                                  <div>
+                                    <h6 className="text-lg font-semibold text-gray-900 capitalize">
+                                      {plan.type.replace('_', ' ')} {t('Payment Plan')}
+                                    </h6>
+                                    <p className="text-sm text-gray-600">
+                                      {plan.installments.length} {t('installment(s)')}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xl font-bold text-gray-900">
+                                    ${planTotal.toLocaleString()}
+                                  </div>
+                                  {plan.discountPercentage > 0 && (
+                                    <div className="text-sm text-green-600">
+                                      {t('Discount')}: {plan.discountPercentage}% (${discountAmount.toLocaleString()})
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Installments Table */}
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm bg-white rounded">
+                                  <thead>
+                                    <tr className="border-b border-gray-200">
+                                      <th className="text-left py-2 px-3 font-medium text-gray-900">{t('Installment')}</th>
+                                      <th className="text-right py-2 px-3 font-medium text-gray-900">{t('Amount')}</th>
+                                      <th className="text-right py-2 px-3 font-medium text-gray-900">{t('Due Date')}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {plan.installments.map((installment, instIndex) => (
+                                      <tr key={instIndex} className="border-b border-gray-100">
+                                        <td className="py-2 px-3 text-gray-900">{installment.label}</td>
+                                        <td className="py-2 px-3 text-right font-medium text-gray-900">
+                                          ${installment.amount.toLocaleString()}
+                                        </td>
+                                        <td className="py-2 px-3 text-right text-gray-600">
+                                          {new Date(installment.dueDate).toLocaleDateString()}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
+                  )
+                ))}
               </div>
             )}
           </div>

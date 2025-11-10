@@ -2,9 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   CalendarIcon,
-  ClipboardDocumentListIcon,
   ReceiptPercentIcon,
   CreditCardIcon,
   CheckCircleIcon,
@@ -33,6 +32,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
   
   const feesAPI = useFeesAPI();
   
+  const [schoolGradeLevels, setSchoolGradeLevels] = useState<string[]>([]);
   const [wizardData, setWizardData] = useState<WizardData>({
     academicContext: {
       academicYear: '',
@@ -41,31 +41,43 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       appliesTo: 'school',
       currency: 'USD'
     },
-    feeItems: [],
-    paymentPlans: []
+    feeItems: []
   });
 
-  // Fetch school currency on mount
+  // Fetch school data (currency and grade levels) on mount
   useEffect(() => {
-    const loadSchoolCurrency = async () => {
+    const loadSchoolData = async () => {
       try {
         const res = await fetch('/api/schools/settings');
         const data = await res.json();
-        if (data.school?.currency) {
-          setWizardData(prev => ({
-            ...prev,
-            academicContext: {
-              ...prev.academicContext,
-              currency: data.school.currency
-            }
-          }));
+        console.log('📚 Fetched school data:', data);
+
+        if (data.school) {
+          // Set currency
+          if (data.school.currency) {
+            console.log('💰 Setting currency:', data.school.currency);
+            setWizardData(prev => ({
+              ...prev,
+              academicContext: {
+                ...prev.academicContext,
+                currency: data.school.currency
+              }
+            }));
+          }
+          // Set grade levels
+          if (data.school.grade_levels && Array.isArray(data.school.grade_levels)) {
+            console.log('🎓 Setting school grade levels:', data.school.grade_levels);
+            setSchoolGradeLevels(data.school.grade_levels);
+          } else {
+            console.log('⚠️ No grade_levels found in school data or not an array. Using all CONGOLESE_GRADES as fallback.');
+          }
         }
       } catch (error) {
-        console.error('Error loading school currency:', error);
+        console.error('Error loading school data:', error);
         // Default to USD if fetch fails
       }
     };
-    loadSchoolCurrency();
+    loadSchoolData();
   }, []);
 
   const wizardSteps = [
@@ -83,12 +95,12 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       icon: ReceiptPercentIcon,
       completed: wizardData.feeItems.length > 0
     },
-    { 
-      id: 3, 
-      title: t('Payment Plans'), 
+    {
+      id: 3,
+      title: t('Payment Plans'),
       description: t('Define installments'),
       icon: CreditCardIcon,
-      completed: wizardData.paymentPlans.length > 0
+      completed: wizardData.feeItems.some(item => item.paymentPlans && item.paymentPlans.length > 0)
     },
     { 
       id: 4, 
@@ -131,8 +143,10 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
     }
     
     if (wizardStep === 3) {
-      if (wizardData.paymentPlans.length === 0) {
-        alert(t('Please create at least one payment plan'));
+      // Check if at least one fee item has payment plans
+      const hasPaymentPlans = wizardData.feeItems.some(item => item.paymentPlans && item.paymentPlans.length > 0);
+      if (!hasPaymentPlans) {
+        alert(t('Please create at least one payment plan for one of the fee items'));
         return;
       }
     }
@@ -302,41 +316,48 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
 
       const structureId = feeStructureResponse.data.feeStructure.id;
 
-      // Step 4: Create Payment Plans
-      for (const plan of wizardData.paymentPlans) {
-        console.log('Creating payment plan:', plan);
-        
-        // Map our internal types to API types
-        const apiType: 'monthly' | 'per-term' | 'upfront' | 'custom' = 
-          plan.type === 'installment' ? 'custom' : 
-          plan.type === 'one_time' ? 'upfront' : 
-          plan.type === 'termly' ? 'per-term' : 
-          'monthly';
-        
-        const paymentPlanData = {
-          structure_id: structureId,
-          type: apiType,
-          discount_percentage: plan.discountPercentage,
-          currency: wizardData.academicContext.currency,
-          installments: plan.installments.map((inst, index) => ({
-            installment_number: index + 1,
-            label: inst.label,
-            amount: inst.amount,
-            due_date: inst.dueDate
-          }))
-        };
-        
-        console.log('Payment plan data being sent:', paymentPlanData);
-        
-        const paymentPlanResponse = await feesAPI.paymentPlans.create(paymentPlanData);
-        console.log('Payment plan creation response:', paymentPlanResponse);
-
-        if (!paymentPlanResponse.success || !paymentPlanResponse.data) {
-          console.error('Payment plan creation failed:', paymentPlanResponse.error);
-          throw new Error(`Failed to create payment plan: ${plan.type} - ${paymentPlanResponse.error}`);
+      // Step 4: Create Payment Plans (from each fee item)
+      for (const feeItem of wizardData.feeItems) {
+        if (!feeItem.paymentPlans || feeItem.paymentPlans.length === 0) {
+          console.log(`Skipping payment plans for ${feeItem.categoryName} - no plans defined`);
+          continue;
         }
-        
-        console.log('Payment plan created successfully:', paymentPlanResponse.data);
+
+        for (const plan of feeItem.paymentPlans) {
+          console.log(`Creating payment plan for ${feeItem.categoryName}:`, plan);
+
+          // Map our internal types to API types
+          const apiType: 'monthly' | 'per-term' | 'upfront' | 'custom' =
+            plan.type === 'installment' ? 'custom' :
+            plan.type === 'one_time' ? 'upfront' :
+            plan.type === 'termly' ? 'per-term' :
+            'monthly';
+
+          const paymentPlanData = {
+            structure_id: structureId,
+            type: apiType,
+            discount_percentage: plan.discountPercentage,
+            currency: wizardData.academicContext.currency,
+            installments: plan.installments.map((inst, index) => ({
+              installment_number: index + 1,
+              label: inst.label,
+              amount: inst.amount,
+              due_date: inst.dueDate
+            }))
+          };
+
+          console.log('Payment plan data being sent:', paymentPlanData);
+
+          const paymentPlanResponse = await feesAPI.paymentPlans.create(paymentPlanData);
+          console.log('Payment plan creation response:', paymentPlanResponse);
+
+          if (!paymentPlanResponse.success || !paymentPlanResponse.data) {
+            console.error('Payment plan creation failed:', paymentPlanResponse.error);
+            throw new Error(`Failed to create payment plan for ${feeItem.categoryName}: ${plan.type} - ${paymentPlanResponse.error}`);
+          }
+
+          console.log(`Payment plan created successfully for ${feeItem.categoryName}:`, paymentPlanResponse.data);
+        }
       }
 
       setSaveSuccess(true);
@@ -498,9 +519,10 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         <div className="p-8">
           {/* Step Content */}
           {wizardStep === 1 && (
-            <SelectAcademicContextStep 
+            <SelectAcademicContextStep
               data={wizardData.academicContext}
               onChange={(data) => setWizardData(prev => ({ ...prev, academicContext: data }))}
+              schoolGradeLevels={schoolGradeLevels}
             />
           )}
           
@@ -512,11 +534,12 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           )}
           
           {wizardStep === 3 && (
-            <DefinePaymentPlansStep 
-              paymentPlans={wizardData.paymentPlans}
+            <DefinePaymentPlansStep
+              paymentPlans={[]} // Deprecated prop
               feeItems={wizardData.feeItems}
               academicYear={wizardData.academicContext.academicYear}
-              onChange={(paymentPlans) => setWizardData(prev => ({ ...prev, paymentPlans }))}
+              onChange={() => {}} // Deprecated prop
+              onFeeItemsChange={(feeItems) => setWizardData(prev => ({ ...prev, feeItems }))}
             />
           )}
           

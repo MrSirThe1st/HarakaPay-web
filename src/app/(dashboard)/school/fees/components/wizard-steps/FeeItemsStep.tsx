@@ -14,6 +14,15 @@ interface FeeItem {
   amount: number;
   isMandatory: boolean;
   paymentModes: Array<'installment' | 'one_time' | 'termly' | 'monthly'>;
+  paymentPlans: {
+    type: 'monthly' | 'termly' | 'one_time' | 'installment';
+    discountPercentage: number;
+    installments: {
+      label: string;
+      amount: number;
+      dueDate: string;
+    }[];
+  }[];
 }
 
 interface FeeItemsStepProps {
@@ -120,7 +129,8 @@ export function FeeItemsStep({ feeItems, onChange }: FeeItemsStepProps) {
       amount: formData.amount,
       isMandatory: formData.isMandatory,
       isRecurring: formData.paymentModes.includes('one_time') ? false : true, // Auto-determine from payment modes
-      paymentModes: formData.paymentModes
+      paymentModes: formData.paymentModes,
+      paymentPlans: [] // Initialize empty payment plans array
     };
 
     if (editingIndex !== null) {

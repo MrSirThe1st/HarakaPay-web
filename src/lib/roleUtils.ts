@@ -36,7 +36,7 @@ export function isSuperAdmin(role: UserRole): boolean {
   return role === 'super_admin';
 }
 
-// Check if user can access specific operations
+
 export function canPerformOperation(userRole: UserRole, operation: string): boolean {
   switch (operation) {
     case 'create_schools':

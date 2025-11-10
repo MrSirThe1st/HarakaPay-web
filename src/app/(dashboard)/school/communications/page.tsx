@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SendNotificationForm from '@/components/school/notifications/SendNotificationForm';
-import ScheduledNotificationsManager from '@/components/school/notifications/ScheduledNotificationsManager';
+// import ScheduledNotificationsManager from '@/components/school/notifications/ScheduledNotificationsManager';
 import NotificationHistory from '@/components/school/notifications/NotificationHistory';
 
 export default function CommunicationsPage() {
@@ -22,9 +22,9 @@ export default function CommunicationsPage() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="send">Send Notification</TabsTrigger>
-          <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+          {/* <TabsTrigger value="scheduled">Scheduled</TabsTrigger> */}
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
@@ -32,9 +32,9 @@ export default function CommunicationsPage() {
           <SendNotificationForm />
         </TabsContent>
 
-        <TabsContent value="scheduled" className="mt-6">
+        {/* <TabsContent value="scheduled" className="mt-6">
           <ScheduledNotificationsManager />
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="history" className="mt-6">
           <NotificationHistory />
