@@ -123,16 +123,9 @@ export async function GET(req: NextRequest) {
             discount_percentage,
             currency,
             installments,
-            is_active
+            is_active,
+            fee_category_id
           )
-        ),
-        payment_plans!inner(
-          id,
-          type,
-          discount_percentage,
-          currency,
-          installments,
-          is_active
         )
       `)
       .in('student_id', studentIds)
@@ -239,6 +232,7 @@ export async function GET(req: NextRequest) {
             name: `${plan.type} Plan`,
             schedule_type: plan.type,
             discount_percentage: plan.discount_percentage,
+            fee_category_id: plan.fee_category_id || null,  // NEW: Link to fee category
             template_name: feeStructure.name,
             installments: installments.map((inst: any, index: number) => ({
               id: `${plan.id}_${index}`,

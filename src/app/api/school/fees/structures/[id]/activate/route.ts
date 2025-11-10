@@ -59,7 +59,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { id: structureId } = await params;
     const body = await req.json();
     // Get all payment plans for this structure automatically
-    const { payment_plan_ids = [] } = body;
+    const { payment_plan_ids = [], dry_run = false } = body;
+
+    console.log('🚀 Fee structure activation request:', {
+      structureId,
+      dry_run,
+      school_id: profile.school_id
+    });
 
     // Fetch the fee structure with academic year info and all payment plans
     const { data: feeStructure, error: structureError } = await adminClient
@@ -103,11 +109,36 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Apply grade level filter if applies_to is 'grade'
     if (feeStructure.applies_to === 'grade') {
-      studentsQuery = studentsQuery.eq('grade_level', feeStructure.grade_level);
+      // Handle both single grade and multiple grades (comma-separated or array)
+      let gradeLevels: string[] = [];
+
+      if (typeof feeStructure.grade_level === 'string') {
+        // Split comma-separated string into array
+        gradeLevels = feeStructure.grade_level.split(',').map(g => g.trim());
+      } else if (Array.isArray(feeStructure.grade_level)) {
+        gradeLevels = feeStructure.grade_level;
+      } else {
+        gradeLevels = [feeStructure.grade_level];
+      }
+
+      console.log('🎯 Filtering students by grade levels:', gradeLevels);
+
+      // Use .in() for multiple grades, or .eq() for single grade
+      if (gradeLevels.length > 1) {
+        studentsQuery = studentsQuery.in('grade_level', gradeLevels);
+      } else {
+        studentsQuery = studentsQuery.eq('grade_level', gradeLevels[0]);
+      }
     }
     // If applies_to is 'school', we get all students (no additional filter)
 
     const { data: students, error: studentsError } = await studentsQuery;
+
+    console.log('📊 Students query result:', {
+      count: students?.length || 0,
+      applies_to: feeStructure.applies_to,
+      grade_level: feeStructure.grade_level
+    });
 
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
@@ -149,17 +180,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const existingStudentIds = new Set(existingAssignments?.map(a => a.student_id) || []);
     const newStudentIds = studentIds.filter(id => !existingStudentIds.has(id));
 
-    if (newStudentIds.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          activated_students: 0,
-          academic_year_activated: false,
-          message: 'All eligible students already have this fee structure activated'
-        }
-      });
-    }
-
     // Get all payment plans for this structure (automatically include all)
     const structurePaymentPlans = feeStructure.payment_plans || [];
     if (structurePaymentPlans.length === 0) {
@@ -167,6 +187,37 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         success: false,
         error: 'No payment plans found for this fee structure. Please create payment plans first.'
       }, { status: 400 });
+    }
+
+    // If this is a dry run (preview), return the preview data without making changes
+    if (dry_run) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          activated_students: newStudentIds.length,
+          academic_year_activated: feeStructure.academic_years ? !feeStructure.academic_years.is_active : false,
+          total_eligible_students: students.length,
+          already_activated: existingStudentIds.size,
+          payment_plans_used: structurePaymentPlans.length,
+          message: newStudentIds.length === 0
+            ? 'All eligible students already have this fee structure activated'
+            : `Ready to activate fee structure for ${newStudentIds.length} student(s)`
+        }
+      });
+    }
+
+    if (newStudentIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          activated_students: 0,
+          academic_year_activated: false,
+          total_eligible_students: students.length,
+          already_activated: existingStudentIds.size,
+          payment_plans_used: structurePaymentPlans.length,
+          message: 'All eligible students already have this fee structure activated'
+        }
+      });
     }
 
     // Create student fee assignments for new students

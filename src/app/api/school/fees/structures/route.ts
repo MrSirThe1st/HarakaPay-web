@@ -310,10 +310,165 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Create fee structure error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Internal server error' 
-      }, 
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+
+    // Check authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get user profile to check role and school
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('role, school_id, is_active')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!profile.is_active) {
+      return NextResponse.json(
+        { success: false, error: 'Account inactive' },
+        { status: 403 }
+      );
+    }
+
+    // Only school admins can delete fee structures
+    if (profile.role !== 'school_admin') {
+      return NextResponse.json(
+        { success: false, error: 'Only school admins can delete fee structures' },
+        { status: 403 }
+      );
+    }
+
+    if (!profile.school_id) {
+      return NextResponse.json(
+        { success: false, error: 'School not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get structure ID from query params
+    const { searchParams } = new URL(req.url);
+    const structureId = searchParams.get('id');
+
+    if (!structureId) {
+      return NextResponse.json(
+        { success: false, error: 'Structure ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify structure belongs to school
+    const { data: structure } = await adminClient
+      .from('fee_structures')
+      .select('id, school_id')
+      .eq('id', structureId)
+      .eq('school_id', profile.school_id)
+      .single();
+
+    if (!structure) {
+      return NextResponse.json(
+        { success: false, error: 'Fee structure not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete related records in order (due to foreign key constraints)
+    console.log('🗑️ Deleting fee structure:', structureId);
+
+    // 1. Delete student fee assignments
+    const { error: assignmentsError } = await adminClient
+      .from('student_fee_assignments')
+      .delete()
+      .eq('structure_id', structureId);
+
+    if (assignmentsError) {
+      console.error('Error deleting student assignments:', assignmentsError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete student assignments' },
+        { status: 500 }
+      );
+    }
+
+    // 2. Delete payment plans
+    const { error: plansError } = await adminClient
+      .from('payment_plans')
+      .delete()
+      .eq('structure_id', structureId);
+
+    if (plansError) {
+      console.error('Error deleting payment plans:', plansError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete payment plans' },
+        { status: 500 }
+      );
+    }
+
+    // 3. Delete fee structure items
+    const { error: itemsError } = await adminClient
+      .from('fee_structure_items')
+      .delete()
+      .eq('structure_id', structureId);
+
+    if (itemsError) {
+      console.error('Error deleting fee structure items:', itemsError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete fee structure items' },
+        { status: 500 }
+      );
+    }
+
+    // 4. Finally, delete the fee structure itself
+    const { error: deleteError } = await adminClient
+      .from('fee_structures')
+      .delete()
+      .eq('id', structureId);
+
+    if (deleteError) {
+      console.error('Error deleting fee structure:', deleteError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete fee structure' },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Fee structure deleted successfully');
+
+    return NextResponse.json({
+      success: true,
+      message: 'Fee structure deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete fee structure error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error'
+      },
       { status: 500 }
     );
   }

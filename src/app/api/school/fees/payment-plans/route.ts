@@ -191,14 +191,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { 
+    const {
       structure_id,
       type,
       discount_percentage = 0,
       installments = [],
       currency = 'USD',
-      is_active = true
+      is_active = true,
+      fee_category_id = null
     } = body;
+
+    console.log('📝 Creating payment plan:', { structure_id, type, fee_category_id });
 
     // Validate required fields
     if (!structure_id || !type) {
@@ -277,6 +280,7 @@ export async function POST(req: Request) {
         installments: installments,
         currency,
         is_active,
+        fee_category_id,  // Add the category link
         created_by: profile.user_id || null  // Use profile.user_id or null if not available
       })
       .select('*')

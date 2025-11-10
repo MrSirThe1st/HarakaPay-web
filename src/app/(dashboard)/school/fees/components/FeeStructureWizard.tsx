@@ -317,7 +317,10 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       const structureId = feeStructureResponse.data.feeStructure.id;
 
       // Step 4: Create Payment Plans (from each fee item)
-      for (const feeItem of wizardData.feeItems) {
+      for (let i = 0; i < wizardData.feeItems.length; i++) {
+        const feeItem = wizardData.feeItems[i];
+        const categoryId = categoryIds[i]; // Get corresponding category ID
+
         if (!feeItem.paymentPlans || feeItem.paymentPlans.length === 0) {
           console.log(`Skipping payment plans for ${feeItem.categoryName} - no plans defined`);
           continue;
@@ -338,6 +341,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
             type: apiType,
             discount_percentage: plan.discountPercentage,
             currency: wizardData.academicContext.currency,
+            fee_category_id: categoryId,  // Use the UUID from categoryIds array
             installments: plan.installments.map((inst, index) => ({
               installment_number: index + 1,
               label: inst.label,
@@ -346,7 +350,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
             }))
           };
 
-          console.log('Payment plan data being sent:', paymentPlanData);
+          console.log(`💾 Payment plan data for ${feeItem.categoryName}:`, paymentPlanData);
 
           const paymentPlanResponse = await feesAPI.paymentPlans.create(paymentPlanData);
           console.log('Payment plan creation response:', paymentPlanResponse);
@@ -563,7 +567,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           {t('Back to Management')}
         </button>
         <div className="flex space-x-3">
-          {wizardStep > 1 && (
+          {wizardStep > 1 && wizardStep < 4 && (
             <button
               onClick={prevWizardStep}
               className="inline-flex items-center px-6 py-3 border border-gray-300 text-sm font-semibold rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
@@ -574,7 +578,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               {t('Previous')}
             </button>
           )}
-          {wizardStep < 4 ? (
+          {wizardStep < 4 && (
             <button
               onClick={nextWizardStep}
               className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
@@ -583,15 +587,6 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
               <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-            </button>
-          ) : (
-            <button
-              onClick={handleSaveFeeStructure}
-              disabled={isSaving}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm disabled:bg-gray-400"
-            >
-              <CheckCircleIcon className="h-4 w-4 mr-2" />
-              {t('Finalize Structure')}
             </button>
           )}
         </div>
