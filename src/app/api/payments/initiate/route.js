@@ -85,7 +85,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
     
-    // Get student fee assignment
+    // Get student fee assignment with payment plan details
     const { data: feeAssignment } = await supabaseAdmin
       .from('student_fee_assignments')
       .select('*, students(*), payment_plans(*)')
@@ -97,7 +97,20 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Fee assignment not found' }, { status: 404 });
     }
     
-    // Create pending payment record
+    // Get installment label from payment plan if installmentNumber is provided
+    let installmentLabel = null;
+    if (installmentNumber && feeAssignment.payment_plans?.installments) {
+      const installment = feeAssignment.payment_plans.installments.find(
+        (inst) => inst.installment_number === installmentNumber
+      );
+      installmentLabel = installment?.label || installment?.name || selectedMonth || null;
+    } else if (selectedMonth) {
+      installmentLabel = selectedMonth;
+    } else if (feeAssignment.payment_plans?.type === 'one_time' || feeAssignment.payment_plans?.type === 'upfront') {
+      installmentLabel = 'Full Payment';
+    }
+    
+    // Create pending payment record with installment info
     const { data: pendingPayment, error: insertError } = await supabaseAdmin
       .from('payments')
       .insert({
@@ -106,7 +119,8 @@ export async function POST(request) {
         amount: amount,
         payment_method: 'mobile_money', // M-Pesa is a type of mobile money
         status: 'pending',
-        description: `Payment for ${feeAssignment.students.first_name} ${feeAssignment.students.last_name}`,
+        description: `Payment for ${feeAssignment.students.first_name} ${feeAssignment.students.last_name}${installmentLabel ? ` - ${installmentLabel}` : ''}`,
+        installment_number: installmentNumber || null,
         created_at: new Date().toISOString()
       })
       .select()
