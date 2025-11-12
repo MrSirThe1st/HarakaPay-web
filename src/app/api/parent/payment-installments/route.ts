@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
       `)
       .eq('student_id', studentId)
       .eq('academic_year_id', academicYearId)
-      .eq('status', 'active');
+      .in('status', ['active', 'fully_paid']); // Include active and fully paid (exclude cancelled)
 
     if (assignmentsError) {
       console.error('Error fetching student fee assignments:', assignmentsError);

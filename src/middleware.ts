@@ -17,6 +17,8 @@ const publicRoutes = [
   '/api/parent',
   '/api/test',
   '/api/school-registration-requests',
+  '/api/payments/simulate-webhook', // Test endpoint for simulating webhooks
+  '/api/payments/webhook', // M-Pesa webhook endpoint (called by external service)
 ];
 
 // Define protected routes and their required roles

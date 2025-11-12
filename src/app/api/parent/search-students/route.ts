@@ -38,6 +38,24 @@ export async function POST(req: NextRequest) {
     // Use admin client for data access (bypasses RLS)
     const supabase = createAdminClient();
 
+    // Get parent record to find already linked students
+    const { data: parent } = await supabase
+      .from('parents')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    // Get already linked student IDs
+    let linkedStudentIds: string[] = [];
+    if (parent) {
+      const { data: linkedStudents } = await supabase
+        .from('parent_students')
+        .select('student_id')
+        .eq('parent_id', parent.id);
+      
+      linkedStudentIds = linkedStudents?.map(ls => ls.student_id) || [];
+    }
+
     let students = [];
 
     if (searchType === 'automatic') {
@@ -99,6 +117,9 @@ export async function POST(req: NextRequest) {
 
       students = data || [];
     }
+
+    // Filter out already linked students
+    students = students.filter((student: any) => !linkedStudentIds.includes(student.id));
 
     // Calculate match confidence and reasons
     const matches = students.map((student: any) => {

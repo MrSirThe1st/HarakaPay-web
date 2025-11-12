@@ -1,0 +1,32 @@
+student id,first name,last name,grade level,level,enrollment date,status,parent name,parent phone,parent email
+STU051,Emmanuel,Ndombe,primaire-3,Primaire,2024-03-05,active,Grace Ndombe,+243910123456,grace.ndombe@gmail.com
+STU052,Priscilla,Kitenge,base-8,Éducation de Base,2024-03-12,active,David Kitenge,+243911234567,david.kitenge@yahoo.com
+STU053,Moses,Banza,humanites-2,Humanités,2024-03-08,active,Josephine Banza,+243912345678,josephine.banza@outlook.com
+STU054,Tabitha,Lungu,primaire-5,Primaire,2024-03-15,active,Patrick Lungu,+243913456789,patrick.lungu@gmail.com
+STU055,Solomon,Mwanza,humanites-1,Humanités,2024-03-10,active,Beatrice Mwanza,+243914567890,beatrice.mwanza@yahoo.fr
+STU056,Phoebe,Nkulu,base-7,Éducation de Base,2024-03-18,active,Thomas Nkulu,+243915678901,thomas.nkulu@gmail.com
+STU057,Gideon,Kabongo,humanites-4,Humanités,2024-03-07,active,Antoinette Kabongo,+243916789012,antoinette.kabongo@hotmail.com
+STU058,Lydia,Mujinga,primaire-2,Primaire,2024-03-22,active,Robert Mujinga,+243917890123,robert.mujinga@gmail.com
+STU059,Nathaniel,Kitoko,humanites-3,Humanités,2024-03-14,active,Henriette Kitoko,+243918901234,henriette.kitoko@yahoo.com
+STU060,Dorcas,Mpiana,primaire-6,Primaire,2024-03-09,active,Francois Mpiana,+243919012345,francois.mpiana@outlook.com
+STU061,Simeon,Bakala,primaire-4,Primaire,2024-03-25,active,Louise Bakala,+243920123456,louise.bakala@gmail.com
+STU062,Eunice,Ngoy,base-8,Éducation de Base,2024-03-11,active,Gilbert Ngoy,+243921234567,gilbert.ngoy@yahoo.fr
+STU063,Matthias,Kazadi,primaire-1,Primaire,2024-03-19,active,Sylvie Kazadi,+243922345678,sylvie.kazadi@gmail.com
+STU064,Rhoda,Mwila,humanites-2,Humanités,2024-03-16,active,Christian Mwila,+243923456789,christian.mwila@outlook.com
+STU065,Barnabas,Tshimanga,licence-1,Enseignement supérieur,2024-03-06,active,Nadine Tshimanga,+243924567890,nadine.tshimanga@gmail.com
+STU066,Martha,Luamba,humanites-1,Humanités,2024-03-21,active,Martin Luamba,+243925678901,martin.luamba@yahoo.com
+STU067,Silas,Monga,base-7,Éducation de Base,2024-03-13,active,Therese Monga,+243926789012,therese.monga@gmail.com
+STU068,Anna,Mushitu,primaire-5,Primaire,2024-03-28,active,Abel Mushitu,+243927890123,abel.mushitu@hotmail.com
+STU069,Philemon,Kabwe,humanites-4,Humanités,2024-03-10,active,Claudine Kabwe,+243928901234,claudine.kabwe@outlook.com
+STU070,Lois,Mwamba,primaire-3,Primaire,2024-03-24,active,Daniel Mwamba,+243929012345,daniel.mwamba@gmail.com
+STU071,Titus,Bope,humanites-3,Humanités,2024-03-17,active,Francine Bope,+243930123456,francine.bope@yahoo.fr
+STU072,Salome,Dikembe,base-8,Éducation de Base,2024-03-08,active,Justin Dikembe,+243931234567,justin.dikembe@gmail.com
+STU073,Amos,Kamanda,licence-2,Enseignement supérieur,2024-03-20,active,Cecile Kamanda,+243932345678,cecile.kamanda@outlook.com
+STU074,Joanna,Mpolo,primaire-2,Primaire,2024-03-15,active,Victor Mpolo,+243933456789,victor.mpolo@gmail.com
+STU075,Micah,Nzuzi,humanites-2,Humanités,2024-03-27,active,Odette Nzuzi,+243934567890,odette.nzuzi@yahoo.com
+STU076,Susanna,Ilunga,primaire-6,Primaire,2024-03-12,active,Henri Ilunga,+243935678901,henri.ilunga@gmail.com
+STU077,Hosea,Tumba,primaire-4,Primaire,2024-03-23,active,Marie Tumba,+243936789012,marie.tumba@hotmail.com
+STU078,Naomi,Kalala,humanites-1,Humanités,2024-03-09,active,Georges Kalala,+243937890123,georges.kalala@outlook.com
+STU079,Joel,Mbuyu,licence-3,Enseignement supérieur,2024-03-26,active,Angelique Mbuyu,+243938901234,angelique.mbuyu@gmail.com
+STU080,Rebekah,Ndala,base-7,Éducation de Base,2024-03-14,active,Innocent Ndala,+243939012345,innocent.ndala@yahoo.fr
+STU025,Patrick,Ngandu,base-7,Éducation de Base,2024-03-14,active,Albert Ngandu,+243901901245,albert.ngandu@gmail.com

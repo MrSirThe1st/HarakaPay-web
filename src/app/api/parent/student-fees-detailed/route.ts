@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
         )
       `)
       .in('student_id', studentIds)
-      .eq('status', 'active');
+      .in('status', ['active', 'fully_paid']); // Include active and fully paid (exclude cancelled)
 
     if (assignmentsError) {
       console.error('Error fetching student fee assignments:', assignmentsError);
@@ -202,7 +202,7 @@ export async function GET(req: NextRequest) {
         );
 
         if (!existingCategory) {
-          // Add new category
+          // Add new category (remaining balance will be calculated after processing payment plans)
           studentFeesMap[student.id].fee_categories.push({
             id: category.id,
             name: category.name,
@@ -211,7 +211,8 @@ export async function GET(req: NextRequest) {
             is_mandatory: item.is_mandatory,
             supports_recurring: item.is_recurring,
             supports_one_time: item.payment_modes?.includes('one_time') || false,
-            category_type: category.category_type
+            category_type: category.category_type,
+            remaining_balance: item.amount // Will be updated after calculating payments
           });
         }
       });
@@ -260,6 +261,83 @@ export async function GET(req: NextRequest) {
         }
       });
     });
+
+    // Calculate remaining balance per category for each student
+    // Use the same logic as paid-installments endpoint: calculate per payment plan
+    for (const studentId in studentFeesMap) {
+      const studentData = studentFeesMap[studentId];
+      const assignment = studentFeeAssignments?.find(a => a.student_id === studentId);
+      
+      if (!assignment) continue;
+
+      // For each category, calculate remaining balance
+      for (const category of studentData.fee_categories) {
+        // Get payment plans for this category
+        const categoryPlans = studentData.payment_schedules.filter(
+          (plan: any) => plan.fee_category_id === category.id
+        );
+
+        if (categoryPlans.length === 0) {
+          // No payment plans, remaining balance = original amount
+          category.remaining_balance = category.amount;
+          continue;
+        }
+
+        // Find which payment plan has been used (from payment transactions)
+        const planIds = categoryPlans.map((p: any) => p.id);
+        const { data: usedTransaction } = await adminClient
+          .from('payment_transactions')
+          .select('payment_plan_id')
+          .eq('student_fee_assignment_id', assignment.id)
+          .in('payment_plan_id', planIds)
+          .eq('transaction_status', 'completed')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        // If a payment plan has been used, calculate based on that plan only
+        // Otherwise, use the first available plan (or calculate minimum)
+        let targetPlan = null;
+        if (usedTransaction?.payment_plan_id) {
+          targetPlan = categoryPlans.find((p: any) => p.id === usedTransaction.payment_plan_id);
+        }
+        
+        // If no plan has been used, use the first plan (or calculate from all plans)
+        if (!targetPlan && categoryPlans.length > 0) {
+          targetPlan = categoryPlans[0];
+        }
+
+        if (!targetPlan) {
+          category.remaining_balance = category.amount;
+          continue;
+        }
+
+        // Calculate total due for THIS payment plan only (same logic as paid-installments)
+        const installments = targetPlan.installments || [];
+        const totalDueForCategory = installments.reduce((sum: number, inst: any) => {
+          return sum + parseFloat(inst.amount?.toString() || '0');
+        }, 0);
+
+        // If no installments, use original amount
+        const finalTotalDue = totalDueForCategory > 0 ? totalDueForCategory : category.amount;
+
+        // Get paid amount for THIS payment plan only
+        const { data: paidTransactions } = await adminClient
+          .from('payment_transactions')
+          .select('amount_paid')
+          .eq('student_fee_assignment_id', assignment.id)
+          .eq('payment_plan_id', targetPlan.id) // Only payments for THIS payment plan
+          .eq('transaction_status', 'completed');
+
+        const paidAmount = paidTransactions?.reduce(
+          (sum, t) => sum + parseFloat(t.amount_paid?.toString() || '0'),
+          0
+        ) || 0;
+
+        // Calculate remaining balance (same as paid-installments endpoint)
+        category.remaining_balance = Math.max(0, finalTotalDue - paidAmount);
+      }
+    }
 
     // Convert to array and sort by student name
     const studentFees = Object.values(studentFeesMap).sort((a: any, b: any) => 

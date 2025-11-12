@@ -23,11 +23,7 @@ export async function POST(request) {
     // Find payment by transaction reference with related data
     const { data: payment } = await supabaseAdmin
       .from('payments')
-      .select(`
-        *,
-        student_fee_assignments(*),
-        payment_plans:student_fee_assignments!inner(payment_plan_id)
-      `)
+      .select('*, student_fee_assignments(*)')
       .eq('transaction_reference', input_TransactionID)
       .single();
     
@@ -73,15 +69,15 @@ export async function POST(request) {
     // If successful, update student_fee_assignments and create payment_transaction record
     if (isSuccessful) {
       const newPaidAmount = parseFloat(payment.student_fee_assignments.paid_amount || 0) + parseFloat(payment.amount);
+      const totalDue = parseFloat(payment.student_fee_assignments.total_due) || 0;
       
       // Update student_fee_assignments
+      // Keep status as 'active' until fully paid, then change to 'fully_paid'
       await supabaseAdmin
         .from('student_fee_assignments')
         .update({
           paid_amount: newPaidAmount,
-          status: newPaidAmount >= (parseFloat(payment.student_fee_assignments.total_due) || 0)
-            ? 'fully_paid' 
-            : 'partially_paid'
+          status: newPaidAmount >= totalDue ? 'fully_paid' : 'active'
         })
         .eq('id', payment.student_fee_assignments.id);
       

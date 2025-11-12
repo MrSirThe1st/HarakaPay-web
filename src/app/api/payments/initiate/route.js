@@ -55,7 +55,8 @@ export async function POST(request) {
       paymentPlanId,
       installmentNumber,
       paymentType,
-      selectedMonth
+      selectedMonth,
+      paymentMethod
     } = body;
     
     console.log('💳 Payment API: Request data:', { 
@@ -85,31 +86,62 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
     
-    // Get student fee assignment with payment plan details
-    const { data: feeAssignment } = await supabaseAdmin
+    // First, get the payment plan to find its structure_id and fee_category_id
+    const { data: paymentPlan, error: planError } = await supabaseAdmin
+      .from('payment_plans')
+      .select('id, structure_id, fee_category_id')
+      .eq('id', paymentPlanId)
+      .single();
+    
+    if (planError || !paymentPlan) {
+      return NextResponse.json({ error: 'Payment plan not found' }, { status: 404 });
+    }
+    
+    // Get student fee assignment - find by structure_id (not payment_plan_id)
+    // A student has one fee assignment per fee structure, but multiple payment plans per structure
+    const { data: feeAssignment, error: assignmentError } = await supabaseAdmin
       .from('student_fee_assignments')
       .select('*, students(*), payment_plans(*)')
       .eq('student_id', studentId)
-      .eq('payment_plan_id', paymentPlanId)
-      .single();
+      .eq('structure_id', paymentPlan.structure_id)
+      .in('status', ['active', 'fully_paid'])
+      .maybeSingle();
     
-    if (!feeAssignment) {
-      return NextResponse.json({ error: 'Fee assignment not found' }, { status: 404 });
+    if (assignmentError) {
+      console.error('Error fetching fee assignment:', assignmentError);
+      return NextResponse.json({ error: 'Failed to fetch fee assignment' }, { status: 500 });
     }
     
-    // Get installment label from payment plan if installmentNumber is provided
+    if (!feeAssignment) {
+      return NextResponse.json({ 
+        error: 'Fee assignment not found',
+        details: `No fee assignment found for student ${studentId} with structure ${paymentPlan.structure_id}`
+      }, { status: 404 });
+    }
+    
+    // Get the full payment plan details for the selected payment plan (not the one in fee assignment)
+    const { data: selectedPaymentPlan } = await supabaseAdmin
+      .from('payment_plans')
+      .select('installments, type')
+      .eq('id', paymentPlanId)
+      .single();
+    
+    // Get installment label from the selected payment plan if installmentNumber is provided
     let installmentLabel = null;
-    if (installmentNumber && feeAssignment.payment_plans?.installments) {
-      const installment = feeAssignment.payment_plans.installments.find(
+    if (installmentNumber && selectedPaymentPlan?.installments) {
+      const installment = selectedPaymentPlan.installments.find(
         (inst) => inst.installment_number === installmentNumber
       );
       installmentLabel = installment?.label || installment?.name || selectedMonth || null;
     } else if (selectedMonth) {
       installmentLabel = selectedMonth;
-    } else if (feeAssignment.payment_plans?.type === 'one_time' || feeAssignment.payment_plans?.type === 'upfront') {
+    } else if (selectedPaymentPlan?.type === 'one_time' || selectedPaymentPlan?.type === 'upfront') {
       installmentLabel = 'Full Payment';
     }
     
+    // Use the provided payment method, or default to mobile_money
+    const finalPaymentMethod = paymentMethod || 'mobile_money';
+
     // Create pending payment record with installment info
     const { data: pendingPayment, error: insertError } = await supabaseAdmin
       .from('payments')
@@ -117,7 +149,7 @@ export async function POST(request) {
         student_id: studentId,
         parent_id: parent.id,
         amount: amount,
-        payment_method: 'mobile_money', // M-Pesa is a type of mobile money
+        payment_method: finalPaymentMethod,
         status: 'pending',
         description: `Payment for ${feeAssignment.students.first_name} ${feeAssignment.students.last_name}${installmentLabel ? ` - ${installmentLabel}` : ''}`,
         installment_number: installmentNumber || null,
@@ -156,13 +188,43 @@ export async function POST(request) {
       description: paymentResult.responseDesc
     });
 
+    // Auto-simulate webhook in sandbox mode if enabled
+    const autoSimulate = process.env.MPESA_ENVIRONMENT === 'sandbox' && process.env.AUTO_SIMULATE_WEBHOOK === 'true';
+    
+    if (autoSimulate && paymentResult.success && paymentResult.transactionId) {
+      console.log('🧪 Auto-simulating webhook for sandbox mode...');
+      try {
+        // Simulate webhook by calling the simulate endpoint
+        const baseUrl = request.url.split('/api')[0]; // Get base URL
+        const simulateUrl = `${baseUrl}/api/payments/simulate-webhook?paymentId=${pendingPayment.id}`;
+        
+        const simulateResponse = await fetch(simulateUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (simulateResponse.ok) {
+          const simulateData = await simulateResponse.json();
+          console.log('✅ Auto-simulation completed:', simulateData);
+        } else {
+          console.warn('⚠️ Auto-simulation returned non-OK status:', simulateResponse.status);
+        }
+      } catch (simulateError) {
+        console.error('⚠️ Auto-simulation failed:', simulateError);
+        // Don't fail the request if simulation fails
+      }
+    }
+
     return NextResponse.json({
       success: paymentResult.success,
       paymentId: pendingPayment.id,
       transactionId: paymentResult.transactionId,
       message: paymentResult.responseDesc,
       responseCode: paymentResult.responseCode,
-      details: paymentResult.rawResponse // Include full M-Pesa response for debugging
+      details: paymentResult.rawResponse, // Include full M-Pesa response for debugging
+      simulated: autoSimulate // Indicate if webhook was auto-simulated
     });
     
   } catch (error) {

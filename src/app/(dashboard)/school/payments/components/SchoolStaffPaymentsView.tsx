@@ -1,8 +1,7 @@
 // src/app/(dashboard)/school/payments/components/SchoolStaffPaymentsView.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CreditCardIcon, 
   PlusIcon, 
@@ -10,9 +9,12 @@ import {
   FunnelIcon,
   CheckCircleIcon,
   ClockIcon,
-  XCircleIcon
+  XCircleIcon,
+  UserGroupIcon,
+  ListBulletIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
+import { PaymentsByGradeView } from './PaymentsByGradeView';
 
 interface Payment {
   id: string;
@@ -39,11 +41,14 @@ interface Payment {
 
 export function SchoolStaffPaymentsView() {
   const { t } = useTranslation();
-  const supabase = createClientComponentClient();
+  const [viewMode, setViewMode] = useState<'list' | 'byGrade'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Stats
   const [stats, setStats] = useState({
@@ -53,82 +58,72 @@ export function SchoolStaffPaymentsView() {
     failedCount: 0,
   });
 
-  useEffect(() => {
-    fetchPayments();
-    subscribeToPayments();
-  }, [filterStatus]);
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
-      setIsLoading(true);
-
-      let query = supabase
-        .from('payments')
-        .select(`
-          *,
-          students (
-            id,
-            first_name,
-            last_name,
-            student_id
-          ),
-          parents (
-            first_name,
-            last_name
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (filterStatus !== 'all') {
-        query = query.eq('status', filterStatus);
+      if (reset) {
+        setIsLoading(true);
+        setCurrentPage(1);
+      } else {
+        setIsLoadingMore(true);
       }
 
-      const { data, error } = await query;
+      const searchParams = new URLSearchParams();
+      searchParams.set('page', page.toString());
+      searchParams.set('limit', '25');
+      if (filterStatus !== 'all') {
+        searchParams.set('status', filterStatus);
+      }
 
-      if (error) throw error;
+      const url = `/api/school/payments?${searchParams.toString()}`;
+      console.log('[PaymentsView] Fetching payments from:', url);
 
-      setPayments(data || []);
-      calculateStats(data || []);
+      const response = await fetch(url);
+      console.log('[PaymentsView] Response status:', response.status);
+
+      const result = await response.json();
+      console.log('[PaymentsView] Response data:', result);
+
+      if (!response.ok || !result.success) {
+        console.error('[PaymentsView] API returned error:', result.error);
+        throw new Error(result.error || 'Failed to fetch payments');
+      }
+
+      console.log('[PaymentsView] Payments received:', result.data.payments?.length || 0);
+      console.log('[PaymentsView] Stats:', result.data.stats);
+
+      if (reset) {
+        setPayments(result.data.payments || []);
+      } else {
+        setPayments(prev => [...prev, ...(result.data.payments || [])]);
+      }
+
+      setHasMore(result.data.pagination.hasMore);
+      setStats(result.data.stats);
     } catch (error) {
-      console.error('Error fetching payments:', error);
+      console.error('[PaymentsView] Error fetching payments:', error);
+      setPayments([]);
+      setStats({
+        totalRevenue: 0,
+        successfulCount: 0,
+        pendingCount: 0,
+        failedCount: 0,
+      });
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  };
+  }, [filterStatus]);
 
-  const calculateStats = (paymentsData: Payment[]) => {
-    const stats = paymentsData.reduce(
-      (acc, payment) => {
-        if (payment.status === 'completed') {
-          acc.totalRevenue += parseFloat(payment.amount.toString());
-          acc.successfulCount++;
-        } else if (payment.status === 'pending') {
-          acc.pendingCount++;
-        } else if (payment.status === 'failed') {
-          acc.failedCount++;
-        }
-        return acc;
-      },
-      { totalRevenue: 0, successfulCount: 0, pendingCount: 0, failedCount: 0 }
-    );
+  useEffect(() => {
+    fetchPayments(1, true);
+  }, [fetchPayments]); // Reset when filter changes
 
-    setStats(stats);
-  };
-
-  const subscribeToPayments = () => {
-    const subscription = supabase
-      .channel('payments_channel')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'payments' },
-        () => fetchPayments()
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+  const loadMorePayments = () => {
+    if (!isLoadingMore && hasMore) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchPayments(nextPage, false);
+    }
   };
 
   const filteredPayments = payments.filter((payment) => {
@@ -144,13 +139,47 @@ export function SchoolStaffPaymentsView() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('Payment Management')}</h1>
-        <p className="text-gray-600">{t('Process and track student payments and fees')}</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('Payment Management')}</h1>
+          <p className="text-gray-600">{t('Process and track student payments and fees')}</p>
+        </div>
+        
+        {/* View Mode Toggle */}
+        <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'list'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <ListBulletIcon className="h-4 w-4" />
+              <span>{t('List View')}</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setViewMode('byGrade')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === 'byGrade'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <UserGroupIcon className="h-4 w-4" />
+              <span>{t('By Grade')}</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
+      {viewMode === 'list' && (
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -368,69 +397,47 @@ export function SchoolStaffPaymentsView() {
               </table>
             </div>
           )}
+
+          {/* Load More Button */}
+          {!isLoading && filteredPayments.length > 0 && hasMore && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={loadMorePayments}
+                disabled={isLoadingMore}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {t('Loading...')}
+                  </>
+                ) : (
+                  <>
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    {t('Load Older Payments')}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* No More Payments Message */}
+          {!isLoading && filteredPayments.length > 0 && !hasMore && (
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-500">
+                {t('No more payments to load')}
+              </p>
+            </div>
+          )}
         </div>
       </div>
+        </>
+      )}
 
-      {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            {t('Quick Actions')}
-          </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
-              <div>
-                <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white">
-                  <PlusIcon className="h-6 w-6" />
-                </span>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-medium">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  {t('Process Payment')}
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  {t('Handle a new student payment')}
-                </p>
-              </div>
-            </button>
-
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
-              <div>
-                <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
-                  <FunnelIcon className="h-6 w-6" />
-                </span>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-medium">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  {t('Bulk Processing')}
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  {t('Process multiple payments at once')}
-                </p>
-              </div>
-            </button>
-
-            <button className="relative group bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500 rounded-lg border border-gray-200 hover:border-gray-300">
-              <div>
-                <span className="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
-                  <CreditCardIcon className="h-6 w-6" />
-                </span>
-              </div>
-              <div className="mt-8">
-                <h3 className="text-lg font-medium">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  {t('Payment Reports')}
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  {t('Generate payment summaries')}
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Grade-Level View */}
+      {viewMode === 'byGrade' && (
+        <PaymentsByGradeView />
+      )}
     </div>
   );
 }
