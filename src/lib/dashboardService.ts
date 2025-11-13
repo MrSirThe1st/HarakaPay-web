@@ -31,7 +31,9 @@ export interface RecentActivity {
 }
 
 export class DashboardService {
-  private adminClient = createAdminClient();
+  private getAdminClient() {
+    return createAdminClient();
+  }
 
   async getAdminDashboardStats(): Promise<AdminDashboardStats> {
     try {
@@ -43,7 +45,7 @@ export class DashboardService {
       const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
       // Get total schools count
-      const { count: totalSchools } = await this.adminClient
+      const { count: totalSchools } = await this.getAdminClient()
         .from('schools')
         .select('*', { count: 'exact', head: true });
 
@@ -51,26 +53,26 @@ export class DashboardService {
       const lastMonthStart = new Date(lastMonthYear, lastMonth, 1);
       const lastMonthEnd = new Date(lastMonthYear, lastMonth + 1, 0);
       
-      const { count: lastMonthSchools } = await this.adminClient
+      const { count: lastMonthSchools } = await this.getAdminClient()
         .from('schools')
         .select('*', { count: 'exact', head: true })
         .lte('created_at', lastMonthEnd.toISOString());
 
       // Get active users count (profiles with is_active = true)
-      const { count: activeUsers } = await this.adminClient
+      const { count: activeUsers } = await this.getAdminClient()
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
       // Get active users count from last month
-      const { count: lastMonthUsers } = await this.adminClient
+      const { count: lastMonthUsers } = await this.getAdminClient()
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true)
         .lte('created_at', lastMonthEnd.toISOString());
 
       // Get total revenue from completed payments
-      const { data: payments } = await this.adminClient
+      const { data: payments } = await this.getAdminClient()
         .from('payments')
         .select('amount')
         .eq('status', 'completed');
@@ -78,7 +80,7 @@ export class DashboardService {
       const totalRevenue = payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
 
       // Get revenue from last month
-      const { data: lastMonthPayments } = await this.adminClient
+      const { data: lastMonthPayments } = await this.getAdminClient()
         .from('payments')
         .select('amount')
         .eq('status', 'completed')
@@ -89,12 +91,12 @@ export class DashboardService {
 
       // Calculate growth rate (overall platform growth based on new users)
       const currentMonthStart = new Date(currentYear, currentMonth, 1);
-      const { count: currentMonthNewUsers } = await this.adminClient
+      const { count: currentMonthNewUsers } = await this.getAdminClient()
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', currentMonthStart.toISOString());
 
-      const { count: lastMonthNewUsers } = await this.adminClient
+      const { count: lastMonthNewUsers } = await this.getAdminClient()
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', lastMonthStart.toISOString())
@@ -146,20 +148,20 @@ export class DashboardService {
       const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
       // Get total students count for this school
-      const { count: totalStudents } = await this.adminClient
+      const { count: totalStudents } = await this.getAdminClient()
         .from('students')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', schoolId);
 
       // Get active students count
-      const { count: activeStudents } = await this.adminClient
+      const { count: activeStudents } = await this.getAdminClient()
         .from('students')
         .select('*', { count: 'exact', head: true })
         .eq('school_id', schoolId)
         .eq('status', 'active');
 
       // Get total revenue for this school's students
-      const { data: studentIds } = await this.adminClient
+      const { data: studentIds } = await this.getAdminClient()
         .from('students')
         .select('id')
         .eq('school_id', schoolId);
@@ -171,7 +173,7 @@ export class DashboardService {
 
       if (studentIdList.length > 0) {
         // Get total revenue
-        const { data: payments } = await this.adminClient
+        const { data: payments } = await this.getAdminClient()
           .from('payments')
           .select('amount')
           .in('student_id', studentIdList)
@@ -181,7 +183,7 @@ export class DashboardService {
 
         // Get monthly revenue
         const currentMonthStart = new Date(currentYear, currentMonth, 1);
-        const { data: monthlyPayments } = await this.adminClient
+        const { data: monthlyPayments } = await this.getAdminClient()
           .from('payments')
           .select('amount')
           .in('student_id', studentIdList)
@@ -211,7 +213,7 @@ export class DashboardService {
 
   async getRecentActivity(limit: number = 10): Promise<RecentActivity[]> {
     try {
-      const { data: activities } = await this.adminClient
+      const { data: activities } = await this.getAdminClient()
         .from('audit_logs')
         .select(`
           id,
