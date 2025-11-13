@@ -14,8 +14,8 @@ export default function RootPage() {
       <LandingNav />
       <main>
         <HeroSection />
-        <StatsSection />
-        <SchoolCarousel />
+        {/* <StatsSection /> */}
+        {/* <SchoolCarousel /> */}
         <FeaturesSection />
         <HowItWorksSection />
         <ContactSection />

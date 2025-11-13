@@ -181,21 +181,6 @@ export default function LoginPage() {
           </p>
         </div>
       </form>
-
-      {/* Demo Credentials Card */}
-      <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Demo Credentials</h3>
-        <div className="text-xs text-gray-600 space-y-2">
-          <div className="flex items-start">
-            <span className="font-semibold text-gray-900 w-20 flex-shrink-0">Admin:</span>
-            <span className="font-mono text-blue-600">admin@harakapay.com / HarakaPay2025!Admin</span>
-          </div>
-          <div className="flex items-start">
-            <span className="font-semibold text-gray-900 w-20 flex-shrink-0">School:</span>
-            <span className="font-mono text-blue-600">marci@harakapay.com / HarakaPay2025!Marci</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

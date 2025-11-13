@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { 
-  BellIcon, 
   UserCircleIcon,
   Bars3Icon,
   XMarkIcon
@@ -51,18 +50,8 @@ export default function AdminTopbar() {
             </div>
           </div>
 
-          {/* Right side - Notifications and profile */}
+          {/* Right side - Profile */}
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <button
-              type="button"
-              className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md relative"
-            >
-              <BellIcon className="h-6 w-6" />
-              {/* Notification badge */}
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-            </button>
-
             {/* Profile dropdown */}
             <div className="relative">
               <button

@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { 
-  BellIcon, 
   MagnifyingGlassIcon, 
   UserCircleIcon,
   Bars3Icon,
@@ -70,18 +69,8 @@ export default function SchoolTopbar() {
             </div>
           </div>
 
-          {/* Right side - Notifications and profile */}
+          {/* Right side - Profile */}
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <button
-              type="button"
-              className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md relative"
-            >
-              <BellIcon className="h-6 w-6" />
-              {/* Notification badge */}
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-            </button>
-
             {/* Profile dropdown */}
             <div className="relative">
               <button
@@ -96,25 +85,12 @@ export default function SchoolTopbar() {
                   <p className="text-sm font-medium text-gray-900">{t('School Staff')}</p>
                   <p className="text-xs text-gray-500">{t('Staff Member')}</p>
                 </div>
-                <UserCircleIcon className="h-5 w-5 text-gray-400" />
+
               </button>
 
               {/* Profile dropdown menu */}
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                  <a
-                    href="/school/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    {t('Profile Settings')}
-                  </a>
-                  <a
-                    href="/school/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    {t('School Settings')}
-                  </a>
-                  <hr className="my-1" />
                   <button
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => {
