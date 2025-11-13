@@ -224,16 +224,23 @@ export class DashboardService {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      return activities?.map(activity => ({
-        id: activity.id,
-        action: activity.action,
-        entity_type: activity.entity_type,
-        entity_id: activity.entity_id,
-        user_name: activity.profiles 
-          ? `${activity.profiles.first_name || ''} ${activity.profiles.last_name || ''}`.trim()
-          : 'System',
-        created_at: activity.created_at
-      })) || [];
+      return activities?.map((activity: any) => {
+        // Handle profiles as array or single object (Supabase type inference issue)
+        const profile = activity.profiles 
+          ? (Array.isArray(activity.profiles) ? activity.profiles[0] : activity.profiles)
+          : undefined;
+        
+        return {
+          id: activity.id,
+          action: activity.action,
+          entity_type: activity.entity_type,
+          entity_id: activity.entity_id,
+          user_name: profile 
+            ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+            : 'System',
+          created_at: activity.created_at
+        };
+      }) || [];
     } catch (error) {
       console.error('Error fetching recent activity:', error);
       throw new Error('Failed to fetch recent activity');

@@ -50,7 +50,7 @@ async function getCachedProfile(userId: string) {
     const adminClient = createAdminClient();
     const { data: profile, error: profileError } = await adminClient
       .from('profiles')
-      .select('role, is_active')
+      .select('id, role, is_active')
       .eq('user_id', userId)
       .single();
 
