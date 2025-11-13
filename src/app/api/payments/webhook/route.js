@@ -1,23 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Use service role for webhook (bypass RLS)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function POST(request) {
   try {
+    // Use service role for webhook (bypass RLS)
+    const supabaseAdmin = createAdminClient();
+
     const body = await request.json();
     
     // M-Pesa sends async response with these fields
     const {
-      input_OriginalConversationID,
-      input_TransactionID,
-      input_ResultCode,
-      input_ResultDesc,
-      input_ThirdPartyConversationID
+      _input_OriginalConversationID,
+      _input_TransactionID,
+      _input_ResultCode,
+      _input_ResultDesc,
+      _input_ThirdPartyConversationID
     } = body;
     
     // Find payment by transaction reference with related data
