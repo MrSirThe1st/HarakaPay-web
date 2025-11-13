@@ -1,6 +1,7 @@
 // src/app/api/school/store/orders/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { StoreOrder, StoreApiResponse, StorePaginationData, StoreStatsData, StoreOrderFilters, CreateOrderData } from '@/types/store';
 
 export async function GET(request: NextRequest) {
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Build query based on user role
-    let query = supabase
+    let query = adminClient
       .from('store_orders')
       .select(`
         *,
@@ -117,7 +119,7 @@ export async function GET(request: NextRequest) {
     // Get stats (only for school staff)
     let stats: StoreStatsData = { total: count || 0 };
     if (['school_admin', 'school_staff'].includes(profile.role)) {
-      const { data: statsData } = await supabase
+      const { data: statsData } = await adminClient
         .from('store_orders')
         .select('status, payment_status')
         .eq('school_id', profile.school_id);
@@ -165,8 +167,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -192,14 +195,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify student exists and belongs to parent (for parents) or school (for staff)
-    let studentQuery = supabase
+    let studentQuery = adminClient
       .from('students')
       .select('*, schools(id)')
       .eq('id', studentId);
 
     if (profile.role === 'parent') {
       // For parents, verify student is linked to them
-      const { data: parentStudent } = await supabase
+      const { data: parentStudent } = await adminClient
         .from('parent_students')
         .select('student_id')
         .eq('parent_id', profile.id)
@@ -226,7 +229,7 @@ export async function POST(request: NextRequest) {
     const validatedItems = [];
 
     for (const item of items) {
-      const { data: storeItem, error: itemError } = await supabase
+      const { data: storeItem, error: itemError } = await adminClient
         .from('store_items')
         .select('*')
         .eq('id', item.itemId)
@@ -264,7 +267,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await adminClient
       .from('store_orders')
       .insert({
         school_id: schoolId,
@@ -287,7 +290,7 @@ export async function POST(request: NextRequest) {
     // Create order items
     const orderItems = [];
     for (const item of validatedItems) {
-      const { data: orderItem, error: itemError } = await supabase
+      const { data: orderItem, error: itemError } = await adminClient
         .from('store_order_items')
         .insert({
           order_id: order.id,
@@ -302,7 +305,7 @@ export async function POST(request: NextRequest) {
       if (itemError) {
         console.error('Error creating order item:', itemError);
         // Rollback order creation
-        await supabase.from('store_orders').delete().eq('id', order.id);
+        await adminClient.from('store_orders').delete().eq('id', order.id);
         return NextResponse.json({ success: false, error: 'Failed to create order items' }, { status: 500 });
       }
 
@@ -310,7 +313,7 @@ export async function POST(request: NextRequest) {
 
       // Create hire record if order type is hire
       if (orderType === 'hire' && item.hireStartDate && item.hireEndDate) {
-        const { error: hireError } = await supabase
+        const { error: hireError } = await adminClient
           .from('hire_records')
           .insert({
             order_item_id: orderItem.id,
@@ -323,7 +326,7 @@ export async function POST(request: NextRequest) {
         if (hireError) {
           console.error('Error creating hire record:', hireError);
           // Rollback order creation
-          await supabase.from('store_orders').delete().eq('id', order.id);
+          await adminClient.from('store_orders').delete().eq('id', order.id);
           return NextResponse.json({ success: false, error: 'Failed to create hire record' }, { status: 500 });
         }
       }

@@ -56,7 +56,18 @@ export async function POST(req: NextRequest) {
       linkedStudentIds = linkedStudents?.map(ls => ls.student_id) || [];
     }
 
-    let students = [];
+    let students: Array<{
+      id: string;
+      student_id: string;
+      first_name: string;
+      last_name: string;
+      grade_level: string;
+      school_id: string;
+      parent_name: string | null;
+      parent_email: string | null;
+      parent_phone: string | null;
+      schools: { name: string } | { name: string }[];
+    }> = [];
 
     if (searchType === 'automatic') {
       // Search for students by parent information
@@ -122,7 +133,7 @@ export async function POST(req: NextRequest) {
     students = students.filter((student: { id: string }) => !linkedStudentIds.includes(student.id));
 
     // Calculate match confidence and reasons
-    const matches = students.map((student: { id: string; first_name?: string; last_name?: string; student_id?: string; date_of_birth?: string; parent_email?: string; parent_phone?: string }) => {
+    const matches = students.map((student) => {
       const matchReasons: string[] = [];
       let confidence: 'high' | 'medium' | 'low' = 'low';
 
@@ -164,6 +175,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Handle schools as array or single object (Supabase type inference issue)
+      const schools = Array.isArray(student.schools) ? student.schools[0] : student.schools;
+      
       return {
         id: student.id,
         student_id: student.student_id,
@@ -171,7 +185,7 @@ export async function POST(req: NextRequest) {
         last_name: student.last_name,
         grade_level: student.grade_level,
         school_id: student.school_id,
-        school_name: student.schools.name,
+        school_name: schools?.name || '',
         parent_name: student.parent_name,
         parent_email: student.parent_email,
         parent_phone: student.parent_phone,

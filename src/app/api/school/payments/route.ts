@@ -5,8 +5,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

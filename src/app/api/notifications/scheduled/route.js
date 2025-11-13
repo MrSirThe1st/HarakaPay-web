@@ -8,8 +8,7 @@ import scheduledNotificationService from '@/services/scheduledNotificationServic
 // GET - Fetch all scheduled notifications for a school
 export async function GET(request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -60,8 +59,7 @@ export async function GET(request) {
 // POST - Create a new scheduled notification
 export async function POST(request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

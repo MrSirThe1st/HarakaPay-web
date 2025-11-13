@@ -202,7 +202,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
                             item.hireRecord?.status === 'overdue' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {item.hireRecord?.status?.charAt(0).toUpperCase() + item.hireRecord?.status?.slice(1)}
+                            {item.hireRecord?.status ? item.hireRecord.status.charAt(0).toUpperCase() + item.hireRecord.status.slice(1) : 'N/A'}
                           </span>
                         </td>
                       </tr>
@@ -221,7 +221,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
                 <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
                 <select
                   value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  onChange={(e) => setSelectedStatus(e.target.value as "pending" | "completed" | "cancelled" | "confirmed" | "preparing" | "ready")}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="pending">Pending</option>
@@ -237,7 +237,7 @@ export function OrderDetailModal({ order, onClose, onUpdateStatus }: OrderDetail
                 <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
                 <select
                   value={selectedPaymentStatus}
-                  onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                  onChange={(e) => setSelectedPaymentStatus(e.target.value as "pending" | "paid" | "refunded")}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="pending">Pending</option>

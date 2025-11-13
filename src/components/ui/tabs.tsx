@@ -18,10 +18,10 @@ export function Tabs({ value, onValueChange, defaultValue, className, children }
     .filter((child): child is React.ReactElement => React.isValidElement(child))
     .filter(child => child.type === TabsList)
     .flatMap(tabsList =>
-      React.Children.toArray(tabsList.props.children)
+      React.Children.toArray((tabsList as any).props.children)
         .filter((child): child is React.ReactElement => React.isValidElement(child))
         .filter(child => child.type === TabsTrigger)
-        .map(trigger => trigger.props.value)
+        .map(trigger => (trigger as any).props.value)
     );
 
   React.useEffect(() => {

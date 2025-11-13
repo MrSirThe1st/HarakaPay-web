@@ -59,6 +59,7 @@ export function EditStudentModal({ isOpen, onClose, onSuccess, student }: EditSt
         first_name: student.first_name,
         last_name: student.last_name,
         grade_level: student.grade_level || '',
+        level: student.level || student.grade_level || '',
         enrollment_date: student.enrollment_date,
         status: student.status,
         parent_name: student.parent_name || '',

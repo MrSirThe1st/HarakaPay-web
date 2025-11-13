@@ -144,10 +144,26 @@ export async function GET(req: NextRequest) {
     }
 
     // Filter assignments that contain the specific category
-    const relevantAssignments = studentFeeAssignments.filter(assignment => {
-      const feeTemplate = assignment.payment_schedules?.fee_templates;
+    const relevantAssignments = studentFeeAssignments.filter((assignment: any) => {
+      // Handle payment_schedules as array or single object
+      const paymentSchedule = Array.isArray(assignment.payment_schedules) 
+        ? assignment.payment_schedules[0] 
+        : assignment.payment_schedules;
+      
+      // Handle fee_templates as array or single object
+      const feeTemplate = paymentSchedule?.fee_templates
+        ? (Array.isArray(paymentSchedule.fee_templates) 
+            ? paymentSchedule.fee_templates[0] 
+            : paymentSchedule.fee_templates)
+        : undefined;
+      
       const categories = feeTemplate?.fee_template_categories || [];
-      return categories.some(ftc => ftc.fee_categories?.id === categoryId);
+      return categories.some((ftc: any) => {
+        const feeCategory = Array.isArray(ftc.fee_categories) 
+          ? ftc.fee_categories[0] 
+          : ftc.fee_categories;
+        return feeCategory?.id === categoryId;
+      });
     });
 
     if (relevantAssignments.length === 0) {
@@ -158,14 +174,38 @@ export async function GET(req: NextRequest) {
     }
 
     // Process installments from all relevant assignments
-    const allInstallments = [];
+    const allInstallments: Array<{
+      id: string;
+      installment_number: number;
+      name: string;
+      amount: number;
+      percentage: number;
+      due_date: string;
+      term_id: string | null;
+      is_current: boolean;
+      is_paid: boolean;
+      schedule_name?: string;
+      schedule_type?: string;
+    }> = [];
     const now = new Date();
 
-    relevantAssignments.forEach(assignment => {
-      const paymentSchedule = assignment.payment_schedules;
+    relevantAssignments.forEach((assignment: any) => {
+      // Handle payment_schedules as array or single object
+      const paymentSchedule = Array.isArray(assignment.payment_schedules) 
+        ? assignment.payment_schedules[0] 
+        : assignment.payment_schedules;
       const installments = paymentSchedule?.payment_installments || [];
       
-      installments.forEach(installment => {
+      installments.forEach((installment: {
+        id: string;
+        installment_number: number;
+        name: string;
+        amount: number;
+        percentage: number;
+        due_date: string;
+        term_id: string | null;
+        is_active: boolean;
+      }) => {
         // Determine if this is the current installment
         const dueDate = new Date(installment.due_date);
         const isCurrent = dueDate <= now && installment.is_active;
@@ -190,8 +230,16 @@ export async function GET(req: NextRequest) {
     allInstallments.sort((a, b) => a.installment_number - b.installment_number);
 
     // Get student and academic year info
-    const student = studentFeeAssignments[0]?.students;
-    const academicYear = studentFeeAssignments[0]?.academic_years;
+    // Handle students as array or single object (Supabase type inference issue)
+    const studentData = studentFeeAssignments[0]?.students;
+    const student = Array.isArray(studentData) ? studentData[0] : studentData;
+    const academicYearData = studentFeeAssignments[0]?.academic_years;
+    const academicYear = Array.isArray(academicYearData) ? academicYearData[0] : academicYearData;
+    
+    // Handle schools as array or single object
+    const schools = student?.schools 
+      ? (Array.isArray(student.schools) ? student.schools[0] : student.schools)
+      : undefined;
 
     return NextResponse.json({ 
       installments: allInstallments,
@@ -202,7 +250,7 @@ export async function GET(req: NextRequest) {
         last_name: student?.last_name,
         grade_level: student?.grade_level,
         school_id: student?.school_id,
-        school_name: student?.schools?.name,
+        school_name: schools?.name || '',
       },
       academic_year: {
         id: academicYear?.id,

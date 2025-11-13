@@ -8,8 +8,7 @@ import { Database } from '@/types/supabase';
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: structureId } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -135,8 +134,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: structureId } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -231,8 +229,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: structureId } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

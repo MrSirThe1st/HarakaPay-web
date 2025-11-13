@@ -7,8 +7,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function POST(req: NextRequest) {
   try {
     console.log('Auto-assign API called');
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -238,7 +237,7 @@ export async function POST(req: NextRequest) {
 
     if (dry_run) {
       // Return what would be assigned without actually assigning
-      const assignments = [];
+      const assignments: any[] = [];
       studentsToAssign.forEach(student => {
         schedules.forEach(schedule => {
           assignments.push({
@@ -274,7 +273,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Actually create the assignments
-    const assignmentsToCreate = [];
+    const assignmentsToCreate: any[] = [];
     studentsToAssign.forEach(student => {
       schedules.forEach(schedule => {
         assignmentsToCreate.push({

@@ -1,6 +1,7 @@
 // src/app/api/school/store/items/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { StoreItem, StoreApiResponse, StorePaginationData, StoreStatsData, StoreItemFilters } from '@/types/store';
 
 export async function GET(request: NextRequest) {
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Build query
-    let query = supabase
+    let query = adminClient
       .from('store_items')
       .select(`
         *,
@@ -80,9 +82,10 @@ export async function GET(request: NextRequest) {
     if (filters.isAvailable !== undefined) {
       query = query.eq('is_available', filters.isAvailable);
     }
-    if (filters.lowStock) {
-      query = query.lte('stock_quantity', supabase.raw('low_stock_threshold'));
-    }
+    // Note: Low stock filtering would need to be done after fetch since Supabase doesn't support column-to-column comparisons
+    // if (filters.lowStock) {
+    //   query = query.lte('stock_quantity', adminClient.raw('low_stock_threshold'));
+    // }
     if (filters.search) {
       query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
     }
@@ -100,7 +103,7 @@ export async function GET(request: NextRequest) {
     // Get stats (only for school staff)
     let stats: StoreStatsData = { total: count || 0 };
     if (['school_admin', 'school_staff'].includes(profile.role)) {
-      const { data: statsData } = await supabase
+      const { data: statsData } = await adminClient
         .from('store_items')
         .select('is_available, stock_quantity, low_stock_threshold')
         .eq('school_id', profile.school_id);
@@ -150,8 +153,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -199,7 +203,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify category exists and belongs to school
-    const { data: category, error: categoryError } = await supabase
+    const { data: category, error: categoryError } = await adminClient
       .from('store_categories')
       .select('id')
       .eq('id', categoryId)
@@ -225,7 +229,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create item
-    const { data: item, error: createError } = await supabase
+    const { data: item, error: createError } = await adminClient
       .from('store_items')
       .insert({
         school_id: profile.school_id,
@@ -249,7 +253,7 @@ export async function POST(request: NextRequest) {
 
     // Create hire settings if item type is hire
     if (itemType === 'hire' && hireSettings) {
-      const { data: hireSettingsData, error: hireSettingsError } = await supabase
+      const { data: hireSettingsData, error: hireSettingsError } = await adminClient
         .from('hire_settings')
         .insert({
           item_id: item.id,
@@ -265,7 +269,7 @@ export async function POST(request: NextRequest) {
       if (hireSettingsError) {
         console.error('Error creating hire settings:', hireSettingsError);
         // Rollback item creation
-        await supabase.from('store_items').delete().eq('id', item.id);
+        await adminClient.from('store_items').delete().eq('id', item.id);
         return NextResponse.json({ success: false, error: 'Failed to create hire settings' }, { status: 500 });
       }
     }

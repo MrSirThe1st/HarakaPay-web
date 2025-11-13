@@ -126,7 +126,6 @@ const translations: Record<string, string> = {
   "Amount": "Montant",
   "Total": "Total",
   "Subtotal": "Sous-total",
-  "Grand Total": "Total général",
   "Amount for payment schedule": "Montant pour l'échéancier de paiement",
   "One-time payments": "Paiements uniques",
   "Base Fee Total": "Total des frais de base",
@@ -158,7 +157,6 @@ const translations: Record<string, string> = {
   // Review & Save Step
   "Review Your Fee Structure": "Réviser votre structure de frais",
   "Please review all details before publishing your fee schedule": "Veuillez réviser tous les détails avant de publier votre échéancier de frais",
-  "Grade/Program": "Niveau/Programme",
   "Total Categories": "Total des catégories",
   "Base Amount": "Montant de base",
   "Total with Interest": "Total avec intérêts",
@@ -236,12 +234,10 @@ const translations: Record<string, string> = {
   
   // Student Management
   "Student": "Étudiant",
-  "Students": "Étudiants",
   "Student Management": "Gestion des étudiants",
   "Manage your school's student records and information": "Gérez les dossiers et informations des étudiants de votre école",
   "Student Name": "Nom de l'étudiant",
   "Student ID": "ID de l'étudiant",
-  "Grade": "Classe",
   "Class": "Classe",
   "Parent": "Parent",
   "Guardian": "Tuteur",
@@ -413,7 +409,6 @@ const translations: Record<string, string> = {
   "Attendance Policy": "Politique de présence",
   "Strict": "Strict",
   "Max Class Size": "Taille maximale de classe",
-  "Students": "Étudiants",
   "Payment Settings": "Paramètres de paiement",
   "Currency": "Devise",
   "Payment Methods": "Méthodes de paiement",

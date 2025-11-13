@@ -1,6 +1,7 @@
 // src/app/api/school/store/categories/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { StoreCategory, StoreApiResponse } from '@/types/store';
 
 export async function PUT(
@@ -17,8 +18,9 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -43,7 +45,7 @@ export async function PUT(
     }
 
     // Check if category exists and belongs to the school
-    const { data: existingCategory, error: fetchError } = await supabase
+    const { data: existingCategory, error: fetchError } = await adminClient
       .from('store_categories')
       .select('*')
       .eq('id', id)
@@ -55,7 +57,7 @@ export async function PUT(
     }
 
     // Check if another category with same name already exists (excluding current one)
-    const { data: duplicateCategory } = await supabase
+    const { data: duplicateCategory } = await adminClient
       .from('store_categories')
       .select('id')
       .eq('school_id', profile.school_id)
@@ -68,7 +70,7 @@ export async function PUT(
     }
 
     // Update category
-    const { data: category, error: updateError } = await supabase
+    const { data: category, error: updateError } = await adminClient
       .from('store_categories')
       .update({
         name: name.trim(),
@@ -113,8 +115,9 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -130,7 +133,7 @@ export async function DELETE(
     }
 
     // Check if category exists and belongs to the school
-    const { data: existingCategory, error: fetchError } = await supabase
+    const { data: existingCategory, error: fetchError } = await adminClient
       .from('store_categories')
       .select('*')
       .eq('id', id)
@@ -142,7 +145,7 @@ export async function DELETE(
     }
 
     // Check if category has associated items
-    const { data: itemsCount, error: itemsError } = await supabase
+    const { data: itemsCount, error: itemsError } = await adminClient
       .from('store_items')
       .select('id', { count: 'exact' })
       .eq('category_id', id);
@@ -160,7 +163,7 @@ export async function DELETE(
     }
 
     // Delete category
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await adminClient
       .from('store_categories')
       .delete()
       .eq('id', id)

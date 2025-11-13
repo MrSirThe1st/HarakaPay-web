@@ -15,7 +15,7 @@ export function AdminSchoolsView() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { stats, loading: statsLoading, refetch: refetchStats } = useSchoolStats();
 
-  const handleSchoolCreated = useCallback((school: School) => {
+  const handleSchoolCreated = useCallback((school: { id: string; name: string }) => {
     // Don't close the form immediately - let the success modal handle the closing
     // The form will close itself when the user clicks "Close" in the success modal
     // Trigger both stats and schools list refresh

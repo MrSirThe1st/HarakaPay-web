@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Return student information with parent details
+    // Handle schools as either array or single object (Supabase type inference issue)
+    const schools = Array.isArray(student.schools) ? student.schools[0] : student.schools;
     const response = NextResponse.json({
       found: true,
       student: {
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
         last_name: student.last_name,
         grade_level: student.grade_level,
         school_id: student.school_id,
-        school_name: student.schools.name,
+        school_name: schools?.name || '',
         parent_name: student.parent_name,
         parent_email: student.parent_email,
         parent_phone: student.parent_phone

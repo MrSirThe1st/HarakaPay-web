@@ -18,7 +18,7 @@ interface RegistrationRequest {
   school_size: number | null;
   existing_system: string | null;
   has_mpesa_account: boolean;
-  fee_schedules: any;
+  fee_schedules: Record<string, unknown>;
   school_levels: string[];
   grade_levels: string[];
   admin_notes: string | null;
@@ -334,12 +334,26 @@ function SchoolRequestDetailModal({
           <section>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">{t("Fee Schedules")}</h3>
             <div className="space-y-2">
-              {Object.entries(request.fee_schedules).map(([key, value]) => (
-                <div key={key}>
-                  <span className="font-medium text-gray-700 capitalize">{key.replace(/([A-Z])/g, " $1")}:</span>{" "}
-                  <span className="text-gray-900">{value ? value : t("Yes")}</span>
-                </div>
-              ))}
+              {Object.entries(request.fee_schedules || {}).map(([key, value]) => {
+                // Convert value to a displayable string
+                let displayValue: string;
+                if (value === null || value === undefined) {
+                  displayValue = t("No");
+                } else if (typeof value === 'boolean') {
+                  displayValue = value ? t("Yes") : t("No");
+                } else if (typeof value === 'object') {
+                  displayValue = JSON.stringify(value);
+                } else {
+                  displayValue = String(value);
+                }
+                
+                return (
+                  <div key={key}>
+                    <span className="font-medium text-gray-700 capitalize">{key.replace(/([A-Z])/g, " $1")}:</span>{" "}
+                    <span className="text-gray-900">{displayValue}</span>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -363,7 +377,7 @@ function SchoolRequestDetailModal({
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t("Status")}</label>
                 <select
                   value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
+                  onChange={(e) => setNewStatus(e.target.value as "pending" | "in_progress" | "approved" | "rejected")}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="pending">{t("Pending")}</option>

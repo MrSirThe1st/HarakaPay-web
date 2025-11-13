@@ -7,8 +7,7 @@ import { Database } from '@/types/supabase';
 
 export async function GET(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -141,8 +140,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -281,7 +279,7 @@ export async function POST(req: Request) {
         currency,
         is_active,
         fee_category_id,  // Add the category link
-        created_by: profile.user_id || null  // Use profile.user_id or null if not available
+        created_by: user.id || null  // Use user.id or null if not available
       })
       .select('*')
       .single();

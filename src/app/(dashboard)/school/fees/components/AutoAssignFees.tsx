@@ -28,7 +28,13 @@ export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    academic_year_id: string;
+    grade_level: string;
+    program_type: string;
+    template_id: string;
+    schedule_ids: string[];
+  }>({
     academic_year_id: '',
     grade_level: '',
     program_type: '',

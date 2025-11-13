@@ -7,8 +7,7 @@ import { Database } from '@/types/supabase';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -114,7 +113,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
       if (typeof feeStructure.grade_level === 'string') {
         // Split comma-separated string into array
-        gradeLevels = feeStructure.grade_level.split(',').map(g => g.trim());
+        gradeLevels = feeStructure.grade_level.split(',').map((g: string) => g.trim());
       } else if (Array.isArray(feeStructure.grade_level)) {
         gradeLevels = feeStructure.grade_level;
       } else {

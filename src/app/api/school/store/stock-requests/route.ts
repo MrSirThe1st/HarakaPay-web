@@ -1,6 +1,7 @@
 // src/app/api/school/store/stock-requests/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { StockRequest, StoreApiResponse, StorePaginationData, StoreStatsData, StockRequestFilters, StockRequestFormData } from '@/types/store';
 
 export async function GET(request: NextRequest) {
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Build query based on user role
-    let query = supabase
+    let query = adminClient
       .from('stock_requests')
       .select(`
         *,
@@ -102,7 +104,7 @@ export async function GET(request: NextRequest) {
     // Get stats (only for school staff)
     let stats: StoreStatsData = { total: count || 0 };
     if (['school_admin', 'school_staff'].includes(profile.role)) {
-      const { data: statsData } = await supabase
+      const { data: statsData } = await adminClient
         .from('stock_requests')
         .select('status')
         .eq('store_items.school_id', profile.school_id);
@@ -150,8 +152,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -162,8 +165,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body = await request.json();
-    const { itemId, studentId, requestedQuantity, message }: StockRequestFormData = body;
+    const reqBody = await request.json();
+    const { itemId, studentId, requestedQuantity, message } = reqBody as any;
 
     // Validate required fields
     if (!itemId) {
@@ -177,7 +180,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify item exists
-    const { data: item, error: itemError } = await supabase
+    const { data: item, error: itemError } = await adminClient
       .from('store_items')
       .select('*')
       .eq('id', itemId)
@@ -202,7 +205,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already a pending request for this item and student
-    const { data: existingRequest } = await supabase
+    const { data: existingRequest } = await adminClient
       .from('stock_requests')
       .select('id')
       .eq('item_id', itemId)
@@ -216,7 +219,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create stock request
-    const { data: request, error: createError } = await supabase
+    const { data: stockRequest, error: createError } = await adminClient
       .from('stock_requests')
       .insert({
         item_id: itemId,
@@ -236,7 +239,7 @@ export async function POST(request: NextRequest) {
 
     const response: StoreApiResponse<{ request: StockRequest }> = {
       success: true,
-      data: { request },
+      data: { request: stockRequest },
       message: 'Stock request created successfully',
     };
 
@@ -257,8 +260,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -283,7 +287,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if request exists and user has permission to update it
-    let query = supabase
+    let query = adminClient
       .from('stock_requests')
       .select('*')
       .eq('id', requestId);
@@ -305,7 +309,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update request status
-    const { data: request, error: updateError } = await supabase
+    const { data: updatedRequest, error: updateError } = await adminClient
       .from('stock_requests')
       .update({
         status,
@@ -322,7 +326,7 @@ export async function PUT(request: NextRequest) {
 
     const response: StoreApiResponse<{ request: StockRequest }> = {
       success: true,
-      data: { request },
+      data: { request: updatedRequest },
       message: 'Request updated successfully',
     };
 

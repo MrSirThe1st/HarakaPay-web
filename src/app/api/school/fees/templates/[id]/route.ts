@@ -7,7 +7,6 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication

@@ -116,23 +116,45 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform the data for easier consumption
-    const paymentHistory = (transactions || []).map((transaction: { id: string; payment_id: string; installment_number: number; installment_label: string; amount_paid?: number | string; payment_date: string; payment_method: string; status: string; fee_category_name?: string; payment_plan_name?: string }) => ({
-      id: transaction.id,
-      payment_id: transaction.payment_id,
-      installment_number: transaction.installment_number,
-      installment_label: transaction.installment_label,
-      amount: parseFloat(transaction.amount_paid?.toString() || '0'),
-      status: transaction.transaction_status,
-      payment_method: transaction.payments?.payment_method || 'unknown',
-      mpesa_transaction_id: transaction.mpesa_transaction_id || transaction.payments?.transaction_reference,
-      category_name: transaction.payment_plans?.fee_categories?.name || 'Unknown',
-      category_id: transaction.payment_plans?.fee_category_id,
-      payment_plan_type: transaction.payment_plans?.type,
-      description: transaction.payments?.description || transaction.notes,
-      payment_date: transaction.payments?.payment_date || transaction.created_at,
-      created_at: transaction.created_at,
-      updated_at: transaction.updated_at,
-    }));
+    const paymentHistory = (transactions || []).map((transaction: {
+      id: string;
+      payment_id: string;
+      installment_number: number;
+      installment_label: string;
+      amount_paid?: number | string;
+      transaction_status: string;
+      mpesa_transaction_id?: string;
+      notes?: string;
+      created_at: string;
+      updated_at: string;
+      payments?: { payment_method?: string; transaction_reference?: string; description?: string; payment_date?: string } | { payment_method?: string; transaction_reference?: string; description?: string; payment_date?: string }[];
+      payment_plans?: { type?: string; fee_category_id?: string; fee_categories?: { name?: string } | { name?: string }[] } | { type?: string; fee_category_id?: string; fee_categories?: { name?: string } | { name?: string }[] }[];
+    }) => {
+      // Handle nested objects that might be arrays (Supabase type inference issue)
+      const payment = Array.isArray(transaction.payments) ? transaction.payments[0] : transaction.payments;
+      const paymentPlan = Array.isArray(transaction.payment_plans) ? transaction.payment_plans[0] : transaction.payment_plans;
+      const feeCategory = paymentPlan?.fee_categories 
+        ? (Array.isArray(paymentPlan.fee_categories) ? paymentPlan.fee_categories[0] : paymentPlan.fee_categories)
+        : undefined;
+      
+      return {
+        id: transaction.id,
+        payment_id: transaction.payment_id,
+        installment_number: transaction.installment_number,
+        installment_label: transaction.installment_label,
+        amount: parseFloat(transaction.amount_paid?.toString() || '0'),
+        status: transaction.transaction_status,
+        payment_method: payment?.payment_method || 'unknown',
+        mpesa_transaction_id: transaction.mpesa_transaction_id || payment?.transaction_reference,
+        category_name: feeCategory?.name || 'Unknown',
+        category_id: paymentPlan?.fee_category_id,
+        payment_plan_type: paymentPlan?.type,
+        description: payment?.description || transaction.notes,
+        payment_date: payment?.payment_date || transaction.created_at,
+        created_at: transaction.created_at,
+        updated_at: transaction.updated_at,
+      };
+    });
 
     // Calculate totals
     const totalPaid = paymentHistory

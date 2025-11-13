@@ -7,8 +7,7 @@ import { CONGOLESE_GRADES, getGradeByValue } from '@/lib/congoleseGrades';
 export async function GET(req: NextRequest) {
   try {
     // Authenticate user using cookies (for school dashboard)
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -67,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // Map grade values to full grade objects with labels
     const grades = gradeLevels
-      .map(value => {
+      .map((value: string) => {
         const grade = getGradeByValue(value);
         console.log(`Mapping grade value '${value}' to:`, grade);
         return grade ? {
@@ -78,7 +77,7 @@ export async function GET(req: NextRequest) {
         } : null;
       })
       .filter(Boolean)
-      .sort((a, b) => a!.order - b!.order);
+      .sort((a: any, b: any) => a!.order - b!.order);
 
     console.log('Final grades to return:', grades);
 

@@ -9,8 +9,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -25,7 +24,7 @@ export async function PATCH(
     const adminClient = createAdminClient();
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("role")
+      .select("role, id")
       .eq("user_id", user.id)
       .single();
 
@@ -109,8 +108,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -125,7 +123,7 @@ export async function GET(
     const adminClient = createAdminClient();
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("role")
+      .select("role, id")
       .eq("user_id", user.id)
       .single();
 

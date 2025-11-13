@@ -8,8 +8,7 @@ import { StoreCategory, StoreApiResponse, StorePaginationData, StoreStatsData } 
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -93,8 +92,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

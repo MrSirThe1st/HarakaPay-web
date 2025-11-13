@@ -3,6 +3,7 @@
 /*
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { StoreItem, StoreApiResponse } from '@/types/store';
 
 export async function GET(
@@ -19,8 +20,9 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -93,8 +95,9 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -142,7 +145,7 @@ export async function PUT(
     }
 
     // Check if item exists and belongs to school
-    const { data: existingItem, error: fetchError } = await supabase
+    const { data: existingItem, error: fetchError } = await adminClient
       .from('store_items')
       .select('*')
       .eq('id', id)
@@ -154,7 +157,7 @@ export async function PUT(
     }
 
     // Verify category exists and belongs to school
-    const { data: category, error: categoryError } = await supabase
+    const { data: category, error: categoryError } = await adminClient
       .from('store_categories')
       .select('id')
       .eq('id', categoryId)
@@ -180,7 +183,7 @@ export async function PUT(
     }
 
     // Update item
-    const { data: item, error: updateError } = await supabase
+    const { data: item, error: updateError } = await adminClient
       .from('store_items')
       .update({
         name: name.trim(),
@@ -283,8 +286,9 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -300,7 +304,7 @@ export async function DELETE(
     }
 
     // Check if item exists and belongs to school
-    const { data: existingItem, error: fetchError } = await supabase
+    const { data: existingItem, error: fetchError } = await adminClient
       .from('store_items')
       .select('*')
       .eq('id', id)
@@ -312,7 +316,7 @@ export async function DELETE(
     }
 
     // Check if item has associated orders
-    const { data: ordersCount, error: ordersError } = await supabase
+    const { data: ordersCount, error: ordersError } = await adminClient
       .from('store_order_items')
       .select('id', { count: 'exact' })
       .eq('item_id', id);
@@ -330,13 +334,13 @@ export async function DELETE(
     }
 
     // Delete hire settings first (if exists)
-    await supabase
+    await adminClient
       .from('hire_settings')
       .delete()
       .eq('item_id', id);
 
     // Delete item
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await adminClient
       .from('store_items')
       .delete()
       .eq('id', id)

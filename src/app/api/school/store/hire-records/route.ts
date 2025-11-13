@@ -1,6 +1,7 @@
 // src/app/api/school/store/hire-records/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { HireRecord, StoreApiResponse, StorePaginationData, StoreStatsData } from '@/types/store';
 
 export async function GET(request: NextRequest) {
@@ -13,8 +14,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || undefined;
 
     // Build query based on user role
-    let query = supabase
+    let query = adminClient
       .from('hire_records')
       .select(`
         *,
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest) {
     // Get stats (only for school staff)
     let stats: StoreStatsData = { total: count || 0 };
     if (['school_admin', 'school_staff'].includes(profile.role)) {
-      const { data: statsData } = await supabase
+      const { data: statsData } = await adminClient
         .from('hire_records')
         .select('status')
         .eq('store_order_items.store_orders.school_id', profile.school_id);

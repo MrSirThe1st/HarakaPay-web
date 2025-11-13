@@ -205,11 +205,21 @@ export async function GET(req: NextRequest) {
     }
     const studentFeesMap: { [key: string]: StudentFeeData } = {};
 
-    studentFeeAssignments?.forEach(assignment => {
-      const student = assignment.students;
-      const feeStructure = assignment.fee_structures;
-      const paymentPlan = assignment.payment_plans;
-      const academicYear = feeStructure?.academic_years;
+    studentFeeAssignments?.forEach((assignment: any) => {
+      // Handle students as array or single object (Supabase type inference issue)
+      const studentData = assignment.students;
+      const student = Array.isArray(studentData) ? studentData[0] : studentData;
+      
+      // Handle fee_structures as array or single object
+      const feeStructureData = assignment.fee_structures;
+      const feeStructure = Array.isArray(feeStructureData) ? feeStructureData[0] : feeStructureData;
+      
+      // Handle academic_years as array or single object
+      const academicYearData = feeStructure?.academic_years;
+      const academicYear = Array.isArray(academicYearData) ? academicYearData[0] : academicYearData;
+      
+      // payment_plans is on fee_structures, not assignment
+      const paymentPlans = feeStructure?.payment_plans || [];
 
       if (!student || !feeStructure) return;
 
@@ -223,7 +233,7 @@ export async function GET(req: NextRequest) {
             last_name: student.last_name,
             grade_level: student.grade_level,
             school_id: student.school_id,
-            school_name: student.schools?.name || 'N/A',
+            school_name: (Array.isArray(student.schools) ? student.schools[0] : student.schools)?.name || 'N/A',
           },
           fee_template: {
             id: feeStructure.id,
@@ -255,8 +265,10 @@ export async function GET(req: NextRequest) {
 
       // Process fee categories from fee structure items
       const feeItems = feeStructure?.fee_structure_items || [];
-      feeItems.forEach(item => {
-        const category = item.fee_categories;
+      feeItems.forEach((item: any) => {
+        // Handle fee_categories as array or single object
+        const categoryData = item.fee_categories;
+        const category = Array.isArray(categoryData) ? categoryData[0] : categoryData;
         if (!category) return;
 
         // Check if category already exists for this student
@@ -282,7 +294,15 @@ export async function GET(req: NextRequest) {
 
       // Process ALL payment plans from the fee structure (not just the assigned one)
       const allPaymentPlans = feeStructure?.payment_plans || [];
-      allPaymentPlans.forEach(plan => {
+      allPaymentPlans.forEach((plan: {
+        id: string;
+        type: string;
+        discount_percentage?: number;
+        currency?: string;
+        installments?: unknown;
+        is_active?: boolean;
+        fee_category_id?: string;
+      }) => {
         // Check if this payment plan is already added for this student
         const existingPlan = studentFeesMap[student.id].payment_schedules.find(
           (p: { id: string }) => p.id === plan.id

@@ -81,12 +81,15 @@ export async function GET(req: NextRequest) {
 
     console.log('📊 Found relationships:', relationships?.length || 0);
     if (relationships && relationships.length > 0) {
-      console.log('📊 Relationship details:', relationships.map(r => ({
-        relationship_id: r.id,
-        parent_id: r.parent_id,
-        student_id: r.student_id,
-        student_name: `${r.students.first_name} ${r.students.last_name}`
-      })));
+      console.log('📊 Relationship details:', relationships.map((r: { id: string; parent_id: string; student_id: string; students: { first_name: string; last_name: string } | { first_name: string; last_name: string }[] }) => {
+        const student = Array.isArray(r.students) ? r.students[0] : r.students;
+        return {
+          relationship_id: r.id,
+          parent_id: r.parent_id,
+          student_id: r.student_id,
+          student_name: `${student.first_name} ${student.last_name}`
+        };
+      }));
     }
 
     if (!relationships || relationships.length === 0) {
@@ -109,20 +112,24 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const students = relationships.map((rel: { students: { id: string; student_id: string; first_name: string; last_name: string; grade_level: string; school_id: string; }; schools: { name: string }; }) => ({
-      id: rel.students.id,
-      student_id: rel.students.student_id,
-      first_name: rel.students.first_name,
-      last_name: rel.students.last_name,
-      grade_level: rel.students.grade_level,
-      school_id: rel.students.school_id,
-      school_name: rel.students.schools.name,
-      parent_name: rel.students.parent_name,
-      parent_email: rel.students.parent_email,
-      parent_phone: rel.students.parent_phone,
-      match_confidence: 'high' as const,
-      match_reasons: ['Already linked'],
-    }));
+    const students = relationships.map((rel: any) => {
+      const student = Array.isArray(rel.students) ? rel.students[0] : rel.students;
+      const schools = Array.isArray(student?.schools) ? student.schools[0] : (student?.schools || { name: '' });
+      return {
+        id: student?.id,
+        student_id: student?.student_id,
+        first_name: student?.first_name,
+        last_name: student?.last_name,
+        grade_level: student?.grade_level,
+        school_id: student?.school_id,
+        school_name: schools?.name || '',
+        parent_name: student?.parent_name,
+        parent_email: student?.parent_email,
+        parent_phone: student?.parent_phone,
+        match_confidence: 'high' as const,
+        match_reasons: ['Already linked'],
+      };
+    });
 
     return NextResponse.json({ 
       students,

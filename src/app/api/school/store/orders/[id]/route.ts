@@ -1,6 +1,7 @@
 // src/app/api/school/store/orders/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { StoreOrder, StoreApiResponse } from '@/types/store';
 
 export async function GET(
@@ -10,15 +11,16 @@ export async function GET(
   try {
     const { id } = await params;
     const supabase = await createClient();
-    
+
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -29,7 +31,7 @@ export async function GET(
     }
 
     // Build query based on user role
-    let query = supabase
+    let query = adminClient
       .from('store_orders')
       .select(`
         *,
@@ -109,15 +111,16 @@ export async function PUT(
   try {
     const { id } = await params;
     const supabase = await createClient();
-    
+
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -149,7 +152,7 @@ export async function PUT(
     }
 
     // Check if order exists and belongs to school
-    const { data: existingOrder, error: fetchError } = await supabase
+    const { data: existingOrder, error: fetchError } = await adminClient
       .from('store_orders')
       .select('*')
       .eq('id', id)
@@ -179,7 +182,7 @@ export async function PUT(
     if (notes !== undefined) updateData.notes = notes;
 
     // Update order
-    const { data: order, error: updateError } = await supabase
+    const { data: order, error: updateError } = await adminClient
       .from('store_orders')
       .update(updateData)
       .eq('id', id)
@@ -194,14 +197,14 @@ export async function PUT(
 
     // If order is confirmed, update stock quantities
     if (status === 'confirmed' && existingOrder.status !== 'confirmed') {
-      const { data: orderItems } = await supabase
+      const { data: orderItems } = await adminClient
         .from('store_order_items')
         .select('item_id, quantity')
         .eq('order_id', id);
 
       if (orderItems) {
         for (const item of orderItems) {
-          await supabase.rpc('decrement_stock', {
+          await adminClient.rpc('decrement_stock', {
             item_id: item.item_id,
             quantity: item.quantity
           });
@@ -211,14 +214,14 @@ export async function PUT(
 
     // If order is cancelled, restore stock quantities
     if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
-      const { data: orderItems } = await supabase
+      const { data: orderItems } = await adminClient
         .from('store_order_items')
         .select('item_id, quantity')
         .eq('order_id', id);
 
       if (orderItems) {
         for (const item of orderItems) {
-          await supabase.rpc('increment_stock', {
+          await adminClient.rpc('increment_stock', {
             item_id: item.item_id,
             quantity: item.quantity
           });

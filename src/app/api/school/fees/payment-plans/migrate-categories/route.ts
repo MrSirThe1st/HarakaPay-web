@@ -7,8 +7,7 @@ import { Database } from '@/types/supabase';
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -92,7 +91,9 @@ export async function POST(req: Request) {
 
     // For each payment plan, match it to a fee category based on amount
     for (const plan of paymentPlans) {
-      const feeStructure = plan.fee_structures;
+      // Handle fee_structures as array or single object (Supabase type inference issue)
+      const feeStructureData = plan.fee_structures;
+      const feeStructure = Array.isArray(feeStructureData) ? feeStructureData[0] : feeStructureData;
       if (!feeStructure || !feeStructure.fee_items) continue;
 
       const feeItems = feeStructure.fee_items as any[];

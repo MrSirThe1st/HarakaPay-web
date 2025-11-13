@@ -72,7 +72,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Get fee assignments for each student
-    const studentIds = linkedStudents.map(rel => rel.students.id);
+    // Handle students as array or single object (Supabase type inference issue)
+    const studentIds = linkedStudents.map((rel: any) => {
+      const student = Array.isArray(rel.students) ? rel.students[0] : rel.students;
+      return student?.id;
+    }).filter((id): id is string => id !== undefined);
     
     const { data: feeAssignments, error: assignmentsError } = await supabase
       .from('student_fee_assignments')
@@ -94,7 +98,7 @@ export async function GET(req: NextRequest) {
           program_type,
           total_amount,
           status,
-          academic_years!inner(name, start_date, end_date)
+          academic_years!inner(id, name, start_date, end_date)
         ),
         payment_schedules!inner(
           id,
@@ -148,19 +152,26 @@ export async function GET(req: NextRequest) {
     }
 
     // Structure the response
-    const studentsWithFees = linkedStudents.map(rel => {
-      const student = rel.students;
-      const studentAssignments = feeAssignments?.filter(assignment => assignment.student_id === student.id) || [];
+    const studentsWithFees = linkedStudents.map((rel: any) => {
+      // Handle students as array or single object (Supabase type inference issue)
+      const studentData = rel.students;
+      const student = Array.isArray(studentData) ? studentData[0] : studentData;
+      const studentAssignments = feeAssignments?.filter(assignment => assignment.student_id === student?.id) || [];
+      
+      // Handle schools as array or single object
+      const schools = student?.schools 
+        ? (Array.isArray(student.schools) ? student.schools[0] : student.schools)
+        : undefined;
       
       return {
         student: {
-          id: student.id,
-          student_id: student.student_id,
-          first_name: student.first_name,
-          last_name: student.last_name,
-          grade_level: student.grade_level,
-          school_id: student.school_id,
-          school_name: student.schools.name,
+          id: student?.id,
+          student_id: student?.student_id,
+          first_name: student?.first_name,
+          last_name: student?.last_name,
+          grade_level: student?.grade_level,
+          school_id: student?.school_id,
+          school_name: schools?.name || '',
           parent_name: student.parent_name,
           parent_email: student.parent_email,
           parent_phone: student.parent_phone,
@@ -169,6 +180,13 @@ export async function GET(req: NextRequest) {
           const templateCategoriesForThisTemplate = templateCategories?.filter(
             tc => tc.template_id === assignment.template_id
           ) || [];
+
+          // Handle fee_templates and academic_years as array or single object (Supabase type inference issue)
+          const feeTemplate = Array.isArray(assignment.fee_templates) ? assignment.fee_templates[0] : assignment.fee_templates;
+          const academicYear = feeTemplate?.academic_years
+            ? (Array.isArray(feeTemplate.academic_years) ? feeTemplate.academic_years[0] : feeTemplate.academic_years)
+            : undefined;
+          const paymentSchedule = Array.isArray(assignment.payment_schedules) ? assignment.payment_schedules[0] : assignment.payment_schedules;
 
           return {
             id: assignment.id,
@@ -182,34 +200,37 @@ export async function GET(req: NextRequest) {
             created_at: assignment.created_at,
             updated_at: assignment.updated_at,
             fee_template: {
-              id: assignment.fee_templates.id,
-              name: assignment.fee_templates.name,
-              grade_level: assignment.fee_templates.grade_level,
-              program_type: assignment.fee_templates.program_type,
-              total_amount: assignment.fee_templates.total_amount,
-              status: assignment.fee_templates.status,
+              id: feeTemplate?.id,
+              name: feeTemplate?.name,
+              grade_level: feeTemplate?.grade_level,
+              program_type: feeTemplate?.program_type,
+              total_amount: feeTemplate?.total_amount,
+              status: feeTemplate?.status,
               academic_year: {
-                id: assignment.fee_templates.academic_years.id,
-                name: assignment.fee_templates.academic_years.name,
-                start_date: assignment.fee_templates.academic_years.start_date,
-                end_date: assignment.fee_templates.academic_years.end_date,
+                id: academicYear?.id,
+                name: academicYear?.name,
+                start_date: academicYear?.start_date,
+                end_date: academicYear?.end_date,
               },
-              categories: templateCategoriesForThisTemplate.map(tc => ({
-                id: tc.fee_categories.id,
-                name: tc.fee_categories.name,
-                description: tc.fee_categories.description,
-                amount: tc.amount,
-                is_mandatory: tc.fee_categories.is_mandatory,
-                is_recurring: tc.fee_categories.is_recurring,
-                category_type: tc.fee_categories.category_type,
-              }))
+              categories: templateCategoriesForThisTemplate.map(tc => {
+                const feeCategory = Array.isArray(tc.fee_categories) ? tc.fee_categories[0] : tc.fee_categories;
+                return {
+                  id: feeCategory?.id,
+                  name: feeCategory?.name,
+                  description: feeCategory?.description,
+                  amount: tc.amount,
+                  is_mandatory: feeCategory?.is_mandatory,
+                  is_recurring: feeCategory?.is_recurring,
+                  category_type: feeCategory?.category_type,
+                };
+              })
             },
             payment_schedule: {
-              id: assignment.payment_schedules.id,
-              name: assignment.payment_schedules.name,
-              schedule_type: assignment.payment_schedules.schedule_type,
-              discount_percentage: assignment.payment_schedules.discount_percentage,
-              installments: assignment.payment_schedules.payment_installments?.map(installment => ({
+              id: paymentSchedule?.id,
+              name: paymentSchedule?.name,
+              schedule_type: paymentSchedule?.schedule_type,
+              discount_percentage: paymentSchedule?.discount_percentage,
+              installments: paymentSchedule?.payment_installments?.map(installment => ({
                 id: installment.id,
                 installment_number: installment.installment_number,
                 name: installment.name,

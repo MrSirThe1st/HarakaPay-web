@@ -1,6 +1,3 @@
-// src/app/api/admin/create-school/route.ts
-// Made consistent with your existing /api/schools route pattern
-
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
@@ -9,8 +6,7 @@ import { createAdminClient } from "@/lib/supabaseServerOnly";
 export async function POST(request: NextRequest) {
   try {
     // Step 1: Use the same auth pattern as /api/schools
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     
     // Check authentication using cookies (same as other routes)
     const { data: { user }, error: authError } = await supabase.auth.getUser();

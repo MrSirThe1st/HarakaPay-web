@@ -128,7 +128,6 @@ export function FeeItemsStep({ feeItems, onChange }: FeeItemsStepProps) {
       categoryName: category.name,
       amount: formData.amount,
       isMandatory: formData.isMandatory,
-      isRecurring: formData.paymentModes.includes('one_time') ? false : true, // Auto-determine from payment modes
       paymentModes: formData.paymentModes,
       paymentPlans: [] // Initialize empty payment plans array
     };
@@ -170,7 +169,7 @@ export function FeeItemsStep({ feeItems, onChange }: FeeItemsStepProps) {
         ...prev,
         categoryId,
         isMandatory: category.isMandatory,
-        paymentModes: category.defaultPaymentModes
+        paymentModes: category.defaultPaymentModes as Array<'installment' | 'one_time' | 'termly' | 'monthly'>
       }));
     }
   };
@@ -299,15 +298,15 @@ export function FeeItemsStep({ feeItems, onChange }: FeeItemsStepProps) {
             <div className="mt-6 space-y-3">
               <Label className="text-sm font-semibold text-gray-900">{t('Supported Payment Modes')} *</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {Object.entries(PAYMENT_MODE_LABELS).map(([mode, label]) => (
+                {Object.entries(PAYMENT_MODE_LABELS).map(([mode, label]: [string, string]) => (
                   <label
                     key={mode}
                     className="flex items-center space-x-2 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
-                      checked={formData.paymentModes.includes(mode as any)}
-                      onChange={() => handlePaymentModeToggle(mode as any)}
+                      checked={formData.paymentModes.includes(mode as 'installment' | 'one_time' | 'termly' | 'monthly')}
+                      onChange={() => handlePaymentModeToggle(mode as 'installment' | 'one_time' | 'termly' | 'monthly')}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="text-sm font-medium text-gray-900">{label}</span>
@@ -365,9 +364,9 @@ export function FeeItemsStep({ feeItems, onChange }: FeeItemsStepProps) {
                           {item.isMandatory ? t('Mandatory') : t('Optional')}
                         </span>
                         <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                          item.isRecurring ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+                          item.paymentModes.includes('one_time') ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
                         }`}>
-                          {item.isRecurring ? t('Recurring') : t('One-time')}
+                          {item.paymentModes.includes('one_time') && item.paymentModes.length === 1 ? t('One-time') : t('Recurring')}
                         </span>
                       </div>
                     </div>

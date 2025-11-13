@@ -1,6 +1,7 @@
 // src/app/api/school/store/hire-records/[id]/return/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { HireRecord, StoreApiResponse } from '@/types/store';
 
 export async function POST(
@@ -17,8 +18,9 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
@@ -43,7 +45,7 @@ export async function POST(
     }
 
     // Check if hire record exists and belongs to school
-    const { data: hireRecord, error: fetchError } = await supabase
+    const { data: hireRecord, error: fetchError } = await adminClient
       .from('hire_records')
       .select(`
         *,
@@ -76,7 +78,7 @@ export async function POST(
       const daysLate = Math.ceil((new Date(actualReturnDate).getTime() - new Date(hireRecord.expected_return_date).getTime()) / (1000 * 60 * 60 * 24));
       
       // Get hire settings to calculate late fees
-      const { data: orderItem } = await supabase
+      const { data: orderItem } = await adminClient
         .from('store_order_items')
         .select(`
           store_items (
@@ -88,12 +90,15 @@ export async function POST(
         .eq('id', hireRecord.order_item_id)
         .single();
 
-      const lateFeePerDay = orderItem?.store_items?.hire_settings?.late_fee_per_day || 0;
+      // Handle store_items as array or single object (Supabase type inference issue)
+      const storeItem = orderItem?.store_items ? (Array.isArray(orderItem.store_items) ? orderItem.store_items[0] : orderItem.store_items) : undefined;
+      const hireSettings = storeItem?.hire_settings ? (Array.isArray(storeItem.hire_settings) ? storeItem.hire_settings[0] : storeItem.hire_settings) : undefined;
+      const lateFeePerDay = hireSettings?.late_fee_per_day || 0;
       calculatedLateFees = daysLate * lateFeePerDay;
     }
 
     // Update hire record
-    const { data: updatedRecord, error: updateError } = await supabase
+    const { data: updatedRecord, error: updateError } = await adminClient
       .from('hire_records')
       .update({
         actual_return_date: actualReturnDate,
@@ -149,7 +154,7 @@ export async function POST(
     }
 
     // Restore stock quantity
-    const { data: orderItem } = await supabase
+    const { data: orderItem } = await adminClient
       .from('store_order_items')
       .select('item_id, quantity')
       .eq('id', hireRecord.order_item_id)

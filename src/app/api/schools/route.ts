@@ -7,8 +7,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function GET(_request: NextRequest) {
   try {
     // Fix 1: Await cookies() for Next.js 15+ compatibility
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     
     // Check authentication using regular client
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -48,24 +47,27 @@ export async function GET(_request: NextRequest) {
     }
     
     // Query schools using admin client based on role (business logic)
-    let query = adminClient.from('schools');
     let selectFields = '*';
-    
-    if (profile.role === 'school_admin' || profile.role === 'school_staff') {
-      // School staff can only see their own school
-      if (!profile.school_id) {
-        return NextResponse.json({ 
-          error: 'School staff must be assigned to a school' 
-        }, { status: 403 });
-      }
-      query = query.eq('id', profile.school_id);
-    } else if (profile.role === 'support_admin') {
+
+    if (profile.role === 'support_admin') {
       // Support admins see basic info only (no payment settings)
       selectFields = 'id, name, address, contact_email, contact_phone, status, verification_status, created_at';
     }
+
+    let query = adminClient.from('schools').select(selectFields);
+
+    if (profile.role === 'school_admin' || profile.role === 'school_staff') {
+      // School staff can only see their own school
+      if (!profile.school_id) {
+        return NextResponse.json({
+          error: 'School staff must be assigned to a school'
+        }, { status: 403 });
+      }
+      query = query.eq('id', profile.school_id);
+    }
     // Super admins and platform admins see everything
-    
-    const { data: schools, error: schoolsError } = await query.select(selectFields);
+
+    const { data: schools, error: schoolsError } = await query;
     
     if (schoolsError) {
       console.error('Schools query error:', schoolsError);

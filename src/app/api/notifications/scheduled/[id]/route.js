@@ -8,8 +8,7 @@ import scheduledNotificationService from '@/services/scheduledNotificationServic
 // PUT - Update scheduled notification
 export async function PUT(request, { params }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -57,8 +56,7 @@ export async function PUT(request, { params }) {
 // DELETE - Delete (deactivate) scheduled notification
 export async function DELETE(request, { params }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

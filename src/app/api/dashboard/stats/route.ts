@@ -6,8 +6,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function GET() {
   try {
     console.log('Dashboard stats API called');
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     
     // Check authentication using regular client
     const { data: { user }, error: authError } = await supabase.auth.getUser();

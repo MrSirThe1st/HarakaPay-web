@@ -13,11 +13,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id as string)
+      .eq('user_id', user.id)
       .single();
 
     if (profileError || !profile) {
@@ -62,7 +63,6 @@ export async function POST(request: NextRequest) {
     const fileName = `${(profile as any).school_id}/receipt-logos/${timestamp}-${randomString}.${fileExtension}`;
 
     // Upload file to Supabase storage using admin client to bypass RLS
-    const adminClient = createAdminClient();
     const { data: uploadData, error: uploadError } = await adminClient.storage
       .from('school-logos')
       .upload(fileName, file, {
@@ -117,11 +117,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile using admin client
+    const adminClient = createAdminClient();
+    const { data: profile, error: profileError } = await adminClient
       .from('profiles')
       .select('*')
-      .eq('user_id', user.id as string)
+      .eq('user_id', user.id)
       .single();
 
     if (profileError || !profile) {
@@ -145,7 +146,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete file from storage using admin client
-    const adminClient = createAdminClient();
     const { error: deleteError } = await adminClient.storage
       .from('school-logos')
       .remove([fileName]);

@@ -10,8 +10,7 @@ export async function GET(
 ) {
   try {
     const { id: staffId } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -91,8 +90,7 @@ export async function PUT(
 ) {
   try {
     const { id: staffId } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -151,7 +149,7 @@ export async function PUT(
     // First, get the staff member to check permissions
     const { data: existingStaff, error: staffError } = await adminClient
       .from('profiles')
-      .select('id, school_id, user_id')
+      .select('id, school_id, user_id, is_active, permissions')
       .eq('id', staffId)
       .eq('school_id', profile.school_id)
       .eq('role', 'school_staff')
@@ -211,8 +209,7 @@ export async function DELETE(
 ) {
   try {
     const { id: staffId } = await params;
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

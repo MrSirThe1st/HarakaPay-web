@@ -8,8 +8,7 @@ import notificationService from '@/services/notificationService';
 export async function POST(request) {
   try {
     // 1. Authenticate user
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
