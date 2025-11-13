@@ -26,23 +26,33 @@ export async function GET(req: NextRequest) {
     const supabase = createAdminClient();
 
     // First, find the parent ID using the user_id
+    console.log('🔍 Looking up parent record for user_id:', user.id);
     const { data: parent, error: parentError } = await supabase
       .from('parents')
-      .select('id')
+      .select('id, user_id, first_name, last_name')
       .eq('user_id', user.id)
       .single();
 
     if (parentError || !parent) {
+      console.error('❌ Parent record not found:', parentError);
+      console.error('❌ User ID:', user.id);
       return NextResponse.json({ 
         error: 'Parent record not found',
-        details: 'No parent record exists for this user'
+        details: 'No parent record exists for this user',
+        user_id: user.id,
+        parentError: parentError?.message
       }, { status: 404 });
     }
 
+    console.log('✅ Parent record found:', parent.id);
+
     // Get linked students
+    console.log('🔍 Fetching linked students for parent_id:', parent.id);
     const { data: relationships, error } = await supabase
       .from('parent_students')
       .select(`
+        id,
+        parent_id,
         student_id,
         students!inner(
           id,
@@ -60,17 +70,42 @@ export async function GET(req: NextRequest) {
       .eq('parent_id', parent.id);
 
     if (error) {
-      console.error('Error fetching linked students:', error);
+      console.error('❌ Error fetching linked students:', error);
+      console.error('❌ Parent ID used:', parent.id);
       return NextResponse.json({ 
         error: 'Failed to fetch linked students',
-        details: error.message
+        details: error.message,
+        parent_id: parent.id
       }, { status: 500 });
     }
 
+    console.log('📊 Found relationships:', relationships?.length || 0);
+    if (relationships && relationships.length > 0) {
+      console.log('📊 Relationship details:', relationships.map(r => ({
+        relationship_id: r.id,
+        parent_id: r.parent_id,
+        student_id: r.student_id,
+        student_name: `${r.students.first_name} ${r.students.last_name}`
+      })));
+    }
+
     if (!relationships || relationships.length === 0) {
+      // Also check if there are ANY parent_students records for debugging
+      const { data: allRelationships } = await supabase
+        .from('parent_students')
+        .select('id, parent_id, student_id')
+        .limit(10);
+      
+      console.log('⚠️ No linked students found for parent_id:', parent.id);
+      console.log('🔍 Sample parent_students records (first 10):', allRelationships);
+      
       return NextResponse.json({ 
         students: [],
-        message: 'No linked students found'
+        message: 'No linked students found',
+        parent_id: parent.id,
+        debug: {
+          sample_records: allRelationships
+        }
       });
     }
 

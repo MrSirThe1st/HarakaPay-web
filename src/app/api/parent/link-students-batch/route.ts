@@ -68,60 +68,50 @@ export async function POST(request: NextRequest) {
     // First, find or create the parent record
     console.log('🔍 Looking up parent record for user_id:', user.id);
     
-    const { data: existingParent, error: parentCheckError } = await adminClient
-      .from('parents')
-      .select('id')
+    // Get user profile data first (needed for creating parent if it doesn't exist)
+    const { data: profile, error: profileError } = await adminClient
+      .from('profiles')
+      .select('*')
       .eq('user_id', user.id)
       .single();
 
-    let parentId;
-
-    if (parentCheckError && parentCheckError.code === 'PGRST116') {
-      // Parent record doesn't exist, create it
-      console.log('🔍 Parent record not found, creating one...');
-      
-      // Get user profile data to create parent record
-      const { data: profile, error: profileError } = await adminClient
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        console.error('❌ Could not find profile for parent:', profileError);
-        return NextResponse.json({ error: 'Parent profile not found' }, { status: 404 });
-      }
-
-      // Create parent record
-      const { data: newParent, error: createParentError } = await adminClient
-        .from('parents')
-        .insert({
-          user_id: user.id,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          email: profile.email || user.email,
-          phone: profile.phone,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (createParentError) {
-        console.error('❌ Error creating parent record:', createParentError);
-        return NextResponse.json({ error: 'Failed to create parent record' }, { status: 500 });
-      }
-
-      parentId = newParent.id;
-      console.log('✅ Parent record created:', newParent);
-    } else if (parentCheckError) {
-      console.error('❌ Error checking parent record:', parentCheckError);
-      return NextResponse.json({ error: 'Failed to check parent record' }, { status: 500 });
-    } else {
-      parentId = existingParent.id;
-      console.log('✅ Parent record exists:', existingParent);
+    if (profileError || !profile) {
+      console.error('❌ Could not find profile for parent:', profileError);
+      return NextResponse.json({ error: 'Parent profile not found' }, { status: 404 });
     }
+
+    // Use upsert to ensure we get the existing parent record or create a new one
+    // This handles race conditions where the parent might be created between check and insert
+    const { data: parentRecord, error: parentUpsertError } = await adminClient
+      .from('parents')
+      .upsert({
+        user_id: user.id,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        email: profile.email || user.email,
+        phone: profile.phone,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+
+    if (parentUpsertError) {
+      console.error('❌ Error upserting parent record:', parentUpsertError);
+      return NextResponse.json({ error: 'Failed to get or create parent record' }, { status: 500 });
+    }
+
+    const parentId = parentRecord.id;
+    console.log('✅ Parent record ready:', { 
+      id: parentId, 
+      user_id: user.id, 
+      name: `${profile.first_name} ${profile.last_name}`,
+      email: profile.email || user.email
+    });
+    console.log('🔍 Will use this parent_id for linking students:', parentId);
 
     // Now lookup all students and create relationships
     const linkedStudents = [];
@@ -166,6 +156,7 @@ export async function POST(request: NextRequest) {
         // Create the parent-student relationship
         console.log('🔗 Creating relationship for:', {
           parent_id: parentId,
+          user_id: user.id,
           student_id: student.id,
           student_name: `${student.first_name} ${student.last_name}`,
           student_number: student.student_id
@@ -187,6 +178,7 @@ export async function POST(request: NextRequest) {
           console.error('❌ Error creating relationship:', relationshipError);
           console.error('❌ Relationship data attempted:', {
             parent_id: parentId,
+            user_id: user.id,
             student_id: student.id,
             relationship: 'parent',
             is_primary: true,
@@ -201,6 +193,12 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('✅ Relationship created successfully:', relationship);
+        console.log('✅ Relationship details:', {
+          relationship_id: relationship.id,
+          parent_id: parentId,
+          student_id: student.id,
+          student_name: `${student.first_name} ${student.last_name}`
+        });
 
         linkedStudents.push({
           id: student.id,
@@ -212,7 +210,7 @@ export async function POST(request: NextRequest) {
           relationship_id: relationship.id
         });
 
-        console.log('✅ Student linked:', student.first_name, student.last_name);
+        console.log('✅ Student linked:', student.first_name, student.last_name, 'to parent_id:', parentId);
 
       } catch (error) {
         console.error('❌ Error processing student:', studentInput, error);
@@ -224,6 +222,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('📊 Batch linking summary:', {
+      parent_id: parentId,
+      user_id: user.id,
+      total_requested: students.length,
+      successfully_linked: linkedStudents.length,
+      failed: errors.length
+    });
+
     const response = NextResponse.json({
       success: true,
       linked_students: linkedStudents,
@@ -232,7 +238,8 @@ export async function POST(request: NextRequest) {
         total_requested: students.length,
         successfully_linked: linkedStudents.length,
         failed: errors.length
-      }
+      },
+      parent_id: parentId // Include parent_id in response for debugging
     });
 
     // Add CORS headers
