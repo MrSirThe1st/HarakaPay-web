@@ -6,9 +6,10 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: studentId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -42,8 +43,6 @@ export async function DELETE(
         { status: 403 }
       );
     }
-
-    const studentId = params.id;
 
     // First, get the student to check permissions
     const { data: student, error: studentError } = await adminClient
@@ -102,9 +101,10 @@ export async function DELETE(
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: studentId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -138,8 +138,6 @@ export async function GET(
         { status: 403 }
       );
     }
-
-    const studentId = params.id;
 
     // Get the student
     const { data: student, error: studentError } = await adminClient
@@ -184,9 +182,10 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: studentId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -220,8 +219,6 @@ export async function PUT(
         { status: 403 }
       );
     }
-
-    const studentId = params.id;
     const body = await req.json();
     const { 
       student_id, 

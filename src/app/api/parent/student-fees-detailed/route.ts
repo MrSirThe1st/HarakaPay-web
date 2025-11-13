@@ -140,7 +140,70 @@ export async function GET(req: NextRequest) {
     }
 
     // Process and structure the data by student
-    const studentFeesMap: { [key: string]: any } = {};
+    interface StudentFeeData {
+      student: {
+        id: string;
+        student_id: string;
+        first_name: string;
+        last_name: string;
+        grade_level: string;
+        school_id: string;
+        school_name: string;
+      };
+      fee_template: {
+        id: string;
+        name: string;
+        grade_level: string;
+        applies_to: string;
+        total_amount: number;
+        status: string;
+        academic_year: {
+          id?: string;
+          name?: string;
+          start_date?: string;
+          end_date?: string;
+          term_structure?: string;
+        };
+      };
+      fee_categories: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        amount: number;
+        is_mandatory: boolean;
+        supports_recurring: boolean;
+        supports_one_time: boolean;
+        category_type?: string;
+        remaining_balance: number;
+      }>;
+      payment_schedules: Array<{
+        id: string;
+        name: string;
+        schedule_type: string;
+        discount_percentage?: number;
+        fee_category_id: string | null;
+        template_name: string;
+        installments: Array<{
+          id: string;
+          installment_number: number;
+          name: string;
+          amount: number;
+          percentage: number;
+          due_date: string;
+          term_id: string | null;
+          paid: boolean;
+        }>;
+      }>;
+      summary: {
+        total_amount: number;
+        paid_amount: number;
+        outstanding_amount: number;
+        total_installments: number;
+        paid_installments: number;
+        upcoming_payments: number;
+      };
+    }
+    const studentFeesMap: { [key: string]: StudentFeeData } = {};
 
     studentFeeAssignments?.forEach(assignment => {
       const student = assignment.students;
@@ -198,7 +261,7 @@ export async function GET(req: NextRequest) {
 
         // Check if category already exists for this student
         const existingCategory = studentFeesMap[student.id].fee_categories.find(
-          (cat: any) => cat.id === category.id
+          (cat: { id: string }) => cat.id === category.id
         );
 
         if (!existingCategory) {
@@ -222,7 +285,7 @@ export async function GET(req: NextRequest) {
       allPaymentPlans.forEach(plan => {
         // Check if this payment plan is already added for this student
         const existingPlan = studentFeesMap[student.id].payment_schedules.find(
-          (p: any) => p.id === plan.id
+          (p: { id: string }) => p.id === plan.id
         );
         
         if (!existingPlan) {
@@ -235,7 +298,7 @@ export async function GET(req: NextRequest) {
             discount_percentage: plan.discount_percentage,
             fee_category_id: plan.fee_category_id || null,  // NEW: Link to fee category
             template_name: feeStructure.name,
-            installments: installments.map((inst: any, index: number) => ({
+            installments: installments.map((inst: { installment_number?: number; label?: string; amount?: number; due_date: string }, index: number) => ({
               id: `${plan.id}_${index}`,
               installment_number: inst.installment_number || (index + 1),
               name: inst.label || `Installment ${index + 1}`,
@@ -255,7 +318,7 @@ export async function GET(req: NextRequest) {
           
           // Count upcoming payments (unpaid installments with future due dates)
           const now = new Date();
-          studentFeesMap[student.id].summary.upcoming_payments += installments.filter((inst: any) => 
+          studentFeesMap[student.id].summary.upcoming_payments += installments.filter((inst: { due_date: string }) => 
             new Date(inst.due_date) > now
           ).length;
         }
@@ -274,7 +337,7 @@ export async function GET(req: NextRequest) {
       for (const category of studentData.fee_categories) {
         // Get payment plans for this category
         const categoryPlans = studentData.payment_schedules.filter(
-          (plan: any) => plan.fee_category_id === category.id
+          (plan: { fee_category_id: string | null }) => plan.fee_category_id === category.id
         );
 
         if (categoryPlans.length === 0) {
@@ -284,7 +347,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Find which payment plan has been used (from payment transactions)
-        const planIds = categoryPlans.map((p: any) => p.id);
+        const planIds = categoryPlans.map((p: { id: string }) => p.id);
         const { data: usedTransaction } = await adminClient
           .from('payment_transactions')
           .select('payment_plan_id')
@@ -299,7 +362,7 @@ export async function GET(req: NextRequest) {
         // Otherwise, use the first available plan (or calculate minimum)
         let targetPlan = null;
         if (usedTransaction?.payment_plan_id) {
-          targetPlan = categoryPlans.find((p: any) => p.id === usedTransaction.payment_plan_id);
+          targetPlan = categoryPlans.find((p: { id: string }) => p.id === usedTransaction.payment_plan_id);
         }
         
         // If no plan has been used, use the first plan (or calculate from all plans)
@@ -314,7 +377,7 @@ export async function GET(req: NextRequest) {
 
         // Calculate total due for THIS payment plan only (same logic as paid-installments)
         const installments = targetPlan.installments || [];
-        const totalDueForCategory = installments.reduce((sum: number, inst: any) => {
+        const totalDueForCategory = installments.reduce((sum: number, inst: { amount?: number | string }) => {
           return sum + parseFloat(inst.amount?.toString() || '0');
         }, 0);
 
@@ -340,7 +403,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Convert to array and sort by student name
-    const studentFees = Object.values(studentFeesMap).sort((a: any, b: any) => 
+    const studentFees = Object.values(studentFeesMap).sort((a: StudentFeeData, b: StudentFeeData) => 
       `${a.student.first_name} ${a.student.last_name}`.localeCompare(`${b.student.first_name} ${b.student.last_name}`)
     );
 
@@ -349,8 +412,8 @@ export async function GET(req: NextRequest) {
       count: studentFees.length,
       summary: {
         total_students: studentFees.length,
-        total_paid: studentFees.reduce((sum: number, sf: any) => sum + sf.summary.paid_amount, 0),
-        total_outstanding: studentFees.reduce((sum: number, sf: any) => sum + sf.summary.outstanding_amount, 0)
+        total_paid: studentFees.reduce((sum: number, sf: StudentFeeData) => sum + sf.summary.paid_amount, 0),
+        total_outstanding: studentFees.reduce((sum: number, sf: StudentFeeData) => sum + sf.summary.outstanding_amount, 0)
       }
     });
 

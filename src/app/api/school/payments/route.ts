@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
       failedCount: 0,
     };
 
-    allPayments?.forEach((payment: any) => {
+    allPayments?.forEach((payment: { status: string; amount?: number | string }) => {
       if (payment.status === 'completed') {
         stats.totalRevenue += parseFloat(payment.amount?.toString() || '0');
         stats.successfulCount++;

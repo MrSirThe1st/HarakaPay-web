@@ -111,8 +111,8 @@ export interface AuditTrail {
   action: string;
   entityType: 'academic-year' | 'fee-category' | 'fee-structure' | 'payment-schedule' | 'published-schedule';
   entityId: string;
-  oldValues: any;
-  newValues: any;
+  oldValues: Record<string, unknown>;
+  newValues: Record<string, unknown>;
   performedBy: string;
   performedAt: string;
 }

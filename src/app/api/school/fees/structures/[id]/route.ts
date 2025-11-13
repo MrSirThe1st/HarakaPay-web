@@ -5,8 +5,9 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { Database } from '@/types/supabase';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: structureId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -55,8 +56,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         { status: 404 }
       );
     }
-
-    const structureId = params.id;
 
     // Fetch the fee structure with all related data
     const { data: feeStructure, error: feeStructureError } = await adminClient
@@ -133,8 +132,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: structureId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -183,8 +183,6 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         { status: 404 }
       );
     }
-
-    const structureId = params.id;
     const body = await req.json();
 
     // Update the fee structure
@@ -230,8 +228,9 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: structureId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -280,8 +279,6 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
         { status: 404 }
       );
     }
-
-    const structureId = params.id;
 
     // Delete the fee structure (cascade will handle related records)
     const { error: deleteError } = await adminClient

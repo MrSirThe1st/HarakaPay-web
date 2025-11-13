@@ -7,11 +7,11 @@ import { ReceiptTemplateForm } from '@/types/receipt';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     const adminClient = createAdminClient();
 
     // Get current user
@@ -40,7 +40,7 @@ export async function GET(
     const { data: template, error: templateError } = await adminClient
       .from('receipt_templates')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -62,11 +62,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     const adminClient = createAdminClient();
 
     // Get current user
@@ -102,7 +102,7 @@ export async function PUT(
     const { data: existingTemplate } = await adminClient
       .from('receipt_templates')
       .select('id, template_name')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -117,7 +117,7 @@ export async function PUT(
       .eq('school_id', profile.school_id)
       .eq('template_name', body.template_name)
       .eq('is_active', true)
-      .neq('id', params.id)
+      .neq('id', id)
       .single();
 
     if (duplicateTemplate) {
@@ -148,7 +148,7 @@ export async function PUT(
         visible_fields: body.visible_fields,
         style_config: body.style_config,
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .select()
       .single();
@@ -172,11 +172,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
     const adminClient = createAdminClient();
 
     // Get current user
@@ -205,7 +205,7 @@ export async function DELETE(
     const { data: existingTemplate } = await adminClient
       .from('receipt_templates')
       .select('id, is_default')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -222,7 +222,7 @@ export async function DELETE(
     const { error: deleteError } = await adminClient
       .from('receipt_templates')
       .update({ is_active: false })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id);
 
     if (deleteError) {

@@ -5,9 +5,10 @@ import { HireRecord, StoreApiResponse } from '@/types/store';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -52,7 +53,7 @@ export async function POST(
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (fetchError || !hireRecord) {
@@ -102,7 +103,7 @@ export async function POST(
         notes: notes?.trim() || null,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select(`
         *,
         store_order_items (

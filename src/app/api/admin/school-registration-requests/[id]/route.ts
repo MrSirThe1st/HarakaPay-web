@@ -5,9 +5,10 @@ import { createAdminClient } from "@/lib/supabaseServerOnly";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -54,7 +55,12 @@ export async function PATCH(
     }
 
     // Build update object
-    const updateData: any = {
+    const updateData: {
+      updated_at: string;
+      status?: string;
+      reviewed_by?: string;
+      admin_notes?: string;
+    } = {
       updated_at: new Date().toISOString(),
     };
 
@@ -72,7 +78,7 @@ export async function PATCH(
     const { data, error } = await adminClientForUpdate
       .from("school_registration_requests")
       .update(updateData)
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -99,9 +105,10 @@ export async function PATCH(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
@@ -141,7 +148,7 @@ export async function GET(
     const { data, error } = await adminClient
       .from("school_registration_requests")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (error) {

@@ -6,9 +6,10 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: staffId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -51,8 +52,6 @@ export async function GET(
       );
     }
 
-    const staffId = params.id;
-
     // Get the staff member
     const { data: staff, error: staffError } = await adminClient
       .from('profiles')
@@ -88,9 +87,10 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: staffId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -132,8 +132,6 @@ export async function PUT(
         { status: 403 }
       );
     }
-
-    const staffId = params.id;
     const body = await req.json();
     const { 
       first_name, 
@@ -209,9 +207,10 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: staffId } = await params;
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
     
@@ -253,8 +252,6 @@ export async function DELETE(
         { status: 403 }
       );
     }
-
-    const staffId = params.id;
 
     // First, get the staff member to check permissions
     const { data: staff, error: staffError } = await adminClient

@@ -5,7 +5,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // In-memory cache for user profiles (middleware runs in edge runtime)
-const profileCache = new Map<string, { profile: any; timestamp: number }>();
+interface CachedProfile {
+  id: string;
+  role: string;
+  school_id?: string;
+  is_active: boolean;
+  [key: string]: unknown;
+}
+const profileCache = new Map<string, { profile: CachedProfile; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Define public routes that don't require authentication

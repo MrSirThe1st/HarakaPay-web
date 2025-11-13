@@ -1,13 +1,16 @@
 // src/app/api/school/store/items/[id]/route.ts
+// TEMPORARILY COMMENTED OUT - Store functionality is on hold for MVP
+/*
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { StoreItem, StoreApiResponse } from '@/types/store';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -46,7 +49,7 @@ export async function GET(
           late_fee_per_day
         )
       `)
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (['school_admin', 'school_staff'].includes(profile.role)) {
       // School staff can see all items from their school
@@ -78,9 +81,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -141,7 +145,7 @@ export async function PUT(
     const { data: existingItem, error: fetchError } = await supabase
       .from('store_items')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -190,7 +194,7 @@ export async function PUT(
         images: images || [],
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .select()
       .single();
@@ -205,7 +209,7 @@ export async function PUT(
       const { data: existingHireSettings } = await supabase
         .from('hire_settings')
         .select('id')
-        .eq('item_id', params.id)
+        .eq('item_id', id)
         .single();
 
       if (existingHireSettings) {
@@ -220,7 +224,7 @@ export async function PUT(
             late_fee_per_day: hireSettings.lateFeePerDay || null,
             updated_at: new Date().toISOString(),
           })
-          .eq('item_id', params.id);
+          .eq('item_id', id);
 
         if (hireSettingsError) {
           console.error('Error updating hire settings:', hireSettingsError);
@@ -231,7 +235,7 @@ export async function PUT(
         const { error: hireSettingsError } = await supabase
           .from('hire_settings')
           .insert({
-            item_id: params.id,
+            item_id: id,
             duration_type: hireSettings.durationType,
             min_duration_days: hireSettings.minDurationDays,
             max_duration_days: hireSettings.maxDurationDays,
@@ -249,7 +253,7 @@ export async function PUT(
       await supabase
         .from('hire_settings')
         .delete()
-        .eq('item_id', params.id);
+        .eq('item_id', id);
     }
 
     const response: StoreApiResponse<{ item: StoreItem }> = {
@@ -267,9 +271,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -298,7 +303,7 @@ export async function DELETE(
     const { data: existingItem, error: fetchError } = await supabase
       .from('store_items')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -310,7 +315,7 @@ export async function DELETE(
     const { data: ordersCount, error: ordersError } = await supabase
       .from('store_order_items')
       .select('id', { count: 'exact' })
-      .eq('item_id', params.id);
+      .eq('item_id', id);
 
     if (ordersError) {
       console.error('Error checking item orders:', ordersError);
@@ -328,13 +333,13 @@ export async function DELETE(
     await supabase
       .from('hire_settings')
       .delete()
-      .eq('item_id', params.id);
+      .eq('item_id', id);
 
     // Delete item
     const { error: deleteError } = await supabase
       .from('store_items')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id);
 
     if (deleteError) {
@@ -353,4 +358,20 @@ export async function DELETE(
     console.error('Error in store items DELETE:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
+}
+*/
+
+// Placeholder exports to prevent build errors
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  return NextResponse.json({ success: false, error: 'Store functionality is temporarily disabled' }, { status: 503 });
+}
+
+export async function PUT() {
+  return NextResponse.json({ success: false, error: 'Store functionality is temporarily disabled' }, { status: 503 });
+}
+
+export async function DELETE() {
+  return NextResponse.json({ success: false, error: 'Store functionality is temporarily disabled' }, { status: 503 });
 }

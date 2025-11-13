@@ -119,10 +119,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Filter out already linked students
-    students = students.filter((student: any) => !linkedStudentIds.includes(student.id));
+    students = students.filter((student: { id: string }) => !linkedStudentIds.includes(student.id));
 
     // Calculate match confidence and reasons
-    const matches = students.map((student: any) => {
+    const matches = students.map((student: { id: string; first_name?: string; last_name?: string; student_id?: string; date_of_birth?: string; parent_email?: string; parent_phone?: string }) => {
       const matchReasons: string[] = [];
       let confidence: 'high' | 'medium' | 'low' = 'low';
 

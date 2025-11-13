@@ -244,7 +244,7 @@ export async function POST(req: Request) {
     }
 
     // Validate item amounts sum to total
-    const itemTotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    const itemTotal = items.reduce((sum: number, item: { amount?: number }) => sum + (item.amount || 0), 0);
     if (Math.abs(itemTotal - total_amount) > 0.01) {
       return NextResponse.json(
         { success: false, error: 'Item amounts must sum to total amount' }, 
@@ -278,7 +278,7 @@ export async function POST(req: Request) {
     }
 
     // Create fee structure items
-    const structureItems = items.map((item: any) => ({
+    const structureItems = items.map((item: { category_id: string; amount: number; is_mandatory?: boolean; is_recurring?: boolean; payment_modes?: string[] }) => ({
       structure_id: newFeeStructure.id,
       category_id: item.category_id,
       amount: item.amount,

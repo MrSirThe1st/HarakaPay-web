@@ -4,10 +4,11 @@ import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -66,7 +67,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
           fee_categories(name, description, is_mandatory, is_recurring)
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -97,10 +98,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -171,7 +172,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const { data: existingTemplate } = await adminClient
       .from('fee_templates')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -206,7 +207,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 
     // Validate category amounts sum to total
-    const categoryTotal = categories.reduce((sum: number, cat: any) => sum + (cat.amount || 0), 0);
+    const categoryTotal = categories.reduce((sum: number, cat: { amount?: number }) => sum + (cat.amount || 0), 0);
     if (Math.abs(categoryTotal - total_amount) > 0.01) {
       return NextResponse.json(
         { success: false, error: 'Category amounts must sum to total amount' }, 
@@ -225,7 +226,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         total_amount,
         status: status || 'draft'
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .select('*')
       .single();
@@ -243,11 +244,11 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     await adminClient
       .from('fee_template_categories')
       .delete()
-      .eq('template_id', params.id);
+      .eq('template_id', id);
 
     // Then, insert new categories
-    const templateCategories = categories.map((cat: any) => ({
-      template_id: params.id,
+    const templateCategories = categories.map((cat: { category_id: string; amount: number }) => ({
+      template_id: id,
       category_id: cat.category_id,
       amount: cat.amount
     }));
@@ -284,10 +285,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const { id } = await params;
+    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -339,7 +340,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     const { data: existingTemplate } = await adminClient
       .from('fee_templates')
       .select('id, status')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -355,7 +356,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       const { data: studentAssignments } = await adminClient
         .from('student_fee_assignments')
         .select('id')
-        .eq('template_id', params.id)
+        .eq('template_id', id)
         .limit(1);
 
       if (studentAssignments && studentAssignments.length > 0) {
@@ -370,13 +371,13 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     await adminClient
       .from('fee_template_categories')
       .delete()
-      .eq('template_id', params.id);
+      .eq('template_id', id);
 
     // Delete fee template
     const { error: deleteError } = await adminClient
       .from('fee_templates')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id);
 
     if (deleteError) {

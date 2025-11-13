@@ -5,9 +5,10 @@ import { StoreCategory, StoreApiResponse } from '@/types/store';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -45,7 +46,7 @@ export async function PUT(
     const { data: existingCategory, error: fetchError } = await supabase
       .from('store_categories')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -59,7 +60,7 @@ export async function PUT(
       .select('id')
       .eq('school_id', profile.school_id)
       .eq('name', name.trim())
-      .neq('id', params.id)
+      .neq('id', id)
       .single();
 
     if (duplicateCategory) {
@@ -75,7 +76,7 @@ export async function PUT(
         is_active: isActive,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .select()
       .single();
@@ -100,9 +101,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -131,7 +133,7 @@ export async function DELETE(
     const { data: existingCategory, error: fetchError } = await supabase
       .from('store_categories')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -143,7 +145,7 @@ export async function DELETE(
     const { data: itemsCount, error: itemsError } = await supabase
       .from('store_items')
       .select('id', { count: 'exact' })
-      .eq('category_id', params.id);
+      .eq('category_id', id);
 
     if (itemsError) {
       console.error('Error checking category items:', itemsError);
@@ -161,7 +163,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('store_categories')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id);
 
     if (deleteError) {

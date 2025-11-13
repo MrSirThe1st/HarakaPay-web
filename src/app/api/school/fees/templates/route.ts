@@ -318,7 +318,7 @@ export async function POST(req: Request) {
     }
 
     // Create fee template categories
-    const templateCategories = categories.map((cat: any) => ({
+    const templateCategories = categories.map((cat: { category_id: string; amount: number }) => ({
       template_id: newFeeTemplate.id,
       category_id: cat.category_id,
       amount: cat.amount

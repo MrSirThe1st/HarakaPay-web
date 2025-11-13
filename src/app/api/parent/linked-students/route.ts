@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const students = relationships.map((rel: any) => ({
+    const students = relationships.map((rel: { students: { id: string; student_id: string; first_name: string; last_name: string; grade_level: string; school_id: string; }; schools: { name: string }; }) => ({
       id: rel.students.id,
       student_id: rel.students.student_id,
       first_name: rel.students.first_name,

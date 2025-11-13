@@ -5,9 +5,10 @@ import { StoreOrder, StoreApiResponse } from '@/types/store';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -71,7 +72,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (['school_admin', 'school_staff'].includes(profile.role)) {
       // School staff can see orders from their school
@@ -103,9 +104,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     
     // Get current user
@@ -150,7 +152,7 @@ export async function PUT(
     const { data: existingOrder, error: fetchError } = await supabase
       .from('store_orders')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .single();
 
@@ -159,7 +161,14 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+      updated_at: string;
+      status?: string;
+      payment_status?: string;
+      payment_method?: string;
+      payment_reference?: string;
+      notes?: string;
+    } = {
       updated_at: new Date().toISOString(),
     };
 
@@ -173,7 +182,7 @@ export async function PUT(
     const { data: order, error: updateError } = await supabase
       .from('store_orders')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('school_id', profile.school_id)
       .select()
       .single();
@@ -188,7 +197,7 @@ export async function PUT(
       const { data: orderItems } = await supabase
         .from('store_order_items')
         .select('item_id, quantity')
-        .eq('order_id', params.id);
+        .eq('order_id', id);
 
       if (orderItems) {
         for (const item of orderItems) {
@@ -205,7 +214,7 @@ export async function PUT(
       const { data: orderItems } = await supabase
         .from('store_order_items')
         .select('item_id, quantity')
-        .eq('order_id', params.id);
+        .eq('order_id', id);
 
       if (orderItems) {
         for (const item of orderItems) {

@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform the data for easier consumption
-    const paymentHistory = (transactions || []).map((transaction: any) => ({
+    const paymentHistory = (transactions || []).map((transaction: { id: string; payment_id: string; installment_number: number; installment_label: string; amount_paid?: number | string; payment_date: string; payment_method: string; status: string; fee_category_name?: string; payment_plan_name?: string }) => ({
       id: transaction.id,
       payment_id: transaction.payment_id,
       installment_number: transaction.installment_number,
