@@ -1,22 +1,19 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Use service role for webhook simulation (bypass RLS)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 /**
  * Test endpoint to simulate M-Pesa webhook confirmation
  * Call this with paymentId to simulate successful payment confirmation
  * Usage: POST /api/payments/simulate-webhook?paymentId=<payment-id>
- * 
+ *
  * NOTE: This endpoint is for testing only and should be disabled in production
  * or protected with a secret key
  */
 export async function POST(request) {
   try {
+    // Use service role for webhook simulation (bypass RLS)
+    const supabaseAdmin = createAdminClient();
+
     // Optional: Add a simple secret check for security (only in production)
     // For now, allow access in all environments for testing
     const authHeader = request.headers.get('x-test-secret');
