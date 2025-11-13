@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { ChartBarIcon, TrendingUpIcon, UsersIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ArrowTrendingUpIcon, UsersIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
 export function AdminAnalyticsView() {
   return (
@@ -64,7 +64,7 @@ export function AdminAnalyticsView() {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <TrendingUpIcon className="h-6 w-6 text-purple-400" />
+                <ArrowTrendingUpIcon className="h-6 w-6 text-purple-400" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -184,7 +184,7 @@ export function AdminAnalyticsView() {
               Export Data
             </button>
             <button className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-              <TrendingUpIcon className="h-4 w-4 mr-2" />
+              <ArrowTrendingUpIcon className="h-4 w-4 mr-2" />
               Generate Report
             </button>
             <button className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
