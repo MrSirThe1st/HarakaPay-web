@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id: staffId } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -90,7 +90,7 @@ export async function PUT(
 ) {
   try {
     const { id: staffId } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -209,7 +209,7 @@ export async function DELETE(
 ) {
   try {
     const { id: staffId } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -31,7 +31,7 @@ export async function POST(request) {
       console.log('✅ Payment API: Authenticated via bearer token');
     } else {
       // Cookie-based authentication (for web)
-      const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+      const supabase = createRouteHandlerClient({ cookies });
       const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !cookieUser) {

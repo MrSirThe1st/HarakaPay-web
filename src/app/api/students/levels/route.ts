@@ -7,7 +7,7 @@ import { CONGOLESE_GRADES, getGradeByValue } from '@/lib/congoleseGrades';
 export async function GET(req: NextRequest) {
   try {
     // Authenticate user using cookies (for school dashboard)
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 

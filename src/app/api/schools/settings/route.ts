@@ -7,7 +7,7 @@ type SchoolUpdate = Database['public']['Tables']['schools']['Update'];
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -92,7 +92,7 @@ export async function PUT(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();

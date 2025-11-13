@@ -11,7 +11,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     const adminClient = createAdminClient();
 
     // Get current user
@@ -66,7 +66,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     const adminClient = createAdminClient();
 
     // Get current user
@@ -176,7 +176,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     const adminClient = createAdminClient();
 
     // Get current user

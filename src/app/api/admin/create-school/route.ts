@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabaseServerOnly";
 export async function POST(request: NextRequest) {
   try {
     // Step 1: Use the same auth pattern as /api/schools
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Check authentication using cookies (same as other routes)
     const { data: { user }, error: authError } = await supabase.auth.getUser();

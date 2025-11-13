@@ -9,7 +9,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -108,7 +108,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

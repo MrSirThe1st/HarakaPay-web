@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -100,7 +100,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -287,7 +287,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

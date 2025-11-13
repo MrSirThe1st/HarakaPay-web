@@ -4,33 +4,36 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json();
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
-    
-    // Check environment variables
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    
-    if (!serviceRoleKey || !supabaseUrl) {
-      return NextResponse.json({ 
-        error: 'Server configuration error'
+
+    // Use admin client to get profile (bypasses RLS)
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch (clientError) {
+      console.error('Failed to create admin client:', clientError);
+      return NextResponse.json({
+        error: 'Server configuration error',
+        details: clientError instanceof Error ? clientError.message : 'Unknown error'
       }, { status: 500 });
     }
-    
-    // Use admin client to get profile (bypasses RLS)
-    const adminClient = createAdminClient();
-    
+
+    console.log('Fetching profile for userId:', userId);
+
     const { data: profile, error } = await adminClient
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
       .single();
-      
+
     if (error) {
-      return NextResponse.json({ 
-        error: 'Profile not found'
+      console.error('Database error fetching profile:', error);
+      return NextResponse.json({
+        error: 'Profile not found',
+        details: error.message
       }, { status: 404 });
     }
     
@@ -41,8 +44,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ profile });
     
   } catch (error) {
-    return NextResponse.json({ 
-      error: 'Internal server error'
+    console.error('Profile API error:', error);
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }

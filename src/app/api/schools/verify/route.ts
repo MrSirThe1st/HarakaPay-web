@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function PATCH(request: NextRequest) {
   try {
     // Fix 1: Await cookies() for Next.js 15+ compatibility
-    const supabase = createRouteHandlerClient({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient({ cookies });
     
     // Check authentication using regular client
     const { data: { user }, error: authError } = await supabase.auth.getUser();

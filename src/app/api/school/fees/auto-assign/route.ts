@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 export async function POST(req: NextRequest) {
   try {
     console.log('Auto-assign API called');
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();

@@ -6,7 +6,7 @@ import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -137,7 +137,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies: async () => await cookies() });
+    const supabase = createRouteHandlerClient<Database>({ cookies });
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
