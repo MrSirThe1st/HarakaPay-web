@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,17 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/hooks/useTranslation";
 import { createClient } from "@/lib/supabaseClient";
+import { setRememberMePreference, getRememberMePreference } from "@/lib/sessionStorage";
 import type { UserRole } from "@/lib/roleUtils";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const { signIn } = useDualAuth();
   const router = useRouter();
   const { t } = useTranslation();
+
+  // Load "Remember Me" preference on mount
+  useEffect(() => {
+    setRememberMe(getRememberMePreference());
+  }, []);
 
   const getRedirectPath = (role: UserRole): string => {
     // Check for admin roles (platform-level admins)
@@ -42,7 +49,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const result = await signIn(email, password);
+      // Save "Remember Me" preference before signing in
+      setRememberMePreference(rememberMe);
+
+      const result = await signIn(email, password, rememberMe);
 
       if (!result.success) {
         setError(result.error || t("Invalid credentials"));
@@ -142,6 +152,22 @@ export default function LoginPage() {
               className="h-11 bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:ring-blue-500"
               disabled={isLoading}
             />
+          </div>
+          
+          {/* Remember Me checkbox */}
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              disabled={isLoading}
+            />
+            <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              {t("Remember me")}
+            </Label>
           </div>
         </div>
 

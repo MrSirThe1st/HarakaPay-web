@@ -1,52 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    // Authenticate and get user profile
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    });
+
+    // Check if authentication failed
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
+    const { profile, adminClient } = authResult;
 
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
+    // Profile is guaranteed to have school_id at this point due to requireSchool: true
+    const school_id = profile.school_id!;
 
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Only school admins and staff can view payments
-    if (!['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' }, 
-        { status: 403 }
-      );
-    }
-
-    if (!profile.school_id) {
+    // Check if no school_id (defensive - should never happen due to middleware)
+    if (!school_id) {
       return NextResponse.json(
         { success: false, error: 'School not found' }, 
         { status: 404 }

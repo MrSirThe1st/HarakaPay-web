@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   ShoppingBagIcon,
   TagIcon,
@@ -13,9 +14,22 @@ import {
 } from '@heroicons/react/24/outline';
 import { useStoreAPI } from '@/hooks/useStoreAPI';
 import { StoreStatsData } from '@/types/store';
-import { ItemsListView } from './ItemsListView';
-import { CategoryManagementView } from './CategoryManagementView';
-import { OrdersListView } from './OrdersListView';
+
+// Lazy load views - they're conditionally rendered based on currentView
+const ItemsListView = dynamic(() => import('./ItemsListView').then(mod => ({ default: mod.ItemsListView })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
+
+const CategoryManagementView = dynamic(() => import('./CategoryManagementView').then(mod => ({ default: mod.CategoryManagementView })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
+
+const OrdersListView = dynamic(() => import('./OrdersListView').then(mod => ({ default: mod.OrdersListView })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
 
 type ViewMode = 'dashboard' | 'items' | 'categories' | 'orders';
 

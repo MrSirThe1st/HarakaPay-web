@@ -1,45 +1,45 @@
 import {
-  Shield,
-  Receipt,
-  Smartphone,
-  BarChart3,
-  Clock,
-  Users,
-} from "lucide-react";
+  ShieldCheckIcon,
+  ReceiptPercentIcon,
+  DevicePhoneMobileIcon,
+  ChartBarIcon,
+  ClockIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 
 const features = [
   {
-    icon: Receipt,
+    icon: ReceiptPercentIcon,
     title: "Instant Receipts",
     description:
       "Generate and send automated receipts immediately after payment processing.",
   },
   {
-    icon: Smartphone,
+    icon: DevicePhoneMobileIcon,
     title: "Parent Portal",
     description:
       "Easy-to-use mobile app for parents to track payments and receive notifications.",
   },
   {
-    icon: BarChart3,
+    icon: ChartBarIcon,
     title: "Financial Reports",
     description:
       "Real-time analytics and comprehensive reports for better financial oversight.",
   },
   {
-    icon: Clock,
+    icon: ClockIcon,
     title: "Automated Reminders",
     description:
       "Never miss a payment with intelligent automated reminders sent to parents.",
   },
   {
-    icon: Shield,
+    icon: ShieldCheckIcon,
     title: "Secure & Compliant",
     description:
       "Bank-level encryption and PCI DSS compliance for maximum security.",
   },
   {
-    icon: Users,
+    icon: UsersIcon,
     title: "Multi-User Support",
     description:
       "Assign roles and permissions for staff members with audit trail tracking.",

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   UserGroupIcon, 
   PlusIcon, 
@@ -13,12 +14,29 @@ import {
   ChevronRightIcon,
   UserIcon
 } from '@heroicons/react/24/outline';
-import { AddStaffModal } from './AddStaffModal';
-import { EditStaffModal } from './EditStaffModal';
-import { ViewStaffModal } from './ViewStaffModal';
-import { DeleteStaffModal } from './DeleteStaffModal';
 import { useStaff, Staff } from '@/hooks/useStaff';
 import { useTranslation } from '@/hooks/useTranslation';
+
+// Lazy load modals - they're only rendered when needed
+const AddStaffModal = dynamic(() => import('./AddStaffModal').then(mod => ({ default: mod.AddStaffModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const EditStaffModal = dynamic(() => import('./EditStaffModal').then(mod => ({ default: mod.EditStaffModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const ViewStaffModal = dynamic(() => import('./ViewStaffModal').then(mod => ({ default: mod.ViewStaffModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const DeleteStaffModal = dynamic(() => import('./DeleteStaffModal').then(mod => ({ default: mod.DeleteStaffModal })), {
+  loading: () => null,
+  ssr: false
+});
 
 export function StaffManagementView() {
   const { t } = useTranslation();

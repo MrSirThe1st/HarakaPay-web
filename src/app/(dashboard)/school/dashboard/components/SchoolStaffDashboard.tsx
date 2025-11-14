@@ -1,9 +1,9 @@
 // src/app/(dashboard)/school/dashboard/components/SchoolStaffDashboard.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  AcademicCapIcon, 
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import {
+  AcademicCapIcon,
   UserGroupIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
@@ -20,7 +20,15 @@ interface DashboardStats {
   revenueChange: number;
 }
 
-export function SchoolStaffDashboard() {
+interface CachedData {
+  stats: DashboardStats;
+  timestamp: number;
+}
+
+const CACHE_KEY = 'dashboard_stats_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const SchoolStaffDashboardComponent = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +46,44 @@ export function SchoolStaffDashboard() {
     }
   }, []);
 
+  // Load from cache
+  const loadFromCache = useCallback(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const data: CachedData = JSON.parse(cached);
+        const now = Date.now();
+
+        // Check if cache is still valid
+        if (now - data.timestamp < CACHE_DURATION) {
+          setStats(data.stats);
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('Error loading from cache:', err);
+    }
+    return false;
+  }, []);
+
+  // Save to cache
+  const saveToCache = useCallback((statsData: DashboardStats) => {
+    try {
+      const cacheData: CachedData = {
+        stats: statsData,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+    } catch (err) {
+      console.error('Error saving to cache:', err);
+    }
+  }, []);
+
   const fetchStats = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/dashboard/stats');
       const result = await response.json();
 
@@ -51,17 +92,24 @@ export function SchoolStaffDashboard() {
       }
 
       setStats(result.stats);
+      saveToCache(result.stats);
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
       setError(err instanceof Error ? err.message : 'Failed to load statistics');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [saveToCache]);
 
+  // Initial load: check cache first, then fetch if needed
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    const hasCachedData = loadFromCache();
+    if (hasCachedData) {
+      setIsLoading(false);
+    } else {
+      fetchStats();
+    }
+  }, [loadFromCache, fetchStats]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -127,7 +175,7 @@ export function SchoolStaffDashboard() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">{error}</p>
           <button
-            onClick={fetchStats}
+            onClick={() => fetchStats()}
             className="mt-2 text-red-600 hover:text-red-800 underline"
           >
             Try again
@@ -261,4 +309,8 @@ export function SchoolStaffDashboard() {
       )}
     </div>
   );
-}
+};
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export const SchoolStaffDashboard = memo(SchoolStaffDashboardComponent);
+SchoolStaffDashboard.displayName = 'SchoolStaffDashboard';

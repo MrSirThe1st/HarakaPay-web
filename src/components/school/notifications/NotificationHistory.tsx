@@ -5,16 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  History,
-  Mail,
-  Eye,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  AlertCircle,
-  CheckCircle2
-} from 'lucide-react';
+  ClockIcon,
+  EnvelopeIcon,
+  EyeIcon,
+  UsersIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowPathIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon
+} from '@heroicons/react/24/outline';
 
 interface NotificationHistoryItem {
   id: string;
@@ -100,7 +100,7 @@ export default function NotificationHistory() {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 text-gray-400 mb-4 animate-spin" />
+          <ArrowPathIcon className="h-8 w-8 text-gray-400 mb-4 animate-spin" />
           <p className="text-gray-600">Loading notification history...</p>
         </CardContent>
       </Card>
@@ -111,7 +111,7 @@ export default function NotificationHistory() {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
+          <ExclamationCircleIcon className="h-12 w-12 text-red-400 mb-4" />
           <h3 className="text-lg font-semibold mb-2 text-red-600">Error Loading History</h3>
           <p className="text-gray-600 text-center max-w-md mb-4">{error}</p>
           <Button onClick={fetchHistory} variant="outline">
@@ -126,7 +126,7 @@ export default function NotificationHistory() {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <History className="h-12 w-12 text-gray-400 mb-4" />
+          <ClockIcon className="h-12 w-12 text-gray-400 mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Notifications Sent</h3>
           <p className="text-gray-600 text-center max-w-md">
             You haven't sent any notifications yet. Send your first notification from the "Send Notification" tab.
@@ -141,7 +141,7 @@ export default function NotificationHistory() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
+            <ClockIcon className="h-5 w-5" />
             Notification History
           </CardTitle>
         </CardHeader>
@@ -165,17 +165,17 @@ export default function NotificationHistory() {
 
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
+                        <EnvelopeIcon className="h-4 w-4" />
                         <span>{formatDate(notification.sent_at || notification.created_at)}</span>
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
+                        <UsersIcon className="h-4 w-4" />
                         <span>{notification.total_recipients} recipients</span>
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
+                        <EyeIcon className="h-4 w-4" />
                         <span>{notification.read_count} read ({getReadPercentage(notification)}%)</span>
                       </div>
                     </div>
@@ -183,7 +183,7 @@ export default function NotificationHistory() {
 
                   <div className="flex items-center ml-4">
                     {getReadPercentage(notification) === 100 ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
                     ) : (
                       <div className="w-12 h-12 rounded-full border-4 border-gray-200 flex items-center justify-center">
                         <span className="text-xs font-semibold">
@@ -218,7 +218,7 @@ export default function NotificationHistory() {
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1 || loading}
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeftIcon className="h-4 w-4 mr-1" />
                 Previous
               </Button>
 
@@ -233,7 +233,7 @@ export default function NotificationHistory() {
                 disabled={page === totalPages || loading}
               >
                 Next
-                <ChevronRight className="h-4 w-4 ml-1" />
+                <ChevronRightIcon className="h-4 w-4 ml-1" />
               </Button>
             </div>
           )}

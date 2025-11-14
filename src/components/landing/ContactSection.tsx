@@ -1,20 +1,20 @@
-import { Mail, Phone, MapPin } from "lucide-react";
+import { EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline";
 
 const contactInfo = [
   {
-    icon: Mail,
+    icon: EnvelopeIcon,
     title: "Email Us",
     detail: "admin@harakapay.com",
     description: "We'll respond within 24 hours",
   },
   {
-    icon: Phone,
+    icon: PhoneIcon,
     title: "Call Us",
     detail: "+243 XXX XXX XXX",
     description: "Mon - Fri, 9am - 5pm",
   },
   {
-    icon: MapPin,
+    icon: MapPinIcon,
     title: "Visit Us",
     detail: "Kinshasa, DR Congo",
     description: "Come say hello at our office",

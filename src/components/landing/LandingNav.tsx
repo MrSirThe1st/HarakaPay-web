@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogIn, UserPlus } from "lucide-react";
+import { AcademicCapIcon, ArrowRightOnRectangleIcon, UserPlusIcon } from "@heroicons/react/24/outline";
 
 export function LandingNav() {
   return (
@@ -8,7 +8,7 @@ export function LandingNav() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-8 h-8 text-blue-600" />
+            <AcademicCapIcon className="w-8 h-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">HarakaPay</span>
           </div>
 
@@ -36,13 +36,13 @@ export function LandingNav() {
           <div className="flex items-center gap-3">
             <Button asChild variant="outline" size="sm">
               <Link href="/login" className="flex items-center gap-2">
-                <LogIn className="w-4 h-4" />
+                <ArrowRightOnRectangleIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Login</span>
               </Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/register" className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4" />
+                <UserPlusIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Register</span>
               </Link>
             </Button>

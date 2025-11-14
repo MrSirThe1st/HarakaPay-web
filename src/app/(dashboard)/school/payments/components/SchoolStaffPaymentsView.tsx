@@ -1,10 +1,10 @@
 // src/app/(dashboard)/school/payments/components/SchoolStaffPaymentsView.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  CreditCardIcon, 
-  PlusIcon, 
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
+import {
+  CreditCardIcon,
+  PlusIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   CheckCircleIcon,
@@ -39,7 +39,23 @@ interface Payment {
   } | null;
 }
 
-export function SchoolStaffPaymentsView() {
+interface CachedPaymentsData {
+  payments: Payment[];
+  stats: {
+    totalRevenue: number;
+    successfulCount: number;
+    pendingCount: number;
+    failedCount: number;
+  };
+  hasMore: boolean;
+  timestamp: number;
+  filterStatus: string;
+}
+
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const AUTO_REFRESH_INTERVAL = 30 * 1000; // 30 seconds
+
+const SchoolStaffPaymentsViewComponent = () => {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'list' | 'byGrade'>('list');
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +65,10 @@ export function SchoolStaffPaymentsView() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
+  const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cacheRef = useRef<Map<string, CachedPaymentsData>>(new Map());
+
   // Stats
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -58,12 +77,48 @@ export function SchoolStaffPaymentsView() {
     failedCount: 0,
   });
 
-  const fetchPayments = useCallback(async (page: number = 1, reset: boolean = false) => {
+  // Generate cache key based on filter
+  const getCacheKey = useCallback((status: string) => {
+    return `payments_${status}`;
+  }, []);
+
+  // Load from cache
+  const loadFromCache = useCallback((status: string) => {
+    const cacheKey = getCacheKey(status);
+    const cached = cacheRef.current.get(cacheKey);
+
+    if (cached) {
+      const now = Date.now();
+      // Check if cache is still valid
+      if (now - cached.timestamp < CACHE_DURATION) {
+        setPayments(cached.payments);
+        setStats(cached.stats);
+        setHasMore(cached.hasMore);
+        return true;
+      }
+    }
+    return false;
+  }, [getCacheKey]);
+
+  // Save to cache
+  const saveToCache = useCallback((status: string, data: Payment[], statsData: typeof stats, hasMoreData: boolean) => {
+    const cacheKey = getCacheKey(status);
+    const cacheData: CachedPaymentsData = {
+      payments: data,
+      stats: statsData,
+      hasMore: hasMoreData,
+      timestamp: Date.now(),
+      filterStatus: status
+    };
+    cacheRef.current.set(cacheKey, cacheData);
+  }, [getCacheKey]);
+
+  const fetchPayments = useCallback(async (page: number = 1, reset: boolean = false, isAutoRefresh = false) => {
     try {
-      if (reset) {
+      if (reset && !isAutoRefresh) {
         setIsLoading(true);
         setCurrentPage(1);
-      } else {
+      } else if (!isAutoRefresh) {
         setIsLoadingMore(true);
       }
 
@@ -75,48 +130,91 @@ export function SchoolStaffPaymentsView() {
       }
 
       const url = `/api/school/payments?${searchParams.toString()}`;
-      console.log('[PaymentsView] Fetching payments from:', url);
 
       const response = await fetch(url);
-      console.log('[PaymentsView] Response status:', response.status);
-
       const result = await response.json();
-      console.log('[PaymentsView] Response data:', result);
 
       if (!response.ok || !result.success) {
-        console.error('[PaymentsView] API returned error:', result.error);
         throw new Error(result.error || 'Failed to fetch payments');
       }
 
-      console.log('[PaymentsView] Payments received:', result.data.payments?.length || 0);
-      console.log('[PaymentsView] Stats:', result.data.stats);
+      const newPayments = result.data.payments || [];
+      const newStats = result.data.stats;
+      const newHasMore = result.data.pagination.hasMore;
 
       if (reset) {
-        setPayments(result.data.payments || []);
+        setPayments(newPayments);
+        saveToCache(filterStatus, newPayments, newStats, newHasMore);
       } else {
-        setPayments(prev => [...prev, ...(result.data.payments || [])]);
+        setPayments(prev => [...prev, ...newPayments]);
       }
 
-      setHasMore(result.data.pagination.hasMore);
-      setStats(result.data.stats);
+      setHasMore(newHasMore);
+      setStats(newStats);
     } catch (error) {
-      console.error('[PaymentsView] Error fetching payments:', error);
-      setPayments([]);
-      setStats({
-        totalRevenue: 0,
-        successfulCount: 0,
-        pendingCount: 0,
-        failedCount: 0,
-      });
+      console.error('Error fetching payments:', error);
+      if (!isAutoRefresh) {
+        setPayments([]);
+        setStats({
+          totalRevenue: 0,
+          successfulCount: 0,
+          pendingCount: 0,
+          failedCount: 0,
+        });
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [filterStatus]);
+  }, [filterStatus, saveToCache]);
 
+  // Initial load: check cache first, then fetch if needed
   useEffect(() => {
-    fetchPayments(1, true);
-  }, [fetchPayments]); // Reset when filter changes
+    const hasCachedData = loadFromCache(filterStatus);
+    if (hasCachedData) {
+      setIsLoading(false);
+    } else {
+      fetchPayments(1, true);
+    }
+  }, [filterStatus, loadFromCache, fetchPayments]);
+
+  // Auto-refresh setup with Page Visibility API
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is not visible, pause auto-refresh
+        if (autoRefreshTimerRef.current) {
+          clearInterval(autoRefreshTimerRef.current);
+          autoRefreshTimerRef.current = null;
+        }
+      } else {
+        // Tab is visible, resume auto-refresh
+        if (!autoRefreshTimerRef.current) {
+          autoRefreshTimerRef.current = setInterval(() => {
+            fetchPayments(1, true, true);
+          }, AUTO_REFRESH_INTERVAL);
+        }
+      }
+    };
+
+    // Start auto-refresh if tab is visible
+    if (!document.hidden) {
+      autoRefreshTimerRef.current = setInterval(() => {
+        fetchPayments(1, true, true);
+      }, AUTO_REFRESH_INTERVAL);
+    }
+
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup
+    return () => {
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchPayments]);
 
   const loadMorePayments = () => {
     if (!isLoadingMore && hasMore) {
@@ -144,7 +242,7 @@ export function SchoolStaffPaymentsView() {
           <h1 className="text-2xl font-bold text-gray-900">{t('Payment Management')}</h1>
           <p className="text-gray-600">{t('Process and track student payments and fees')}</p>
         </div>
-        
+
         {/* View Mode Toggle */}
         <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
           <button
@@ -281,8 +379,7 @@ export function SchoolStaffPaymentsView() {
 
             {/* Status Filter */}
             <div className="sm:w-48">
-              <div className="relative">
-                <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <div className="relative"> 
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
@@ -440,4 +537,8 @@ export function SchoolStaffPaymentsView() {
       )}
     </div>
   );
-}
+};
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export const SchoolStaffPaymentsView = memo(SchoolStaffPaymentsViewComponent);
+SchoolStaffPaymentsView.displayName = 'SchoolStaffPaymentsView';

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowPathIcon, PaperAirplaneIcon, ExclamationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function SendNotificationForm() {
   const [title, setTitle] = useState('');
@@ -227,14 +227,14 @@ export default function SendNotificationForm() {
             {/* Alerts */}
             {error && (
               <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
+                <ExclamationCircleIcon className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             {success && (
               <Alert className="border-green-500 bg-green-50">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">{success}</AlertDescription>
               </Alert>
             )}
@@ -248,12 +248,12 @@ export default function SendNotificationForm() {
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
+                  <PaperAirplaneIcon className="mr-2 h-4 w-4" />
                   Send Notification
                 </>
               )}

@@ -1,27 +1,27 @@
-import { TrendingUp, Users, Building, DollarSign } from "lucide-react";
+import { ArrowTrendingUpIcon, UsersIcon, BuildingOfficeIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
 
 export function StatsSection() {
   const stats = [
     {
-      icon: Building,
+      icon: BuildingOfficeIcon,
       value: "500+",
       label: "Schools Served",
       description: "Trusted by institutions nationwide",
     },
     {
-      icon: Users,
+      icon: UsersIcon,
       value: "50,000+",
       label: "Students Enrolled",
       description: "Active student database",
     },
     {
-      icon: TrendingUp,
+      icon: ArrowTrendingUpIcon,
       value: "98%",
       label: "Collection Rate",
       description: "Improved fee collection efficiency",
     },
     {
-      icon: DollarSign,
+      icon: CurrencyDollarIcon,
       value: "$10M+",
       label: "Transactions Processed",
       description: "Secure payment processing",

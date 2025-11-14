@@ -9,8 +9,9 @@ export default function SchoolStaffSettingsPage() {
   const { canAccessSchoolPanel } = useDualAuth();
 
   return (
-    <RoleBasedRoute requiredRole="school_level">
+    <div className="container mx-auto p-6 space-y-6"><RoleBasedRoute requiredRole="school_level">
       {canAccessSchoolPanel && <SchoolStaffSettingsView />}
-    </RoleBasedRoute>
+    </RoleBasedRoute></div>
+    
   );
 }

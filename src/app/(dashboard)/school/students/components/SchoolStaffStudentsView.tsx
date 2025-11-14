@@ -1,7 +1,8 @@
 // src/app/(dashboard)/school/students/components/SchoolStaffStudentsView.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   AcademicCapIcon, 
   PlusIcon, 
@@ -15,17 +16,38 @@ import {
   CheckIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { BulkImportModal } from './BulkImportModal';
-import { AddStudentModal } from './AddStudentModal';
-import { EditStudentModal } from './EditStudentModal';
-import { ViewStudentModal } from './ViewStudentModal';
-import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { StudentImportData } from '@/lib/csvParser';
 import { useStudents, Student } from '@/hooks/useStudents';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGradeByValue, CONGOLESE_GRADES } from '@/lib/congoleseGrades';
 
-export function SchoolStaffStudentsView() {
+// Lazy load modals - they're only rendered when needed
+const BulkImportModal = dynamic(() => import('./BulkImportModal').then(mod => ({ default: mod.BulkImportModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const AddStudentModal = dynamic(() => import('./AddStudentModal').then(mod => ({ default: mod.AddStudentModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const EditStudentModal = dynamic(() => import('./EditStudentModal').then(mod => ({ default: mod.EditStudentModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const ViewStudentModal = dynamic(() => import('./ViewStudentModal').then(mod => ({ default: mod.ViewStudentModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const DeleteConfirmationModal = dynamic(() => import('./DeleteConfirmationModal').then(mod => ({ default: mod.DeleteConfirmationModal })), {
+  loading: () => null,
+  ssr: false
+});
+
+const SchoolStaffStudentsViewComponent = () => {
   const { t } = useTranslation();
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showAddStudent, setShowAddStudent] = useState(false);
@@ -769,4 +791,8 @@ export function SchoolStaffStudentsView() {
       )}
     </div>
   );
-}
+};
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export const SchoolStaffStudentsView = memo(SchoolStaffStudentsViewComponent);
+SchoolStaffStudentsView.displayName = 'SchoolStaffStudentsView';

@@ -9,6 +9,7 @@ const translations: Record<string, string> = {
   "Sign Up": "S'inscrire",
   "Login": "Connexion",
   "Register": "S'inscrire",
+  "Remember me": "Se souvenir de moi",
   "Don't have an account?": "Vous n'avez pas de compte ?",
   "Already have an account?": "Vous avez déjà un compte ?",
   "Create an account": "Créer un compte",

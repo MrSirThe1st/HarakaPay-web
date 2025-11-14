@@ -1,30 +1,30 @@
-import { ArrowRight, UserPlus, CreditCard, FileText, CheckCircle } from "lucide-react";
+import { ArrowRightIcon, UserPlusIcon, CreditCardIcon, DocumentTextIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 
 const steps = [
   {
     number: "01",
-    icon: UserPlus,
+    icon: UserPlusIcon,
     title: "Register Your School",
     description:
       "Sign up and complete your school profile with basic information and fee structure.",
   },
   {
     number: "02",
-    icon: CreditCard,
+    icon: CreditCardIcon,
     title: "Configure Payment Plans",
     description:
       "Set up flexible payment schedules, categories, and assign to student groups.",
   },
   {
     number: "03",
-    icon: FileText,
+    icon: DocumentTextIcon,
     title: "Send Notifications",
     description:
       "Automatically notify parents about fees due via SMS, email, or in-app notifications.",
   },
   {
     number: "04",
-    icon: CheckCircle,
+    icon: CheckCircleIcon,
     title: "Track & Analyze",
     description:
       "Monitor payments in real-time and generate comprehensive financial reports.",
@@ -54,7 +54,7 @@ export function HowItWorksSection() {
                   {index < steps.length - 1 && (
                     <div className="hidden lg:block absolute top-12 left-full w-full h-0.5 bg-gradient-to-r from-blue-200 via-blue-300 to-transparent -translate-x-1/2">
                       <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2">
-                        <ArrowRight className="w-6 h-6 text-blue-600" />
+                        <ArrowRightIcon className="w-6 h-6 text-blue-600" />
                       </div>
                     </div>
                   )}

@@ -6,26 +6,14 @@ import { RoleBasedRoute } from "@/components/shared/auth/RoleBasedRoute";
 import { SchoolStaffPaymentsView } from "./components/SchoolStaffPaymentsView";
 
 export default function SchoolStaffPaymentsPage() {
-  const { canAccessSchoolPanel, profile, loading } = useDualAuth();
-
-  console.log('[PaymentsPage] Auth state:', {
-    canAccessSchoolPanel,
-    role: profile?.role,
-    loading
-  });
+  const { canAccessSchoolPanel } = useDualAuth();
 
   return (
     <RoleBasedRoute requiredRole="school_level">
       {canAccessSchoolPanel ? (
-        <>
-          {console.log('[PaymentsPage] Rendering SchoolStaffPaymentsView')}
-          <SchoolStaffPaymentsView />
-        </>
+        <SchoolStaffPaymentsView />
       ) : (
-        <>
-          {console.log('[PaymentsPage] canAccessSchoolPanel is false')}
-          <div>Access Denied: You don't have school panel access</div>
-        </>
+        <div>Access Denied: You don't have school panel access</div>
       )}
     </RoleBasedRoute>
   );

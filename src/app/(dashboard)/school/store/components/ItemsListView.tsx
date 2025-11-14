@@ -316,7 +316,7 @@ export function ItemsListView({}: ItemsListViewProps) {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
                             {item.images && item.images.length > 0 ? (
-                              <Image className="h-10 w-10 rounded-lg object-cover" src={item.images[0]} alt={item.name} width={40} height={40} />
+                              <Image className="h-10 w-10 rounded-lg object-cover" src={item.images[0]} alt={item.name} width={40} height={40} loading="lazy" />
                             ) : (
                               <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
                                 <span className="text-xs text-gray-500">No Image</span>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Mail, Phone, MapPin } from "lucide-react";
+import { AcademicCapIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline";
 
 export function LandingFooter() {
   return (
@@ -10,7 +10,7 @@ export function LandingFooter() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <GraduationCap className="w-8 h-8 text-blue-500" />
+              <AcademicCapIcon className="w-8 h-8 text-blue-500" />
               <span className="text-xl font-bold">HarakaPay</span>
             </div>
             <p className="text-gray-400 text-sm mb-4">
@@ -105,7 +105,7 @@ export function LandingFooter() {
                   href="mailto:admin@harakapay.com"
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
-                  <Mail className="w-4 h-4" />
+                  <EnvelopeIcon className="w-4 h-4" />
                   admin@harakapay.com
                 </a>
               </li>
@@ -114,13 +114,13 @@ export function LandingFooter() {
                   href="tel:+243XXX"
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
-                  <Phone className="w-4 h-4" />
+                  <PhoneIcon className="w-4 h-4" />
                   +243 XXX XXX XXX
                 </a>
               </li>
               <li>
                 <span className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
+                  <MapPinIcon className="w-4 h-4" />
                   DRC, Africa
                 </span>
               </li>

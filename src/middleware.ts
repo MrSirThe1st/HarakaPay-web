@@ -111,15 +111,26 @@ export async function middleware(req: NextRequest) {
       }
     } else {
       // Fall back to cookie-based session
-      const { data: { session: cookieSession }, error } = await supabase.auth.getSession();
+      let { data: { session: cookieSession }, error } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error('Auth error in middleware:', error);
-        // Only redirect non-API routes
-        if (!pathname.startsWith('/api/')) {
-          return NextResponse.redirect(new URL('/login', req.url));
+      // If session is expired or invalid, try to refresh it
+      if (error || !cookieSession) {
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (!refreshError && refreshedSession) {
+          cookieSession = refreshedSession;
+          error = null;
+        } else {
+          // If refresh fails, check if it's a real error or just no session
+          if (error && error.message !== 'Session not found') {
+            console.error('Auth error in middleware:', error);
+          }
+          // Only redirect non-API routes
+          if (!pathname.startsWith('/api/')) {
+            return NextResponse.redirect(new URL('/login', req.url));
+          }
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
       session = cookieSession;
@@ -149,20 +160,12 @@ export async function middleware(req: NextRequest) {
         
         // Check if user is active
         if (!profile.is_active) {
-          console.log('User account is inactive:', session.user.id);
           return NextResponse.redirect(new URL('/login', req.url));
         }
-        
+
         // Check if user has required role
         if (!userRole || !requiredRoles.includes(userRole)) {
-          console.log(`Access denied: User role '${userRole}' not in required roles [${requiredRoles.join(', ')}]`);
           return NextResponse.redirect(new URL('/unauthorized', req.url));
-        }
-
-        // Only log access on first visit or cache miss (not on every navigation)
-        const cached = profileCache.get(session.user.id);
-        if (!cached || (Date.now() - cached.timestamp) < 1000) { // Log only if just fetched
-          console.log(`Access granted: User ${session.user.id} with role '${userRole}' accessing ${pathname}`);
         }
       }
     }

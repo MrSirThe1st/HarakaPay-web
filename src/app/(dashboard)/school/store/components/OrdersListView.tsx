@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -12,7 +13,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { useStoreAPI } from '@/hooks/useStoreAPI';
 import { StoreOrder, StoreOrderFilters } from '@/types/store';
-import { OrderDetailModal } from './OrderDetailModal';
+
+// Lazy load modal - only rendered when needed
+const OrderDetailModal = dynamic(() => import('./OrderDetailModal').then(mod => ({ default: mod.OrderDetailModal })), {
+  loading: () => null,
+  ssr: false
+});
 
 interface OrdersListViewProps {
   onCreateNew?: () => void;

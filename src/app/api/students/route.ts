@@ -1,43 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    // Authenticate and get user profile
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff', 'super_admin', 'platform_admin', 'support_admin'],
+      requireSchool: false, // Platform admins might not have a school
+      requireActive: true
+    });
+
+    // Check if authentication failed
+    if (isAuthError(authResult)) {
+      return authResult; // Return error response
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     // Get URL parameters for search and filtering
     const { searchParams } = new URL(req.url);
@@ -47,9 +25,6 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
-
-    // Debug logging (can be removed in production)
-    console.log('API Request params:', { search, grade, status, page, limit });
 
     // Determine which school to fetch students for
     let targetSchoolId = profile.school_id;
@@ -82,12 +57,8 @@ export async function GET(req: Request) {
 
     // Apply grade filter
     if (grade && grade !== 'all') {
-      console.log('Applying grade filter:', grade);
-      
       // Convert grade to lowercase to match database format
       const normalizedGrade = grade.toLowerCase();
-      console.log('Normalized grade:', normalizedGrade);
-      
       query = query.eq('grade_level', normalizedGrade);
     }
 
@@ -100,13 +71,6 @@ export async function GET(req: Request) {
     query = query.range(offset, offset + limit - 1).order('created_at', { ascending: false });
 
     const { data: students, error: studentsError, count } = await query;
-
-    console.log('Query results:', { 
-      studentsCount: students?.length || 0, 
-      totalCount: count,
-      grade: grade,
-      hasGradeFilter: grade && grade !== 'all'
-    });
 
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
@@ -179,38 +143,19 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    // Authenticate and get user profile
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true, // Must have a school to create students
+      requireActive: true
+    });
+
+    // Check if authentication failed
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     const body = await req.json();
     const { 

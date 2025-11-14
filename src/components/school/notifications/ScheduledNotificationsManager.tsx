@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Clock, Loader2, AlertCircle, CheckCircle2, Calendar } from 'lucide-react';
+import { PlusIcon, PencilIcon, TrashIcon, ClockIcon, ArrowPathIcon, ExclamationCircleIcon, CheckCircleIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 interface ScheduledNotification {
   id: string;
@@ -214,7 +214,7 @@ export default function ScheduledNotificationsManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <ArrowPathIcon className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -230,7 +230,7 @@ export default function ScheduledNotificationsManager() {
           </p>
         </div>
         <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" />
+          <PlusIcon className="mr-2 h-4 w-4" />
           Schedule Notification
         </Button>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -359,14 +359,14 @@ export default function ScheduledNotificationsManager() {
               {/* Alerts */}
               {formError && (
                 <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
+                  <ExclamationCircleIcon className="h-4 w-4" />
                   <AlertDescription>{formError}</AlertDescription>
                 </Alert>
               )}
 
               {formSuccess && (
                 <Alert className="border-green-500 bg-green-50">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <CheckCircleIcon className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800">{formSuccess}</AlertDescription>
                 </Alert>
               )}
@@ -383,7 +383,7 @@ export default function ScheduledNotificationsManager() {
               <Button onClick={handleSubmit} disabled={formLoading}>
                 {formLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
@@ -399,10 +399,10 @@ export default function ScheduledNotificationsManager() {
       {scheduledNotifications.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Clock className="h-12 w-12 text-gray-400 mb-4" />
+            <ClockIcon className="h-12 w-12 text-gray-400 mb-4" />
             <p className="text-gray-600">No scheduled notifications yet</p>
             <Button className="mt-4" onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
+              <PlusIcon className="mr-2 h-4 w-4" />
               Create Your First Scheduled Notification
             </Button>
           </CardContent>
@@ -420,11 +420,11 @@ export default function ScheduledNotificationsManager() {
                       </CardTitle>
                       <CardDescription className="mt-2 flex flex-wrap gap-2">
                         <Badge variant="outline">
-                          <Clock className="mr-1 h-3 w-3" />
+                          <ClockIcon className="mr-1 h-3 w-3" />
                           {getFrequencyLabel(notification.frequency)}
                         </Badge>
                         <Badge variant="outline">
-                          <Calendar className="mr-1 h-3 w-3" />
+                          <CalendarIcon className="mr-1 h-3 w-3" />
                           Next: {formatNextSendTime(notification.next_send_at)}
                         </Badge>
                       </CardDescription>
@@ -472,7 +472,7 @@ export default function ScheduledNotificationsManager() {
                         className="flex-1"
                         onClick={() => openEditDialog(notification)}
                       >
-                        <Edit className="mr-2 h-3 w-3" />
+                        <PencilIcon className="mr-2 h-3 w-3" />
                         Edit
                       </Button>
                       <Button
@@ -481,7 +481,7 @@ export default function ScheduledNotificationsManager() {
                         className="flex-1 text-red-600 hover:text-red-700"
                         onClick={() => handleDelete(notification)}
                       >
-                        <Trash2 className="mr-2 h-3 w-3" />
+                        <TrashIcon className="mr-2 h-3 w-3" />
                         Delete
                       </Button>
                     </div>

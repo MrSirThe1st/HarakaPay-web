@@ -72,13 +72,47 @@ export function useDualAuth() {
     }
   }, []);
 
-  // Initialize auth state
+  // Initialize auth state with session refresh support
   useEffect(() => {
     let mounted = true;
+    let refreshInterval: NodeJS.Timeout | null = null;
 
     async function initializeAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Get current session (this will trigger refresh if needed)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          // Try to refresh the session
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError || !refreshedSession) {
+            if (mounted) {
+              setAuthState({
+                user: null,
+                profile: null,
+                loading: false,
+                error: null,
+              });
+            }
+            return;
+          }
+          
+          // Use refreshed session
+          if (refreshedSession?.user) {
+            const profile = await fetchUserProfile(refreshedSession.user.id);
+            if (mounted) {
+              setAuthState({
+                user: refreshedSession.user,
+                profile,
+                loading: false,
+                error: null,
+              });
+            }
+          }
+          return;
+        }
         
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
@@ -90,6 +124,29 @@ export function useDualAuth() {
               loading: false,
               error: null,
             });
+          }
+          
+          // Set up automatic session refresh (refresh 5 minutes before expiration)
+          if (session.expires_at) {
+            const expiresIn = (session.expires_at * 1000) - Date.now();
+            const refreshTime = Math.max(expiresIn - (5 * 60 * 1000), 60 * 1000); // At least 1 minute
+            
+            refreshInterval = setTimeout(async () => {
+              if (mounted) {
+                const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+                if (!refreshError && refreshedSession?.user) {
+                  const profile = await fetchUserProfile(refreshedSession.user.id);
+                  if (mounted) {
+                    setAuthState({
+                      user: refreshedSession.user,
+                      profile,
+                      loading: false,
+                      error: null,
+                    });
+                  }
+                }
+              }
+            }, refreshTime);
           }
         } else {
           if (mounted) {
@@ -116,7 +173,7 @@ export function useDualAuth() {
 
     initializeAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes including token refresh events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -129,7 +186,20 @@ export function useDualAuth() {
               error: null,
             });
           }
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Handle token refresh - update state if needed
+          const profile = await fetchUserProfile(session.user.id);
+          if (mounted) {
+            setAuthState(prev => ({
+              ...prev,
+              user: session.user,
+              profile,
+            }));
+          }
         } else if (event === 'SIGNED_OUT') {
+          if (refreshInterval) {
+            clearTimeout(refreshInterval);
+          }
           if (mounted) {
             setAuthState({
               user: null,
@@ -144,12 +214,15 @@ export function useDualAuth() {
 
     return () => {
       mounted = false;
+      if (refreshInterval) {
+        clearTimeout(refreshInterval);
+      }
       subscription.unsubscribe();
     };
   }, [fetchUserProfile, supabase.auth]);
 
-  // Sign in function
-  const signIn = async (email: string, password: string) => {
+  // Sign in function with persistent session support
+  const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
@@ -159,6 +232,14 @@ export function useDualAuth() {
       });
 
       if (error) throw error;
+
+      // If remember me is enabled, ensure session persists
+      if (rememberMe && data.session) {
+        // The session will be automatically persisted via cookies
+        // Supabase handles refresh tokens automatically
+        // We just need to ensure the session is stored
+        await supabase.auth.setSession(data.session);
+      }
 
       return { success: true };
     } catch (error: unknown) {
@@ -172,12 +253,23 @@ export function useDualAuth() {
     }
   };
 
-  // Sign out function
+  // Sign out function - clears session and preferences
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Sign out error:', error);
     }
+    
+    // Clear session preferences on sign out
+    if (typeof window !== 'undefined') {
+      try {
+        const { clearSessionPreferences } = await import('@/lib/sessionStorage');
+        clearSessionPreferences();
+      } catch (error) {
+        console.error('Error clearing session preferences:', error);
+      }
+    }
+    
     router.push('/login');
   };
 

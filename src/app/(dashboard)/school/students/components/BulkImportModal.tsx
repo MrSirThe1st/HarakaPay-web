@@ -11,8 +11,18 @@ import {
   InformationCircleIcon,
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
-import { parseCSV, generateCSVTemplate, StudentImportData, CSVParseResult } from '@/lib/csvParser';
 import { useTranslation } from '@/hooks/useTranslation';
+import type { StudentImportData, CSVParseResult } from '@/lib/csvParser';
+
+// Lazy load CSV parser - it's only needed when this modal is opened
+let csvParserModule: typeof import('@/lib/csvParser') | null = null;
+
+const loadCSVParser = async () => {
+  if (!csvParserModule) {
+    csvParserModule = await import('@/lib/csvParser');
+  }
+  return csvParserModule;
+};
 
 interface BulkImportModalProps {
   isOpen: boolean;
@@ -30,7 +40,7 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
   const [importedCount, setImportedCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
@@ -42,10 +52,11 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
     setFile(selectedFile);
     setImportError(null);
     
-    // Parse the file immediately
+    // Lazy load CSV parser and parse the file
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target?.result as string;
+      const { parseCSV } = await loadCSVParser();
       const result = parseCSV(content, selectedFile.name);
       setParseResult(result);
       
@@ -74,7 +85,8 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
     }
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const { generateCSVTemplate } = await loadCSVParser();
     const template = generateCSVTemplate();
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FileCheck, Search, Filter, Eye, Edit } from "lucide-react";
+import { DocumentCheckIcon, MagnifyingGlassIcon, FunnelIcon, EyeIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface RegistrationRequest {
@@ -144,7 +144,7 @@ export function SchoolRequestsView() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
               placeholder={t("Search by school name, contact name, or email")}
@@ -156,7 +156,7 @@ export function SchoolRequestsView() {
 
           {/* Status Filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -211,7 +211,7 @@ export function SchoolRequestsView() {
                         onClick={() => openDetailModal(request)}
                         className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
                       >
-                        <Eye className="w-4 h-4" />
+                        <EyeIcon className="w-4 h-4" />
                         {t("View")}
                       </button>
                     </td>

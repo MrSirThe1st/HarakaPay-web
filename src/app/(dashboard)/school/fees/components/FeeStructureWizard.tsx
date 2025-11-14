@@ -1,7 +1,8 @@
 // src/app/(dashboard)/school/fees/components/FeeStructureWizard.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
+import dynamic from 'next/dynamic';
 import {
   CalendarIcon,
   ReceiptPercentIcon,
@@ -11,19 +12,36 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { WizardData, WizardStep } from '../types/feeTypes';
-import { SelectAcademicContextStep } from './wizard-steps/SelectAcademicContextStep';
-import { FeeItemsStep } from './wizard-steps/FeeItemsStep';
-import { DefinePaymentPlansStep } from './wizard-steps/DefinePaymentPlansStep';
-import { PublishStep } from './wizard-steps/PublishStep';
 import { useFeesAPI } from '@/hooks/useFeesAPI';
 import { useTranslation } from '@/hooks/useTranslation';
+
+// Lazy load wizard steps - they're conditionally rendered based on wizardStep
+const SelectAcademicContextStep = dynamic(() => import('./wizard-steps/SelectAcademicContextStep').then(mod => ({ default: mod.SelectAcademicContextStep })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
+
+const FeeItemsStep = dynamic(() => import('./wizard-steps/FeeItemsStep').then(mod => ({ default: mod.FeeItemsStep })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
+
+const DefinePaymentPlansStep = dynamic(() => import('./wizard-steps/DefinePaymentPlansStep').then(mod => ({ default: mod.DefinePaymentPlansStep })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
+
+const PublishStep = dynamic(() => import('./wizard-steps/PublishStep').then(mod => ({ default: mod.PublishStep })), {
+  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>,
+  ssr: false
+});
 
 interface FeeStructureWizardProps {
   onComplete: () => void;
   onCancel: () => void;
 }
 
-export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardProps) {
+const FeeStructureWizardComponent = ({ onComplete, onCancel }: FeeStructureWizardProps) => {
   const { t } = useTranslation();
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,12 +68,10 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       try {
         const res = await fetch('/api/schools/settings');
         const data = await res.json();
-        console.log('📚 Fetched school data:', data);
 
         if (data.school) {
           // Set currency
           if (data.school.currency) {
-            console.log('💰 Setting currency:', data.school.currency);
             setWizardData(prev => ({
               ...prev,
               academicContext: {
@@ -66,10 +82,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           }
           // Set grade levels
           if (data.school.grade_levels && Array.isArray(data.school.grade_levels)) {
-            console.log('🎓 Setting school grade levels:', data.school.grade_levels);
             setSchoolGradeLevels(data.school.grade_levels);
-          } else {
-            console.log('⚠️ No grade_levels found in school data or not an array. Using all CONGOLESE_GRADES as fallback.');
           }
         }
       } catch (error) {
@@ -177,8 +190,6 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
     setSaveError(null);
     
     try {
-      console.log('Finalizing fee structure with wizard data:', wizardData);
-      
       // Step 1: Create Academic Year
       // Since we use hardcoded academic years, we'll always create them with our predefined structure
       const academicYearData = {
@@ -188,11 +199,8 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
         term_structure: '3 Trimesters', // Default for Congo
         is_active: false
       };
-      
-      console.log('Creating academic year:', academicYearData);
-      
+
       const academicYearResponse = await feesAPI.academicYears.create(academicYearData);
-      console.log('Academic year creation response:', academicYearResponse);
 
       if (!academicYearResponse.success || !academicYearResponse.data) {
         console.error('Academic year creation failed:', academicYearResponse.error);
@@ -206,25 +214,22 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       }
 
       const academicYearId = academicYearResponse.data.academicYear.id;
-      console.log('Created academic year with ID:', academicYearId);
 
       // Step 2: Create Fee Categories (if they don't exist)
-      console.log('Creating fee categories for items:', wizardData.feeItems);
-      
-      const categoryPromises = wizardData.feeItems.map(async (item) => {
-        console.log(`Processing category: ${item.categoryName}`);
-        
-        // Check if category already exists
-        const existingCategories = await feesAPI.feeCategories.getAll();
-        console.log('Existing categories:', existingCategories);
-        
-        const existingCategory = existingCategories.success && existingCategories.data?.feeCategories.find(
-          cat => cat.name === item.categoryName
-        );
+      // OPTIMIZATION: Fetch all existing categories once before processing
+      const existingCategoriesResponse = await feesAPI.feeCategories.getAll();
+      const existingCategoriesMap = new Map(
+        existingCategoriesResponse.success && existingCategoriesResponse.data?.feeCategories
+          ? existingCategoriesResponse.data.feeCategories.map(cat => [cat.name, cat.id])
+          : []
+      );
 
-        if (existingCategory) {
-          console.log(`Using existing category: ${item.categoryName} (ID: ${existingCategory.id})`);
-          return existingCategory.id;
+      const categoryPromises = wizardData.feeItems.map(async (item) => {
+        // Check if category already exists (using the pre-fetched map)
+        const existingCategoryId = existingCategoriesMap.get(item.categoryName);
+
+        if (existingCategoryId) {
+          return existingCategoryId;
         }
 
         // Create new category
@@ -232,52 +237,40 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           name: item.categoryName,
           description: `${item.categoryName} fees`,
           is_mandatory: item.isMandatory,
-          is_recurring: !item.paymentModes.includes('one_time'), // Auto-determine from payment modes
+          is_recurring: !item.paymentModes.includes('one_time'),
           category_type: item.categoryName.toLowerCase().includes('tuition') ? 'tuition' : 'additional'
         };
-        
-        console.log(`Creating new category: ${item.categoryName}`, categoryData);
-        
+
         const categoryResponse = await feesAPI.feeCategories.create(categoryData);
-        console.log(`Category creation response for ${item.categoryName}:`, categoryResponse);
 
         if (!categoryResponse.success || !categoryResponse.data) {
           console.error(`Failed to create category: ${item.categoryName}`, categoryResponse.error);
-          
-          // Check if it's a duplicate name error (409) or permission error
+
+          // Check if it's a duplicate name error (category was created by another request)
           if (categoryResponse.error?.includes('already exists')) {
-            // Try to find the existing category again
-            const retryExistingCategories = await feesAPI.feeCategories.getAll();
-            const retryExistingCategory = retryExistingCategories.success && retryExistingCategories.data?.feeCategories.find(
-              cat => cat.name === item.categoryName
-            );
-            
-            if (retryExistingCategory) {
-              console.log(`Found existing category after duplicate error: ${item.categoryName} (ID: ${retryExistingCategory.id})`);
-              return retryExistingCategory.id;
+            // Use the existing category ID if we somehow have it now
+            const retryId = existingCategoriesMap.get(item.categoryName);
+            if (retryId) {
+              return retryId;
             }
           }
-          
+
           if (categoryResponse.error?.includes('Only school admins can create fee categories')) {
             throw new Error('You need school admin permissions to create fee categories. Please contact your administrator to create the required categories first.');
           }
-          
+
           throw new Error(`Failed to create category: ${item.categoryName} - ${categoryResponse.error}`);
         }
 
-        console.log(`Successfully created category: ${item.categoryName} (ID: ${categoryResponse.data.feeCategory.id})`);
         return categoryResponse.data.feeCategory.id;
       });
 
       const categoryIds = await Promise.all(categoryPromises);
-      console.log('All category IDs:', categoryIds);
       
       // Validate that all categories were created successfully
       if (categoryIds.some(id => !id)) {
         throw new Error('Some fee categories failed to create. Please try again.');
       }
-      
-      console.log('All categories created successfully, proceeding with fee structure creation');
 
       // Step 3: Create Fee Structure
       const totalAmount = wizardData.feeItems.reduce((sum, item) => sum + item.amount, 0);
@@ -302,12 +295,8 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
           payment_modes: item.paymentModes
         }))
       };
-      
-      console.log('Creating fee structure with data:', feeStructureData);
-      console.log('Academic year ID being used:', academicYearId);
-      
+
       const feeStructureResponse = await feesAPI.feeStructures.create(feeStructureData);
-      console.log('Fee structure creation response:', feeStructureResponse);
 
       if (!feeStructureResponse.success || !feeStructureResponse.data) {
         console.error('Fee structure creation failed:', feeStructureResponse.error);
@@ -317,17 +306,18 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       const structureId = feeStructureResponse.data.feeStructure.id;
 
       // Step 4: Create Payment Plans (from each fee item)
+      // OPTIMIZATION: Batch all payment plan creation calls in parallel
+      const paymentPlanPromises: Promise<unknown>[] = [];
+
       for (let i = 0; i < wizardData.feeItems.length; i++) {
         const feeItem = wizardData.feeItems[i];
         const categoryId = categoryIds[i]; // Get corresponding category ID
 
         if (!feeItem.paymentPlans || feeItem.paymentPlans.length === 0) {
-          console.log(`Skipping payment plans for ${feeItem.categoryName} - no plans defined`);
           continue;
         }
 
         for (const plan of feeItem.paymentPlans) {
-          console.log(`Creating payment plan for ${feeItem.categoryName}:`, plan);
 
           // Map our internal types to API types
           const apiType: 'monthly' | 'per-term' | 'upfront' | 'custom' =
@@ -341,7 +331,7 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
             type: apiType,
             discount_percentage: plan.discountPercentage,
             currency: wizardData.academicContext.currency,
-            fee_category_id: categoryId,  // Use the UUID from categoryIds array
+            fee_category_id: categoryId,
             installments: plan.installments.map((inst, index) => ({
               installment_number: index + 1,
               label: inst.label,
@@ -350,19 +340,22 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
             }))
           };
 
-          console.log(`💾 Payment plan data for ${feeItem.categoryName}:`, paymentPlanData);
+          // Add to batch
+          const promise = feesAPI.paymentPlans.create(paymentPlanData).then(response => {
+            if (!response.success || !response.data) {
+              console.error('Payment plan creation failed:', response.error);
+              throw new Error(`Failed to create payment plan for ${feeItem.categoryName}: ${plan.type} - ${response.error}`);
+            }
 
-          const paymentPlanResponse = await feesAPI.paymentPlans.create(paymentPlanData);
-          console.log('Payment plan creation response:', paymentPlanResponse);
+            return response.data;
+          });
 
-          if (!paymentPlanResponse.success || !paymentPlanResponse.data) {
-            console.error('Payment plan creation failed:', paymentPlanResponse.error);
-            throw new Error(`Failed to create payment plan for ${feeItem.categoryName}: ${plan.type} - ${paymentPlanResponse.error}`);
-          }
-
-          console.log(`Payment plan created successfully for ${feeItem.categoryName}:`, paymentPlanResponse.data);
+          paymentPlanPromises.push(promise);
         }
       }
+
+      // Execute all payment plan creation calls in parallel
+      await Promise.all(paymentPlanPromises);
 
       setSaveSuccess(true);
       
@@ -593,4 +586,8 @@ export function FeeStructureWizard({ onComplete, onCancel }: FeeStructureWizardP
       </div>
     </div>
   );
-}
+};
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export const FeeStructureWizard = memo(FeeStructureWizardComponent);
+FeeStructureWizard.displayName = 'FeeStructureWizard';

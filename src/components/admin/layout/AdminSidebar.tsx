@@ -3,24 +3,24 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Home, 
-  Building2, 
-  Users, 
-  BarChart3, 
-  Settings,
-  FileCheck
-} from 'lucide-react';
+import {
+  HomeIcon,
+  BuildingOffice2Icon,
+  UsersIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  DocumentCheckIcon
+} from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
-  { name: 'Schools', href: '/admin/schools', icon: Building2 },
-  { name: 'School Requests', href: '/admin/school-requests', icon: FileCheck },
-  { name: 'Platform Users', href: '/admin/platform-users', icon: Users },
-  { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
+  { name: 'Schools', href: '/admin/schools', icon: BuildingOffice2Icon },
+  { name: 'School Requests', href: '/admin/school-requests', icon: DocumentCheckIcon },
+  { name: 'Platform Users', href: '/admin/platform-users', icon: UsersIcon },
+  { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
+  { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
 ];
 
 export default function AdminSidebar() {
