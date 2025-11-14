@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon, PhotoIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useStoreAPI } from '@/hooks/useStoreAPI';
 import { StoreItem, StoreCategory, StoreItemFormData } from '@/types/store';
 
@@ -67,14 +67,14 @@ export function ItemFormModal({ item, categories, onClose, onSubmit }: ItemFormM
     }
   }, [item]);
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean | string[] | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const handleHireSettingsChange = (field: string, value: any) => {
+  const handleHireSettingsChange = (field: string, value: string | number | boolean | null) => {
     setFormData(prev => ({
       ...prev,
       hireSettings: {

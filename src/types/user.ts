@@ -20,6 +20,18 @@ export type AdminType =
   | "platform_admin" 
   | "support_admin";
 
+export interface AdminCredentials {
+  id: string;
+  email: string;
+  phone?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  role?: string;
+  admin_type?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+}
+
 export interface UserProfile {
   id: string;
   user_id: string;

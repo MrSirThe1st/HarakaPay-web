@@ -32,7 +32,15 @@ interface AmountsStepProps {
     }[];
     discountPercentage?: number;
   };
-  onChange: (categories: any[]) => void;
+  onChange: (categories: {
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+    isMandatory: boolean;
+    supportsRecurring: boolean;
+    supportsOneTime: boolean;
+    categoryType: 'tuition' | 'additional';
+  }[]) => void;
 }
 
 export function AmountsStep({ selectedCategories, academicYear, paymentSchedule, onChange }: AmountsStepProps) {

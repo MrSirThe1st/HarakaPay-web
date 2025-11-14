@@ -73,7 +73,36 @@ export async function GET(req: NextRequest) {
 
     // Get fee assignments for each student
     // Handle students as array or single object (Supabase type inference issue)
-    const studentIds = linkedStudents.map((rel: any) => {
+    interface LinkedStudent {
+      id?: string;
+      parent_id?: string;
+      student_id?: string;
+      students?: {
+        id?: string;
+        student_id?: string;
+        first_name?: string;
+        last_name?: string;
+        grade_level?: string;
+        school_id?: string;
+        parent_name?: string;
+        parent_email?: string;
+        parent_phone?: string;
+        schools?: { name?: string } | { name?: string }[];
+      } | {
+        id?: string;
+        student_id?: string;
+        first_name?: string;
+        last_name?: string;
+        grade_level?: string;
+        school_id?: string;
+        parent_name?: string;
+        parent_email?: string;
+        parent_phone?: string;
+        schools?: { name?: string } | { name?: string }[];
+      }[];
+      [key: string]: unknown;
+    }
+    const studentIds = linkedStudents.map((rel: LinkedStudent) => {
       const student = Array.isArray(rel.students) ? rel.students[0] : rel.students;
       return student?.id;
     }).filter((id): id is string => id !== undefined);
@@ -152,11 +181,14 @@ export async function GET(req: NextRequest) {
     }
 
     // Structure the response
-    const studentsWithFees = linkedStudents.map((rel: any) => {
+    const studentsWithFees = linkedStudents.map((rel: LinkedStudent) => {
       // Handle students as array or single object (Supabase type inference issue)
       const studentData = rel.students;
       const student = Array.isArray(studentData) ? studentData[0] : studentData;
-      const studentAssignments = feeAssignments?.filter(assignment => assignment.student_id === student?.id) || [];
+      if (!student?.id) {
+        return null;
+      }
+      const studentAssignments = feeAssignments?.filter(assignment => assignment.student_id === student.id) || [];
       
       // Handle schools as array or single object
       const schools = student?.schools 
@@ -172,9 +204,9 @@ export async function GET(req: NextRequest) {
           grade_level: student?.grade_level,
           school_id: student?.school_id,
           school_name: schools?.name || '',
-          parent_name: student.parent_name,
-          parent_email: student.parent_email,
-          parent_phone: student.parent_phone,
+          parent_name: student?.parent_name,
+          parent_email: student?.parent_email,
+          parent_phone: student?.parent_phone,
         },
         fee_assignments: studentAssignments.map(assignment => {
           const templateCategoriesForThisTemplate = templateCategories?.filter(
@@ -243,7 +275,7 @@ export async function GET(req: NextRequest) {
           };
         })
       };
-    });
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
 
     return NextResponse.json({ 
       students: studentsWithFees,

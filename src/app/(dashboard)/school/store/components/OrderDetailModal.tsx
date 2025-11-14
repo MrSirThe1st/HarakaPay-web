@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { XMarkIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, } from '@heroicons/react/24/outline';
 import { StoreOrder } from '@/types/store';
 
 interface OrderDetailModalProps {

@@ -30,11 +30,23 @@ interface FeeSummaryProps {
   total: number;
   type: 'tuition' | 'additional';
   scheduleType?: string;
-  installments: any[];
+  installments: Array<{
+    installmentNumber: number;
+    amount: number;
+    dueDate: string;
+    percentage: number;
+    termId?: string;
+  }>;
   scheduleTypes: ScheduleType[];
   isDropdownOpen: boolean;
   onDropdownOpenChange: (open: boolean) => void;
-  onScheduleChange: (scheduleType: string, installments: any[]) => void;
+  onScheduleChange: (scheduleType: string, installments: Array<{
+    installmentNumber: number;
+    amount: number;
+    dueDate: string;
+    percentage: number;
+    termId?: string;
+  }>) => void;
   oneTimeEnabled?: boolean;
   onOneTimeToggle?: (enabled: boolean) => void;
   oneTimeDiscount?: number;

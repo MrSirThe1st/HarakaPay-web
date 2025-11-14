@@ -95,7 +95,7 @@ export function RoleBasedRoute({
       }}>
         <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Access Denied</h1>
         <p style={{ textAlign: "center", marginBottom: "2rem" }}>
-          You don't have permission to access this page.
+          You don&apos;t have permission to access this page.
         </p>
         <button 
           onClick={() => router.push('/')}

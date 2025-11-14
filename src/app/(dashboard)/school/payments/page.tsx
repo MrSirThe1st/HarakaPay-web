@@ -13,7 +13,7 @@ export default function SchoolStaffPaymentsPage() {
       {canAccessSchoolPanel ? (
         <SchoolStaffPaymentsView />
       ) : (
-        <div>Access Denied: You don't have school panel access</div>
+        <div>Access Denied: You don&apos;t have school panel access</div>
       )}
     </RoleBasedRoute>
   );

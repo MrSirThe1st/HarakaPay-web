@@ -1,15 +1,14 @@
 // src/app/(dashboard)/admin/platform-users/components/PlatformUsersView.tsx
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, } from 'react';
 import { 
   UserPlusIcon, 
   CheckCircleIcon, 
   XMarkIcon,
-  EyeIcon,
-  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 import { useDualAuth } from '@/hooks/shared/hooks/useDualAuth';
+import { AdminCredentials } from '@/types/user';
 
 interface AdminFormData {
   email: string;
@@ -33,8 +32,7 @@ export function PlatformUsersView() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [createdAdmin, setCreatedAdmin] = useState<any>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [createdAdmin, setCreatedAdmin] = useState<(AdminCredentials & { password?: string }) | null>(null);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -163,16 +161,16 @@ export function PlatformUsersView() {
                 <h4 className="font-medium text-blue-900 mb-2">Admin Details</h4>
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="font-medium">Name:</span> {createdAdmin.first_name} {createdAdmin.last_name}
+                    <span className="font-medium">Name:</span> {createdAdmin.first_name || ''} {createdAdmin.last_name || ''}
                   </div>
                   <div>
                     <span className="font-medium">Email:</span> {createdAdmin.email}
                   </div>
                   <div>
-                    <span className="font-medium">Role:</span> {createdAdmin.role}
+                    <span className="font-medium">Role:</span> {createdAdmin.role || 'N/A'}
                   </div>
                   <div>
-                    <span className="font-medium">Admin Type:</span> {createdAdmin.admin_type}
+                    <span className="font-medium">Admin Type:</span> {createdAdmin.admin_type || 'N/A'}
                   </div>
                 </div>
                 <div className="bg-yellow-50 p-3 rounded border border-yellow-200 mt-3">

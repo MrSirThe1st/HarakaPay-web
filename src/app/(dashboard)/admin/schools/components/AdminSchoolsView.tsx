@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import { BuildingOfficeIcon, MapPinIcon, UsersIcon, PlusIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, UsersIcon, PlusIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import CreateSchoolForm from './CreateSchoolForm';
 import { SchoolsList } from './SchoolsList';
 import { useSchoolStats } from '@/hooks/useSchoolStats';

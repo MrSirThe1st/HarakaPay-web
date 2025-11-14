@@ -26,7 +26,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has school-level access
-    if (!(profile as any).school_id || !['school_admin', 'school_staff'].includes((profile as any).role)) {
+    interface Profile {
+      school_id?: string;
+      role?: string;
+      [key: string]: unknown;
+    }
+    const profileData = profile as Profile;
+    if (!profileData.school_id || !['school_admin', 'school_staff'].includes(profileData.role || '')) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -60,7 +66,7 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${(profile as any).school_id}/receipt-logos/${timestamp}-${randomString}.${fileExtension}`;
+    const fileName = `${profileData.school_id}/receipt-logos/${timestamp}-${randomString}.${fileExtension}`;
 
     // Upload file to Supabase storage using admin client to bypass RLS
     const { data: uploadData, error: uploadError } = await adminClient.storage
@@ -130,7 +136,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user has school-level access
-    if (!(profile as any).school_id || !['school_admin', 'school_staff'].includes((profile as any).role)) {
+    interface Profile {
+      school_id?: string;
+      role?: string;
+      [key: string]: unknown;
+    }
+    const profileData = profile as Profile;
+    if (!profileData.school_id || !['school_admin', 'school_staff'].includes(profileData.role || '')) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -141,7 +153,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify the file belongs to the school
-    if (!fileName.startsWith(`${(profile as any).school_id}/`)) {
+    if (!fileName.startsWith(`${profileData.school_id}/`)) {
       return NextResponse.json({ success: false, error: 'Unauthorized file access' }, { status: 403 });
     }
 

@@ -284,7 +284,11 @@ export async function POST(req: Request) {
     }
 
     // Validate category amounts sum to total
-    const categoryTotal = categories.reduce((sum: number, cat: any) => sum + (cat.amount || 0), 0);
+    interface Category {
+      amount?: number;
+      [key: string]: unknown;
+    }
+    const categoryTotal = categories.reduce((sum: number, cat: Category) => sum + (cat.amount || 0), 0);
     if (Math.abs(categoryTotal - total_amount) > 0.01) {
       return NextResponse.json(
         { success: false, error: 'Category amounts must sum to total amount' }, 

@@ -293,7 +293,7 @@ export function InstallmentManager({
           <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>No installments added yet.</p>
           {scheduleType === 'custom' && (
-            <p className="text-sm mt-2">Fill in the description above and click "Add Installment" to create payment schedules.</p>
+            <p className="text-sm mt-2">Fill in the description above and click &quot;Add Installment&quot; to create payment schedules.</p>
           )}
         </div>
       )}

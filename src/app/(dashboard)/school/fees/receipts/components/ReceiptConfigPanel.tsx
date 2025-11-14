@@ -4,10 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PhotoIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  CheckIcon,
-  XMarkIcon
+
 } from '@heroicons/react/24/outline';
 import { useReceiptsAPI } from '@/hooks/useReceiptsAPI';
 import { 
@@ -15,8 +12,7 @@ import {
   ReceiptFieldConfig, 
   ReceiptStyleConfig, 
   FeeCategory,
-  DEFAULT_FIELD_CONFIG,
-  DEFAULT_STYLE_CONFIG 
+
 } from '@/types/receipt';
 
 interface ReceiptConfigPanelProps {
@@ -63,7 +59,7 @@ export function ReceiptConfigPanel({
     });
   };
 
-  const handleStyleChange = (field: keyof ReceiptStyleConfig, value: any) => {
+  const handleStyleChange = (field: keyof ReceiptStyleConfig, value: string | number | boolean) => {
     const updatedStyle = {
       ...template.style_config,
       [field]: value
@@ -148,7 +144,7 @@ export function ReceiptConfigPanel({
   const renderSelect = (
     field: keyof ReceiptStyleConfig, 
     label: string, 
-    options: { value: any; label: string }[]
+    options: { value: string | number; label: string }[]
   ) => (
     <div className="space-y-2">
       <label className="text-sm font-medium text-gray-700">{label}</label>

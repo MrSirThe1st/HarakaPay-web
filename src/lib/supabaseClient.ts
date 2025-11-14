@@ -8,7 +8,6 @@ export const createClient = () => {
       // Configure cookie options for persistent sessions
       name: 'sb-auth-token',
       domain: process.env.NODE_ENV === 'production' ? undefined : undefined, // Use default domain
-      maxAge: 60 * 60 * 24 * 7, // 7 days for refresh token
       path: '/',
       sameSite: 'lax' as const,
       secure: process.env.NODE_ENV === 'production',

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
+import {  createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   UsersIcon, 
   EllipsisVerticalIcon,
@@ -12,8 +12,6 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   CalendarIcon,
-  EyeIcon,
-  EyeSlashIcon,
   PencilIcon,
   KeyIcon,
   UserMinusIcon

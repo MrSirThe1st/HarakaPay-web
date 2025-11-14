@@ -3,12 +3,11 @@
 
 import React, { useState } from 'react';
 import { 
-  XMarkIcon, 
+
   UserPlusIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import { useStudents } from '@/hooks/useStudents';
 import { CONGOLESE_GRADES } from '@/lib/congoleseGrades';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -134,7 +133,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                   </h3>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Enter the student's information below. All fields marked with * are required.
+                      Enter the student&apos;s information below. All fields marked with * are required.
                     </p>
                   </div>
                 </div>

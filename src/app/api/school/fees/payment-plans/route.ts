@@ -250,8 +250,14 @@ export async function POST(req: Request) {
     }
 
     // Validate installments JSONB structure
+    interface Installment {
+      installment_number?: number;
+      amount?: number;
+      due_date?: string;
+      [key: string]: unknown;
+    }
     if (installments.length > 0) {
-      const validInstallments = installments.every((inst: any) => 
+      const validInstallments = installments.every((inst: Installment) => 
         inst.installment_number && 
         inst.amount && 
         inst.due_date &&

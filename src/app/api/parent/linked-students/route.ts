@@ -112,7 +112,27 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const students = relationships.map((rel: any) => {
+    interface RelationshipStudent {
+      id: string;
+      student_id: string;
+      first_name: string;
+      last_name: string;
+      grade_level: string;
+      school_id: string;
+      parent_name?: string;
+      parent_email?: string;
+      parent_phone?: string;
+      schools?: { name: string } | { name: string }[];
+    }
+
+    interface Relationship {
+      id: string;
+      parent_id: string;
+      student_id: string;
+      students: RelationshipStudent | RelationshipStudent[];
+    }
+
+    const students = relationships.map((rel: Relationship) => {
       const student = Array.isArray(rel.students) ? rel.students[0] : rel.students;
       const schools = Array.isArray(student?.schools) ? student.schools[0] : (student?.schools || { name: '' });
       return {

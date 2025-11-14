@@ -88,7 +88,7 @@ export interface FeeStructure {
     type: 'monthly' | 'per-term' | 'upfront' | 'custom';
     discount_percentage: number;
     currency: string;
-    installments: any; // JSONB field
+    installments: unknown; // JSONB field
     is_active: boolean;
     created_at: string;
   }>;

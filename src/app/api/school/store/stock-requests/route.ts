@@ -165,8 +165,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const reqBody = await request.json();
-    const { itemId, studentId, requestedQuantity, message } = reqBody as any;
+    interface StockRequestBody {
+      itemId?: string;
+      studentId?: string;
+      requestedQuantity?: number;
+      message?: string;
+      [key: string]: unknown;
+    }
+    const reqBody = await request.json() as StockRequestBody;
+    const { itemId, studentId, requestedQuantity, message } = reqBody;
 
     // Validate required fields
     if (!itemId) {

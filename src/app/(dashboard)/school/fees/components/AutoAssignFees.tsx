@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useFeesAPI } from '@/hooks/useFeesAPI';
+import { useFeesAPI, AcademicYear, FeeTemplate, PaymentSchedule } from '@/hooks/useFeesAPI';
 import { 
   CheckCircleIcon, 
   ExclamationTriangleIcon,
   InformationCircleIcon,
-  UserGroupIcon,
-  DocumentTextIcon,
-  CalendarIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { CONGOLESE_GRADES, CONGOLESE_PROGRAM_TYPES } from '@/lib/congoleseGrades';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -15,15 +13,38 @@ interface AutoAssignFeesProps {
   onAssignmentComplete?: () => void;
 }
 
+interface PreviewAssignment {
+  student_id: string;
+  student_id_display: string;
+  student_name: string;
+  grade_level: string;
+  total_amount: number;
+  schedule_name: string;
+  template_total_amount: number;
+}
+
+interface PreviewData {
+  summary: {
+    total_students: number;
+    new_assignments: number;
+    total_assignments: number;
+    existing_assignments: number;
+    schedules_count: number;
+  };
+  assignments: PreviewAssignment[];
+  total_students: number;
+  total_amount: number;
+}
+
 export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
   const { t } = useTranslation();
   const feesAPI = useFeesAPI();
-  const [academicYears, setAcademicYears] = useState<any[]>([]);
-  const [feeTemplates, setFeeTemplates] = useState<any[]>([]);
-  const [paymentSchedules, setPaymentSchedules] = useState<any[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [feeTemplates, setFeeTemplates] = useState<FeeTemplate[]>([]);
+  const [paymentSchedules, setPaymentSchedules] = useState<PaymentSchedule[]>([]);
   const [loading, setLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -409,7 +430,7 @@ export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
             <div className="max-h-60 overflow-y-auto">
               <h5 className="text-xs font-semibold text-blue-800 mb-2">Students to be assigned:</h5>
               <div className="space-y-1">
-                {previewData.assignments.slice(0, 10).map((assignment: any, index: number) => (
+                {previewData.assignments.slice(0, 10).map((assignment: PreviewAssignment, index: number) => (
                   <div key={index} className="text-xs text-blue-700 flex justify-between items-center">
                     <div>
                       <span className="font-medium">{assignment.student_name} ({assignment.student_id_display})</span>

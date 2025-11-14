@@ -99,7 +99,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Calculate total due for THIS payment plan (category) from installments
-    const installments = (fullPaymentPlan.installments as any[]) || [];
+    interface Installment {
+      amount?: number | string;
+      [key: string]: unknown;
+    }
+    const installments = (fullPaymentPlan.installments as Installment[]) || [];
     const totalDueForCategory = installments.reduce((sum, inst) => {
       return sum + parseFloat(inst.amount?.toString() || '0');
     }, 0);

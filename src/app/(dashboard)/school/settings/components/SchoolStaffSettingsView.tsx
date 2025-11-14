@@ -1,20 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+
 import {
   BuildingOfficeIcon,
   AcademicCapIcon,
   CreditCardIcon,
-  PhotoIcon,
-  CurrencyDollarIcon,
-  DevicePhoneMobileIcon,
-  GlobeAltIcon,
-  DocumentTextIcon,
+
   CheckCircleIcon,
   ExclamationTriangleIcon,
   PencilIcon,
-  CloudArrowUpIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 import { createClient } from '@/lib/supabaseClient';

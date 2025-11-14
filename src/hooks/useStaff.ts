@@ -14,7 +14,7 @@ export interface Staff {
   role: 'school_staff';
   school_id: string;
   is_active: boolean;
-  permissions: Record<string, any>;
+  permissions: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -139,7 +139,7 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     email: string;
     first_name: string;
     last_name: string;
-    permissions?: Record<string, any>;
+    permissions?: Record<string, unknown>;
   }) => {
     try {
       const response = await fetch('/api/school/staff', {
@@ -173,7 +173,7 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     first_name: string;
     last_name: string;
     is_active?: boolean;
-    permissions?: Record<string, any>;
+    permissions?: Record<string, unknown>;
   }) => {
     try {
       const response = await fetch(`/api/school/staff/${staffId}`, {

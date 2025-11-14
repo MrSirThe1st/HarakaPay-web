@@ -22,7 +22,7 @@ interface ScheduledNotification {
   schedule_time: string;
   schedule_days: number[] | null;
   schedule_date: string | null;
-  target_audience: any;
+  target_audience: unknown;
   next_send_at: string;
   last_sent_at: string | null;
   is_active: boolean;
@@ -161,8 +161,8 @@ export default function ScheduledNotificationsManager() {
         loadScheduledNotifications();
       }, 1000);
 
-    } catch (error: any) {
-      setFormError(error.message || 'Failed to save scheduled notification');
+    } catch (error: unknown) {
+      setFormError(error instanceof Error ? error.message : 'Failed to save scheduled notification');
     } finally {
       setFormLoading(false);
     }
@@ -185,8 +185,8 @@ export default function ScheduledNotificationsManager() {
       }
 
       loadScheduledNotifications();
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

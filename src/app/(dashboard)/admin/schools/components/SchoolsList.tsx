@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
+import { createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   BuildingOfficeIcon, 
   MapPinIcon, 
@@ -17,6 +17,7 @@ import {
   EllipsisVerticalIcon
 } from '@heroicons/react/24/outline';
 import { Database } from '@/types/supabase';
+import { AdminCredentials } from '@/types/user';
 
 type School = Database['public']['Tables']['schools']['Row'];
 
@@ -32,7 +33,7 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
   const [verifyingSchool, setVerifyingSchool] = useState<string | null>(null);
   const [showVerifyModal, setShowVerifyModal] = useState<{ school: School; action: 'verify' | 'reject' } | null>(null);
   const [showCredentialsModal, setShowCredentialsModal] = useState<School | null>(null);
-  const [adminCredentials, setAdminCredentials] = useState<any>(null);
+  const [adminCredentials, setAdminCredentials] = useState<AdminCredentials | null>(null);
   const [loadingCredentials, setLoadingCredentials] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -117,8 +118,6 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
     };
   }, [openMenuId, closeMenu]);
 
-  // REMOVED the problematic useEffect that was calling onRefresh automatically
-  // Now onRefresh is only called manually when needed
 
   const getStatusIcon = (status: string, verificationStatus: string) => {
     if (status === 'approved' && verificationStatus === 'verified') {
@@ -354,7 +353,7 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
           There are currently no schools registered on the platform.
         </p>
         <p className="mt-2 text-sm text-gray-400">
-          Click "Add School" to register your first school.
+          Click &quot;Add School&quot; to register your first school.
         </p>
       </div>
     );
@@ -622,7 +621,7 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
                     )}
                     <div className="bg-blue-50 p-3 rounded border border-blue-200">
                       <p className="text-sm text-blue-800">
-                        <strong>Password Setup:</strong> Use the "Reset Password" button below to set up the admin's login password. 
+                        <strong>Password Setup:</strong> Use the &quot;Reset Password&quot; button below to set up the admin&apos;s login password. 
                         This is the primary way to create and manage admin passwords securely.
                       </p>
                     </div>

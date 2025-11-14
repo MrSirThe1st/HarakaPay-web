@@ -12,7 +12,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     <div>
       {React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, { open, onOpenChange });
+          return React.cloneElement(child as React.ReactElement<{ open?: boolean; onOpenChange?: (open: boolean) => void }>, { open, onOpenChange });
         }
         return child;
       })}
@@ -20,11 +20,23 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   );
 };
 
-const DialogTrigger = ({ children, asChild, ...props }: any) => {
-  return asChild ? React.cloneElement(children, props) : <button {...props}>{children}</button>;
+interface DialogTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  asChild?: boolean;
+}
+
+const DialogTrigger = ({ children, asChild, ...props }: DialogTriggerProps) => {
+  return asChild ? React.cloneElement(children as React.ReactElement, props) : <button {...props}>{children}</button>;
 };
 
-const DialogContent = ({ className, children, open, onOpenChange, ...props }: any) => {
+interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+  children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+const DialogContent = ({ className, children, open, onOpenChange, ...props }: DialogContentProps) => {
   if (!open) return null;
 
   return (

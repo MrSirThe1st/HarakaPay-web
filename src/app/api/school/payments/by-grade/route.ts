@@ -245,7 +245,15 @@ export async function GET(req: NextRequest) {
     });
 
     // Group by grade level
-    const byGrade: Record<string, any[]> = {};
+    interface StudentPaymentData {
+      student_id: string;
+      student_name: string;
+      grade_level: string;
+      total_paid: number;
+      payment_count: number;
+      [key: string]: unknown;
+    }
+    const byGrade: Record<string, StudentPaymentData[]> = {};
     studentPaymentMap.forEach((studentData) => {
       const grade = studentData.grade_level || 'Unknown';
       if (!byGrade[grade]) {

@@ -12,9 +12,17 @@ interface ScheduleType {
   termType?: string;
 }
 
+interface Installment {
+  installmentNumber: number;
+  amount: number;
+  dueDate: string;
+  percentage: number;
+  termId?: string;
+}
+
 interface PaymentScheduleSummaryProps {
   scheduleType: string;
-  installments: any[];
+  installments: Installment[];
   discountPercentage?: number;
   type: 'tuition' | 'additional';
   selectedSchedule?: ScheduleType;

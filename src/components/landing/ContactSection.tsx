@@ -30,7 +30,7 @@ export function ContactSection() {
             Get In Touch
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Have questions or ready to get started? We're here to help.
+            Have questions or ready to get started? We&apos;re here to help.
           </p>
         </div>
 

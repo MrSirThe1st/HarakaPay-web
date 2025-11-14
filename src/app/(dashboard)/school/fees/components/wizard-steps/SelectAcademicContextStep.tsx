@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { CONGOLESE_GRADES, CONGOLESE_PROGRAM_TYPES, getGradesByLevel } from '@/lib/congoleseGrades';
+import { CONGOLESE_GRADES } from '@/lib/congoleseGrades';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface SelectAcademicContextStepProps {

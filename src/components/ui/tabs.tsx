@@ -17,12 +17,16 @@ export function Tabs({ value, onValueChange, defaultValue, className, children }
   const tabNames = React.Children.toArray(children)
     .filter((child): child is React.ReactElement => React.isValidElement(child))
     .filter(child => child.type === TabsList)
-    .flatMap(tabsList =>
-      React.Children.toArray((tabsList as any).props.children)
+    .flatMap(tabsList => {
+      const tabsListElement = tabsList as React.ReactElement<{ children: React.ReactNode }>;
+      return React.Children.toArray(tabsListElement.props.children)
         .filter((child): child is React.ReactElement => React.isValidElement(child))
         .filter(child => child.type === TabsTrigger)
-        .map(trigger => (trigger as any).props.value)
-    );
+        .map(trigger => {
+          const triggerElement = trigger as React.ReactElement<{ value: string }>;
+          return triggerElement.props.value;
+        });
+    });
 
   React.useEffect(() => {
     if (value) {

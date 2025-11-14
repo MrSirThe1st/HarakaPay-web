@@ -7,8 +7,6 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   EyeIcon,
-  CheckCircleIcon,
-  ClockIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { useStoreAPI } from '@/hooks/useStoreAPI';

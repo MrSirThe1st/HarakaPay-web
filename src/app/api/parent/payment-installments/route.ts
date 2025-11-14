@@ -144,7 +144,60 @@ export async function GET(req: NextRequest) {
     }
 
     // Filter assignments that contain the specific category
-    const relevantAssignments = studentFeeAssignments.filter((assignment: any) => {
+    interface FeeCategory {
+      id: string;
+      name?: string;
+      description?: string;
+      is_mandatory?: boolean;
+      is_recurring?: boolean;
+      category_type?: string;
+    }
+
+    interface FeeTemplateCategory {
+      amount?: number;
+      fee_categories?: FeeCategory | FeeCategory[];
+    }
+
+    interface FeeTemplate {
+      id?: string;
+      name?: string;
+      grade_level?: string;
+      program_type?: string;
+      status?: string;
+      fee_template_categories?: FeeTemplateCategory[];
+    }
+
+    interface PaymentInstallment {
+      id: string;
+      installment_number: number;
+      name: string;
+      amount: number;
+      percentage: number;
+      due_date: string;
+      term_id: string | null;
+      is_active: boolean;
+    }
+
+    interface PaymentSchedule {
+      id?: string;
+      name?: string;
+      schedule_type?: string;
+      discount_percentage?: number;
+      payment_installments?: PaymentInstallment[];
+      fee_templates?: FeeTemplate | FeeTemplate[];
+    }
+
+    interface StudentFeeAssignment {
+      id: string;
+      student_id: string;
+      paid_amount?: number;
+      status?: string;
+      academic_year_id?: string;
+      payment_schedules?: PaymentSchedule | PaymentSchedule[];
+      [key: string]: unknown;
+    }
+
+    const relevantAssignments = studentFeeAssignments.filter((assignment: StudentFeeAssignment) => {
       // Handle payment_schedules as array or single object
       const paymentSchedule = Array.isArray(assignment.payment_schedules) 
         ? assignment.payment_schedules[0] 
@@ -158,7 +211,7 @@ export async function GET(req: NextRequest) {
         : undefined;
       
       const categories = feeTemplate?.fee_template_categories || [];
-      return categories.some((ftc: any) => {
+      return categories.some((ftc: FeeTemplateCategory) => {
         const feeCategory = Array.isArray(ftc.fee_categories) 
           ? ftc.fee_categories[0] 
           : ftc.fee_categories;
@@ -189,23 +242,14 @@ export async function GET(req: NextRequest) {
     }> = [];
     const now = new Date();
 
-    relevantAssignments.forEach((assignment: any) => {
+    relevantAssignments.forEach((assignment: StudentFeeAssignment) => {
       // Handle payment_schedules as array or single object
       const paymentSchedule = Array.isArray(assignment.payment_schedules) 
         ? assignment.payment_schedules[0] 
         : assignment.payment_schedules;
       const installments = paymentSchedule?.payment_installments || [];
-      
-      installments.forEach((installment: {
-        id: string;
-        installment_number: number;
-        name: string;
-        amount: number;
-        percentage: number;
-        due_date: string;
-        term_id: string | null;
-        is_active: boolean;
-      }) => {
+
+      installments.forEach((installment) => {
         // Determine if this is the current installment
         const dueDate = new Date(installment.due_date);
         const isCurrent = dueDate <= now && installment.is_active;

@@ -24,7 +24,7 @@ interface NotificationHistoryItem {
   notification_channel: string;
   sent_at: string;
   created_at: string;
-  target_audience: any;
+  target_audience: unknown;
   total_recipients: number;
   read_count: number;
 }
@@ -55,9 +55,9 @@ export default function NotificationHistory() {
 
       setNotifications(result.data.notifications);
       setTotalPages(result.data.pagination.pages);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching notification history:', err);
-      setError(err.message || 'Failed to load notification history');
+      setError(err instanceof Error ? err.message : 'Failed to load notification history');
     } finally {
       setLoading(false);
     }
@@ -129,7 +129,7 @@ export default function NotificationHistory() {
           <ClockIcon className="h-12 w-12 text-gray-400 mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Notifications Sent</h3>
           <p className="text-gray-600 text-center max-w-md">
-            You haven't sent any notifications yet. Send your first notification from the "Send Notification" tab.
+            You haven&apos;t sent any notifications yet. Send your first notification from the &quot;Send Notification&quot; tab.
           </p>
         </CardContent>
       </Card>
@@ -194,17 +194,18 @@ export default function NotificationHistory() {
                   </div>
                 </div>
 
-                {notification.target_audience && Object.keys(notification.target_audience).length > 0 && (
+                {notification.target_audience && typeof notification.target_audience === 'object' && Object.keys(notification.target_audience).length > 0 ? (
                   <div className="mt-3 pt-3 border-t">
                     <span className="text-xs text-gray-500">
-                      Target: {
-                        notification.target_audience.gradeLevels?.length > 0
-                          ? `${notification.target_audience.gradeLevels.length} grade level(s)`
-                          : 'All students'
-                      }
+                      Target: {(() => {
+                        const audience = notification.target_audience as { gradeLevels?: string[] };
+                        return audience.gradeLevels?.length && audience.gradeLevels.length > 0
+                          ? `${audience.gradeLevels.length} grade level(s)`
+                          : 'All students';
+                      })()}
                     </span>
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

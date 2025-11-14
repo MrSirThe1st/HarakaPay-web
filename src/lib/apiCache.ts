@@ -5,7 +5,7 @@ interface CacheEntry<T> {
 }
 
 class APICache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
 
   set<T>(key: string, data: T): void {
     this.cache.set(key, {
@@ -60,13 +60,13 @@ class APICache {
 export const apiCache = new APICache();
 
 // Helper function to create cache keys
-export function createCacheKey(prefix: string, params: Record<string, any> = {}): string {
+export function createCacheKey(prefix: string, params: Record<string, unknown> = {}): string {
   const sortedParams = Object.keys(params)
     .sort()
     .reduce((result, key) => {
       result[key] = params[key];
       return result;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
   
   return `${prefix}:${JSON.stringify(sortedParams)}`;
 }

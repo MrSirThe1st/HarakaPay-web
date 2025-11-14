@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DocumentCheckIcon, MagnifyingGlassIcon, FunnelIcon, EyeIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, FunnelIcon, EyeIcon } from "@heroicons/react/24/outline";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface RegistrationRequest {

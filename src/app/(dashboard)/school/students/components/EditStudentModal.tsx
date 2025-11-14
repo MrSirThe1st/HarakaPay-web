@@ -152,7 +152,7 @@ export function EditStudentModal({ isOpen, onClose, onSuccess, student }: EditSt
                   </h3>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Update the student's information below. All fields marked with * are required.
+                      Update the student&apos;s information below. All fields marked with * are required.
                     </p>
                   </div>
                 </div>

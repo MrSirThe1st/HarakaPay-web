@@ -140,6 +140,16 @@ export async function GET(req: NextRequest) {
     }
 
     // Process and structure the data by student
+    interface PaymentPlan {
+      id: string;
+      type: string;
+      discount_percentage?: number;
+      currency?: string;
+      installments?: unknown;
+      is_active?: boolean;
+      fee_category_id?: string;
+    }
+
     interface StudentFeeData {
       student: {
         id: string;
@@ -205,7 +215,76 @@ export async function GET(req: NextRequest) {
     }
     const studentFeesMap: { [key: string]: StudentFeeData } = {};
 
-    studentFeeAssignments?.forEach((assignment: any) => {
+    interface StudentFeeAssignment {
+      id: string;
+      student_id: string;
+      paid_amount?: number;
+      status?: string;
+      students?: {
+        id: string;
+        student_id: string;
+        first_name: string;
+        last_name: string;
+        grade_level: string;
+        school_id: string;
+        schools?: { name: string } | { name: string }[];
+      } | {
+        id: string;
+        student_id: string;
+        first_name: string;
+        last_name: string;
+        grade_level: string;
+        school_id: string;
+        schools?: { name: string } | { name: string }[];
+      }[];
+      fee_structures?: {
+        id: string;
+        name: string;
+        grade_level: string;
+        applies_to?: string;
+        total_amount: number;
+        is_active: boolean;
+        academic_years?: {
+          id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          term_structure?: unknown;
+        } | {
+          id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          term_structure?: unknown;
+        }[];
+        payment_plans?: unknown[];
+        fee_structure_items?: unknown[];
+      } | {
+        id: string;
+        name: string;
+        grade_level: string;
+        applies_to?: string;
+        total_amount: number;
+        is_active: boolean;
+        academic_years?: {
+          id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          term_structure?: unknown;
+        } | {
+          id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          term_structure?: unknown;
+        }[];
+        payment_plans?: unknown[];
+        fee_structure_items?: unknown[];
+      }[];
+      [key: string]: unknown;
+    }
+    studentFeeAssignments?.forEach((assignment: StudentFeeAssignment) => {
       // Handle students as array or single object (Supabase type inference issue)
       const studentData = assignment.students;
       const student = Array.isArray(studentData) ? studentData[0] : studentData;
@@ -239,15 +318,15 @@ export async function GET(req: NextRequest) {
             id: feeStructure.id,
             name: feeStructure.name,
             grade_level: feeStructure.grade_level,
-            applies_to: feeStructure.applies_to,
+            applies_to: feeStructure.applies_to || '',
             total_amount: feeStructure.total_amount,
             status: feeStructure.is_active ? 'active' : 'inactive',
             academic_year: {
-              id: academicYear?.id,
-              name: academicYear?.name,
-              start_date: academicYear?.start_date,
-              end_date: academicYear?.end_date,
-              term_structure: academicYear?.term_structure,
+              id: academicYear?.id as string | undefined,
+              name: academicYear?.name as string | undefined,
+              start_date: academicYear?.start_date as string | undefined,
+              end_date: academicYear?.end_date as string | undefined,
+              term_structure: academicYear?.term_structure as string | undefined,
             }
           },
           fee_categories: [],
@@ -264,8 +343,27 @@ export async function GET(req: NextRequest) {
       }
 
       // Process fee categories from fee structure items
-      const feeItems = feeStructure?.fee_structure_items || [];
-      feeItems.forEach((item: any) => {
+      interface FeeStructureItem {
+        fee_categories?: {
+          id: string;
+          name: string;
+          description?: string;
+          is_mandatory?: boolean;
+          is_recurring?: boolean;
+          category_type?: string;
+        } | {
+          id: string;
+          name: string;
+          description?: string;
+          is_mandatory?: boolean;
+          is_recurring?: boolean;
+          category_type?: string;
+        }[];
+        amount?: number;
+        [key: string]: unknown;
+      }
+      const feeItems = (feeStructure?.fee_structure_items || []) as FeeStructureItem[];
+      feeItems.forEach((item: FeeStructureItem) => {
         // Handle fee_categories as array or single object
         const categoryData = item.fee_categories;
         const category = Array.isArray(categoryData) ? categoryData[0] : categoryData;
@@ -282,27 +380,19 @@ export async function GET(req: NextRequest) {
             id: category.id,
             name: category.name,
             description: category.description,
-            amount: item.amount,
-            is_mandatory: item.is_mandatory,
-            supports_recurring: item.is_recurring,
-            supports_one_time: item.payment_modes?.includes('one_time') || false,
+            amount: item.amount || 0,
+            is_mandatory: Boolean(item.is_mandatory),
+            supports_recurring: Boolean(item.is_recurring),
+            supports_one_time: Array.isArray(item.payment_modes) && item.payment_modes.includes('one_time') || false,
             category_type: category.category_type,
-            remaining_balance: item.amount // Will be updated after calculating payments
+            remaining_balance: item.amount || 0 // Will be updated after calculating payments
           });
         }
       });
 
       // Process ALL payment plans from the fee structure (not just the assigned one)
-      const allPaymentPlans = feeStructure?.payment_plans || [];
-      allPaymentPlans.forEach((plan: {
-        id: string;
-        type: string;
-        discount_percentage?: number;
-        currency?: string;
-        installments?: unknown;
-        is_active?: boolean;
-        fee_category_id?: string;
-      }) => {
+      const allPaymentPlans = (feeStructure?.payment_plans || []) as PaymentPlan[];
+      allPaymentPlans.forEach((plan) => {
         // Check if this payment plan is already added for this student
         const existingPlan = studentFeesMap[student.id].payment_schedules.find(
           (p: { id: string }) => p.id === plan.id

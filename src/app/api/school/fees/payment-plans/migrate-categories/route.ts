@@ -96,15 +96,26 @@ export async function POST(req: Request) {
       const feeStructure = Array.isArray(feeStructureData) ? feeStructureData[0] : feeStructureData;
       if (!feeStructure || !feeStructure.fee_items) continue;
 
-      const feeItems = feeStructure.fee_items as any[];
+      interface FeeItem {
+        fee_category_id?: string;
+        amount?: number;
+        [key: string]: unknown;
+      }
+      interface Installment {
+        amount?: number;
+        [key: string]: unknown;
+      }
+      const feeItems = (feeStructure.fee_items || []) as FeeItem[];
 
       // Calculate plan total
-      const installments = (plan.installments as any[]) || [];
+      const installments = (plan.installments || []) as Installment[];
       const planTotal = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
 
       // Find matching fee category
       let matchedCategoryId = null;
       for (const item of feeItems) {
+        if (!item.amount) continue; // Skip items without amount
+
         const expectedTotal = item.amount * (1 - (plan.discount_percentage || 0) / 100);
         const tolerance = item.amount * 0.05; // 5% tolerance
 

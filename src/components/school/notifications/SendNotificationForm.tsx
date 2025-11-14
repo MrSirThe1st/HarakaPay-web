@@ -102,8 +102,8 @@ export default function SendNotificationForm() {
         setSuccess(null);
       }, 3000);
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to send notification');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send notification');
     } finally {
       setLoading(false);
     }
@@ -212,7 +212,7 @@ export default function SendNotificationForm() {
             {/* Channel */}
             <div className="space-y-2">
               <Label htmlFor="channel">Delivery Channel</Label>
-              <Select value={channel} onValueChange={(val) => setChannel(val as any)}>
+              <Select value={channel} onValueChange={(val) => setChannel(val as 'in_app' | 'push' | 'all')}>
                 <SelectTrigger id="channel">
                   <SelectValue placeholder="Select delivery method" />
                   <SelectContent>

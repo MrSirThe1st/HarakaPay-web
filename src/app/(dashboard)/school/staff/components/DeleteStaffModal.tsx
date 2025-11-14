@@ -13,7 +13,7 @@ interface DeleteStaffModalProps {
   onClose: () => void;
   onConfirm: () => void;
   staff: Staff | null;
-  deleteStaff: (staffId: string) => Promise<any>;
+  deleteStaff: (staffId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function DeleteStaffModal({ 
@@ -82,7 +82,7 @@ export function DeleteStaffModal({
                   </p>
                   <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
                     <p className="text-sm text-red-700">
-                      <strong>Warning:</strong> This will permanently delete the staff member's account and all associated data. 
+                      <strong>Warning:</strong> This will permanently delete the staff member&apos;s account and all associated data. 
                       They will no longer be able to access the system.
                     </p>
                   </div>

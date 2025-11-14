@@ -18,8 +18,17 @@ interface AddStaffModalProps {
     email: string;
     first_name: string;
     last_name: string;
-    permissions?: Record<string, any>;
-  }) => Promise<any>;
+    permissions?: Record<string, unknown>;
+  }) => Promise<{
+    success: boolean;
+    error?: string;
+    data?: {
+      credentials: {
+        email: string;
+        password: string;
+      };
+    };
+  }>;
 }
 
 interface StaffFormData {
@@ -85,12 +94,14 @@ export function AddStaffModal({ isOpen, onClose, onSuccess, createStaff }: AddSt
         permissions: formData.permissions
       });
 
-      setGeneratedCredentials({
-        email: result.data.credentials.email,
-        password: result.data.credentials.password
-      });
-      setSuccess(true);
-      setShowCredentials(true);
+      if (result.data?.credentials) {
+        setGeneratedCredentials({
+          email: result.data.credentials.email,
+          password: result.data.credentials.password
+        });
+        setSuccess(true);
+        setShowCredentials(true);
+      }
       
       // Refresh the staff list but don't auto-close the modal
       onSuccess();

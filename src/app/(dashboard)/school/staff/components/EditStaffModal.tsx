@@ -18,8 +18,8 @@ interface EditStaffModalProps {
     first_name: string;
     last_name: string;
     is_active?: boolean;
-    permissions?: Record<string, any>;
-  }) => Promise<any>;
+    permissions?: Record<string, unknown>;
+  }) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface StaffFormData {
@@ -56,9 +56,9 @@ export function EditStaffModal({ isOpen, onClose, onSuccess, staff, updateStaff 
         last_name: staff.last_name,
         is_active: staff.is_active,
         permissions: {
-          canManageStudents: staff.permissions?.canManageStudents || false,
-          canViewReports: staff.permissions?.canViewReports || false,
-          canManagePayments: staff.permissions?.canManagePayments || false
+          canManageStudents: Boolean(staff.permissions?.canManageStudents),
+          canViewReports: Boolean(staff.permissions?.canViewReports),
+          canManagePayments: Boolean(staff.permissions?.canManagePayments)
         }
       });
     }

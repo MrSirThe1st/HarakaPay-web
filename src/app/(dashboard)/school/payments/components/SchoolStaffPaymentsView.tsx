@@ -6,7 +6,6 @@ import {
   CreditCardIcon,
   PlusIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   CheckCircleIcon,
   ClockIcon,
   XCircleIcon,

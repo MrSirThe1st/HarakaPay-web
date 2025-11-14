@@ -77,7 +77,11 @@ export async function GET(req: NextRequest) {
         } : null;
       })
       .filter(Boolean)
-      .sort((a: any, b: any) => a!.order - b!.order);
+      .sort((a: unknown, b: unknown) => {
+        const gradeA = a as { order: number };
+        const gradeB = b as { order: number };
+        return gradeA.order - gradeB.order;
+      });
 
     console.log('Final grades to return:', grades);
 

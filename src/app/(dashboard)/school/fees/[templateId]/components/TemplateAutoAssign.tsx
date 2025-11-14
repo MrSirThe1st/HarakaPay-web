@@ -16,6 +16,15 @@ interface TemplateAutoAssignProps {
   onActivationComplete?: () => void;
 }
 
+interface PreviewData {
+  total_eligible_students: number;
+  activated_students: number;
+  already_activated: number;
+  academic_year_activated: boolean;
+  payment_plans_used: number;
+  message?: string;
+}
+
 export function TemplateAutoAssign({ structure, onClose, onActivationComplete }: TemplateAutoAssignProps) {
   const { t } = useTranslation();
   const feesAPI = useFeesAPI();
@@ -23,7 +32,7 @@ export function TemplateAutoAssign({ structure, onClose, onActivationComplete }:
   // All hooks must be called before any early returns
   const [loading, setLoading] = useState(false);
   const [activating, setActivating] = useState(false);
-  const [previewData, setPreviewData] = useState<Record<string, unknown> | null>(null);
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 

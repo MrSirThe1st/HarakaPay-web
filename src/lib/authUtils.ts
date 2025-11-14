@@ -1,5 +1,5 @@
 import { createAdminClient } from './supabaseServerOnly';
-import { hasRoleLevel } from './roleUtils';
+import { hasRoleLevel, type UserRole } from './roleUtils';
 
 // Profile type for permission checking
 interface Profile {
@@ -54,15 +54,15 @@ export async function checkUserPermission(
   // Handle different operation types
   switch (operation) {
     case 'view_all_schools':
-      return { 
-        allowed: hasRoleLevel(profile.role, 'support_admin'), 
-        profile 
+      return {
+        allowed: hasRoleLevel(profile.role as UserRole, 'support_admin'),
+        profile
       };
-      
+
     case 'create_schools':
-      return { 
-        allowed: hasRoleLevel(profile.role, 'platform_admin'), 
-        profile 
+      return {
+        allowed: hasRoleLevel(profile.role as UserRole, 'platform_admin'),
+        profile
       };
       
     case 'delete_schools':
@@ -109,16 +109,16 @@ export async function checkUserPermission(
       
     case 'access_admin_panel':
       return {
-        allowed: hasRoleLevel(profile.role, 'support_admin'),
+        allowed: hasRoleLevel(profile.role as UserRole, 'support_admin'),
         profile,
-        reason: hasRoleLevel(profile.role, 'support_admin') ? undefined : 'Admin panel requires admin role'
+        reason: hasRoleLevel(profile.role as UserRole, 'support_admin') ? undefined : 'Admin panel requires admin role'
       };
-      
+
     case 'access_school_panel':
       return {
-        allowed: hasRoleLevel(profile.role, 'school_staff'),
+        allowed: hasRoleLevel(profile.role as UserRole, 'school_staff'),
         profile,
-        reason: hasRoleLevel(profile.role, 'school_staff') ? undefined : 'School panel requires school staff role'
+        reason: hasRoleLevel(profile.role as UserRole, 'school_staff') ? undefined : 'School panel requires school staff role'
       };
       
     case 'access_parent_panel':

@@ -237,7 +237,19 @@ export async function POST(req: NextRequest) {
 
     if (dry_run) {
       // Return what would be assigned without actually assigning
-      const assignments: any[] = [];
+      interface AssignmentPreview {
+        student_id: string;
+        student_name: string;
+        student_id_display: string;
+        grade_level: string;
+        template_name: string;
+        schedule_id: string;
+        schedule_name: string;
+        schedule_type: string;
+        template_total_amount: number;
+        status: string;
+      }
+      const assignments: AssignmentPreview[] = [];
       studentsToAssign.forEach(student => {
         schedules.forEach(schedule => {
           assignments.push({
@@ -273,7 +285,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Actually create the assignments
-    const assignmentsToCreate: any[] = [];
+    interface AssignmentToCreate {
+      student_id: string;
+      template_id: string;
+      schedule_id: string;
+      academic_year_id: string;
+      total_amount: number;
+      paid_amount: number;
+      status: string;
+    }
+    const assignmentsToCreate: AssignmentToCreate[] = [];
     studentsToAssign.forEach(student => {
       schedules.forEach(schedule => {
         assignmentsToCreate.push({
@@ -281,6 +302,7 @@ export async function POST(req: NextRequest) {
           template_id: template_id,
           schedule_id: schedule.id,
           academic_year_id: academic_year_id,
+          total_amount: template.total_amount,
           paid_amount: 0,
           status: 'active'
         });
