@@ -23,9 +23,14 @@ export function TemplateAutoAssign({ structure, onClose, onActivationComplete }:
   // All hooks must be called before any early returns
   const [loading, setLoading] = useState(false);
   const [activating, setActivating] = useState(false);
-  const [previewData, setPreviewData] = useState<any>(null);
+  const [previewData, setPreviewData] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // No need to load payment plans separately - they'll be fetched by the API
+  useEffect(() => {
+    // Component is ready to use
+  }, [structure?.id]);
 
   // Safety check - don't render if structure is not available
   if (!structure) {
@@ -45,11 +50,6 @@ export function TemplateAutoAssign({ structure, onClose, onActivationComplete }:
       </div>
     );
   }
-
-  // No need to load payment plans separately - they'll be fetched by the API
-  useEffect(() => {
-    // Component is ready to use
-  }, [structure?.id]);
 
   const handlePreview = async () => {
     setActivating(true);

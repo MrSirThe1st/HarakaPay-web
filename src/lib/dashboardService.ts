@@ -226,7 +226,22 @@ export class DashboardService {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      return activities?.map((activity: any) => {
+      interface ActivityRow {
+        id: string;
+        action: string;
+        entity_type: string;
+        entity_id: string;
+        created_at: string;
+        profiles?: {
+          first_name: string | null;
+          last_name: string | null;
+        } | Array<{
+          first_name: string | null;
+          last_name: string | null;
+        }> | null;
+      }
+
+      return activities?.map((activity: ActivityRow) => {
         // Handle profiles as array or single object (Supabase type inference issue)
         const profile = activity.profiles 
           ? (Array.isArray(activity.profiles) ? activity.profiles[0] : activity.profiles)

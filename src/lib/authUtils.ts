@@ -1,8 +1,18 @@
 import { createAdminClient } from './supabaseServerOnly';
-import { hasRoleLevel, type UserRole } from './roleUtils';
+import { hasRoleLevel } from './roleUtils';
+
+// Profile type for permission checking
+interface Profile {
+  id: string;
+  user_id: string;
+  role: string;
+  school_id?: string | null;
+  is_active: boolean;
+  [key: string]: unknown;
+}
 
 // Get user profile using admin client (bypasses RLS)
-export async function getUserProfile(userId: string) {
+export async function getUserProfile(userId: string): Promise<Profile | null> {
   const adminClient = createAdminClient();
   
   try {
@@ -17,7 +27,7 @@ export async function getUserProfile(userId: string) {
       return null;
     }
     
-    return profile;
+    return profile as Profile;
   } catch (error) {
     console.error('Unexpected error fetching profile:', error);
     return null;
@@ -29,7 +39,7 @@ export async function checkUserPermission(
   userId: string, 
   operation: string,
   resourceId?: string
-): Promise<{ allowed: boolean; profile: any; reason?: string }> {
+): Promise<{ allowed: boolean; profile: Profile | null; reason?: string }> {
   
   const profile = await getUserProfile(userId);
   

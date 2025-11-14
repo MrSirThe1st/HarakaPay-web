@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify student exists and belongs to parent (for parents) or school (for staff)
-    let studentQuery = adminClient
+    const studentQuery = adminClient
       .from('students')
       .select('*, schools(id)')
       .eq('id', studentId);
