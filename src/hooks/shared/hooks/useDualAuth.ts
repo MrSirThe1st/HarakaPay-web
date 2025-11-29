@@ -79,76 +79,14 @@ export function useDualAuth() {
 
     async function initializeAuth() {
       try {
-        // Get current session (this will trigger refresh if needed)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          // Try to refresh the session
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshError || !refreshedSession) {
-            if (mounted) {
-              setAuthState({
-                user: null,
-                profile: null,
-                loading: false,
-                error: null,
-              });
-            }
-            return;
+        // SECURITY: Use getUser() instead of getSession() to validate with server
+        const { data: { user: validatedUser }, error: sessionError } = await supabase.auth.getUser();
+
+        if (sessionError || !validatedUser) {
+          // Only log actual errors, not missing sessions (expected on login page)
+          if (sessionError && sessionError.message !== 'Auth session missing!') {
+            console.error('Session error:', sessionError);
           }
-          
-          // Use refreshed session
-          if (refreshedSession?.user) {
-            const profile = await fetchUserProfile(refreshedSession.user.id);
-            if (mounted) {
-              setAuthState({
-                user: refreshedSession.user,
-                profile,
-                loading: false,
-                error: null,
-              });
-            }
-          }
-          return;
-        }
-        
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          
-          if (mounted) {
-            setAuthState({
-              user: session.user,
-              profile,
-              loading: false,
-              error: null,
-            });
-          }
-          
-          // Set up automatic session refresh (refresh 5 minutes before expiration)
-          if (session.expires_at) {
-            const expiresIn = (session.expires_at * 1000) - Date.now();
-            const refreshTime = Math.max(expiresIn - (5 * 60 * 1000), 60 * 1000); // At least 1 minute
-            
-            refreshInterval = setTimeout(async () => {
-              if (mounted) {
-                const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-                if (!refreshError && refreshedSession?.user) {
-                  const profile = await fetchUserProfile(refreshedSession.user.id);
-                  if (mounted) {
-                    setAuthState({
-                      user: refreshedSession.user,
-                      profile,
-                      loading: false,
-                      error: null,
-                    });
-                  }
-                }
-              }
-            }, refreshTime);
-          }
-        } else {
           if (mounted) {
             setAuthState({
               user: null,
@@ -157,7 +95,39 @@ export function useDualAuth() {
               error: null,
             });
           }
+          return;
         }
+
+        // User is validated by server
+        const profile = await fetchUserProfile(validatedUser.id);
+
+        if (mounted) {
+          setAuthState({
+            user: validatedUser,
+            profile,
+            loading: false,
+            error: null,
+          });
+        }
+
+        // Set up automatic session refresh (refresh every 50 minutes)
+        refreshInterval = setTimeout(async () => {
+          if (mounted) {
+            const { data: { user: refreshedUser }, error: refreshError } = await supabase.auth.getUser();
+            if (!refreshError && refreshedUser) {
+              const profile = await fetchUserProfile(refreshedUser.id);
+              if (mounted) {
+                setAuthState({
+                  user: refreshedUser,
+                  profile,
+                  loading: false,
+                  error: null,
+                });
+              }
+            }
+          }
+        }, 50 * 60 * 1000); // Refresh every 50 minutes
+
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
@@ -224,7 +194,7 @@ export function useDualAuth() {
   // Sign in function with persistent session support
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -233,11 +203,9 @@ export function useDualAuth() {
 
       if (error) throw error;
 
-      // If remember me is enabled, ensure session persists
-      if (rememberMe && data.session) {
-        // The session will be automatically persisted via cookies
-        // Supabase handles refresh tokens automatically
-        // We just need to ensure the session is stored
+      // Ensure session persists - always set the session explicitly
+      // This ensures the refresh token is properly stored
+      if (data.session) {
         await supabase.auth.setSession(data.session);
       }
 
@@ -255,9 +223,22 @@ export function useDualAuth() {
 
   // Sign out function - clears session and preferences
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Sign out error:', error);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const scope = data.session ? 'global' : 'local';
+      
+      const { error } = await supabase.auth.signOut({ scope });
+      if (error) {
+        // Supabase throws AuthSessionMissingError when the refresh token has
+        // already been cleared (e.g. multiple tabs); fall back to local scope.
+        if (error.message?.toLowerCase().includes('auth session missing')) {
+          await supabase.auth.signOut({ scope: 'local' });
+        } else {
+          console.error('Sign out error:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Sign out exception:', error);
     }
     
     // Clear session preferences on sign out

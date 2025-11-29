@@ -6,6 +6,7 @@ import {
   ClockIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const features = [
   {
@@ -47,16 +48,17 @@ const features = [
 ];
 
 export function FeaturesSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Everything You Need to Manage School Fees
+            {t("Everything You Need to Manage School Fees")}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Powerful features designed to streamline your fee management process
-            and enhance parent communication.
+            {t("Powerful features designed to streamline your fee management process and enhance parent communication.")}
           </p>
         </div>
 
@@ -72,10 +74,10 @@ export function FeaturesSection() {
                   <Icon className="w-7 h-7 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {feature.title}
+                  {t(feature.title)}
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  {feature.description}
+                  {t(feature.description)}
                 </p>
               </div>
             );

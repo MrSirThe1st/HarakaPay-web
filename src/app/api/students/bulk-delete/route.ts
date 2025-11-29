@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -10,51 +8,21 @@ export async function DELETE(req: NextRequest) {
 
     if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'No student IDs provided' }, 
+        { success: false, error: 'No student IDs provided' },
         { status: 400 }
       );
     }
 
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin', 'support_admin', 'school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Check if user has permission to delete students
-    if (!['super_admin', 'platform_admin', 'support_admin', 'school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     // For school-level users, ensure they can only delete students from their school
     let deleteQuery = adminClient

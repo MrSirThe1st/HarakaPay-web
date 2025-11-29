@@ -5,8 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   ExclamationTriangleIcon,
-  DocumentDuplicateIcon,
-  PlusIcon
 } from '@heroicons/react/24/outline';
 import { useFeesAPI, FeeStructure } from '@/hooks/useFeesAPI';
 
@@ -237,32 +235,6 @@ export function FeeManagementView({}: FeeManagementViewProps) {
           </table>
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
-        </div>
-        <div className="px-6 py-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <button
-              onClick={() => router.push('/school/fees/receipts')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
-              Manage Receipt Templates
-            </button>
-            <button
-              onClick={() => router.push('/school/fees/structures/new')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create Fee Structure
-            </button>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }

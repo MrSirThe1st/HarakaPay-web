@@ -1,37 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { CONGOLESE_GRADES, getGradeByValue } from '@/lib/congoleseGrades';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
+import { getGradeByValue } from '@/lib/congoleseGrades';
+
+// Cache this data for 5 minutes (grade levels rarely change)
+export const revalidate = 300;
 
 export async function GET(req: NextRequest) {
   try {
-    // Authenticate user using cookies (for school dashboard)
-    const supabase = createRouteHandlerClient({ cookies });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      console.error('Auth error in students/levels:', authError);
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    console.log('Authenticated user:', user.id);
+    const { profile, adminClient } = authResult;
 
-    // Get user's school with grade_levels
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('school_id, role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError) {
-      console.error('Profile error:', profileError);
-    }
-
-    if (!profile || !profile.school_id) {
-      console.log('No profile or school_id for user:', user.id);
+    if (!profile.school_id) {
       return NextResponse.json({
         success: true,
         grades: [],

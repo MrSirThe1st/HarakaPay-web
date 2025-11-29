@@ -5,7 +5,7 @@ import React, { useState, useEffect, memo } from 'react';
 import dynamic from 'next/dynamic';
 import {
   CalendarIcon,
-  ReceiptPercentIcon,
+  DocumentTextIcon,
   CreditCardIcon,
   CheckCircleIcon,
   EyeIcon,
@@ -94,18 +94,18 @@ const FeeStructureWizardComponent = ({ onComplete, onCancel }: FeeStructureWizar
   }, []);
 
   const wizardSteps = [
-    { 
-      id: 1, 
-      title: t('Academic Context'), 
+    {
+      id: 1,
+      title: t('Academic Context'),
       description: t('Year, grade & scope'),
       icon: CalendarIcon,
       completed: wizardData.academicContext.academicYear !== '' && wizardData.academicContext.structureName !== ''
     },
-    { 
-      id: 2, 
-      title: t('Fee Items'), 
+    {
+      id: 2,
+      title: t('Fee Items'),
       description: t('Categories & amounts'),
-      icon: ReceiptPercentIcon,
+      icon: DocumentTextIcon,
       completed: wizardData.feeItems.length > 0
     },
     {
@@ -115,11 +115,11 @@ const FeeStructureWizardComponent = ({ onComplete, onCancel }: FeeStructureWizar
       icon: CreditCardIcon,
       completed: wizardData.feeItems.some(item => item.paymentPlans && item.paymentPlans.length > 0)
     },
-    { 
-      id: 4, 
-      title: t('Review & Save'), 
+    {
+      id: 4,
+      title: t('Review & Save'),
       description: t('Confirm & finalize'),
-      icon: CheckCircleIcon,
+      icon: EyeIcon,
       completed: false
     }
   ];
@@ -285,8 +285,8 @@ const FeeStructureWizardComponent = ({ onComplete, onCancel }: FeeStructureWizar
         grade_level: gradeLevelString,
         applies_to: wizardData.academicContext.appliesTo,
         total_amount: totalAmount,
-        is_active: false, // Always inactive by default
-        is_published: true, // User clicked "Finalize"
+        is_active: false, 
+        is_published: true, 
         items: wizardData.feeItems.map((item, index) => ({
           category_id: categoryIds[index],
           amount: item.amount,
@@ -491,14 +491,7 @@ const FeeStructureWizardComponent = ({ onComplete, onCancel }: FeeStructureWizar
         {/* Step Header */}
         <div className="bg-gradient-to-r from-green-50 to-green-100 px-8 py-6 border-b border-green-200">
           <div className="flex items-center space-x-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-                {wizardStep === 1 && <CalendarIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 2 && <ReceiptPercentIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 3 && <CreditCardIcon className="w-6 h-6 text-white" />}
-                {wizardStep === 4 && <CheckCircleIcon className="w-6 h-6 text-white" />}
-              </div>
-            </div>
+    
             <div>
               <h3 className="text-xl font-semibold text-gray-900">
                 {wizardSteps[wizardStep - 1].title}

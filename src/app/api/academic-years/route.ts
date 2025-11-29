@@ -1,42 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
 
 type AcademicYearInsert = Database['public']['Tables']['academic_years']['Insert'];
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user's profile to check school access
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id, role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has permission to view academic years
-    if (!['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-    }
+    const { profile, adminClient } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json({ error: 'No school associated with user' }, { status: 400 });
     }
 
     // Get academic years for this school
-    const { data: academicYears, error: yearsError } = await supabase
+    const { data: academicYears, error: yearsError } = await adminClient
       .from('academic_years')
       .select('*')
       .eq('school_id', profile.school_id)
@@ -57,29 +43,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user's profile to check school access
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id, role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has permission to create academic years
-    if (!['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-    }
+    const { profile, adminClient } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json({ error: 'No school associated with user' }, { status: 400 });
@@ -113,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already an active academic year
-    const { data: existingActiveYear } = await supabase
+    const { data: existingActiveYear } = await adminClient
       .from('academic_years')
       .select('id')
       .eq('school_id', profile.school_id)
@@ -132,7 +105,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Create academic year
-    const { data: newYear, error: createError } = await supabase
+    const { data: newYear, error: createError } = await adminClient
       .from('academic_years')
       .insert(insertData)
       .select()

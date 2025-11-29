@@ -1,44 +1,19 @@
 // src/app/api/school/fees/structures/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { Database } from '@/types/supabase';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     // Only school admins can view fee structures
     if (profile.role !== 'school_admin') {
@@ -143,50 +118,20 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Only school admins can create fee structures
-    if (profile.role !== 'school_admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only school admins can create fee structures' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient, user } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json(
-        { success: false, error: 'School not found' }, 
+        { success: false, error: 'School not found' },
         { status: 404 }
       );
     }
@@ -319,46 +264,16 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin'],
+      requireActive: true
+    });
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' },
-        { status: 403 }
-      );
-    }
-
-    // Only school admins can delete fee structures
-    if (profile.role !== 'school_admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only school admins can delete fee structures' },
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json(

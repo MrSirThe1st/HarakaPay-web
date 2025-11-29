@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Simple in-memory cache for staff data
 const staffCache = new Map<string, {
@@ -15,6 +15,12 @@ export interface Staff {
   school_id: string;
   is_active: boolean;
   permissions: Record<string, unknown>;
+  gender: string | null;
+  work_email: string | null;
+  home_address: string | null;
+  phone: string | null;
+  position: string | null;
+  staff_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -140,6 +146,12 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     first_name: string;
     last_name: string;
     permissions?: Record<string, unknown>;
+    gender?: string | null;
+    work_email?: string | null;
+    home_address?: string | null;
+    phone?: string | null;
+    position?: string | null;
+    staff_id?: string | null;
   }) => {
     try {
       const response = await fetch('/api/school/staff', {
@@ -174,6 +186,12 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     last_name: string;
     is_active?: boolean;
     permissions?: Record<string, unknown>;
+    gender?: string | null;
+    work_email?: string | null;
+    home_address?: string | null;
+    phone?: string | null;
+    position?: string | null;
+    staff_id?: string | null;
   }) => {
     try {
       const response = await fetch(`/api/school/staff/${staffId}`, {
@@ -231,7 +249,8 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
   useEffect(() => {
     // Only fetch on initial mount, not on every filter change
     fetchStaff();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     staff,

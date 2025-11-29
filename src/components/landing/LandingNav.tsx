@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AcademicCapIcon, ArrowRightOnRectangleIcon, UserPlusIcon } from "@heroicons/react/24/outline";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function LandingNav() {
+  const { t } = useTranslation();
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto px-4">
@@ -17,19 +20,19 @@ export function LandingNav() {
               href="#features"
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              Features
+              {t("Features")}
             </Link>
             <Link
               href="#how-it-works"
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              How It Works
+              {t("How It Works")}
             </Link>
             <Link
               href="#faq"
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              FAQ
+              {t("FAQ")}
             </Link>
           </div>
 
@@ -37,13 +40,13 @@ export function LandingNav() {
             <Button asChild variant="outline" size="sm">
               <Link href="/login" className="flex items-center gap-2">
                 <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Login</span>
+                <span className="hidden sm:inline">{t("Login")}</span>
               </Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/register" className="flex items-center gap-2">
                 <UserPlusIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Register</span>
+                <span className="hidden sm:inline">{t("Register")}</span>
               </Link>
             </Button>
           </div>

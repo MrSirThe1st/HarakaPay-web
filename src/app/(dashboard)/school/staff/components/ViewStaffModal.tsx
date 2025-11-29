@@ -7,7 +7,11 @@ import {
   UserIcon,
   EnvelopeIcon,
   CalendarIcon,
-  PencilIcon
+  PencilIcon,
+  PhoneIcon,
+  HomeIcon,
+  IdentificationIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline';
 import { Staff } from '@/hooks/useStaff';
 
@@ -106,13 +110,30 @@ export function ViewStaffModal({ isOpen, onClose, onEdit, staff }: ViewStaffModa
                       <dt className="text-xs font-medium text-gray-500">Full Name</dt>
                       <dd className="text-sm text-gray-900">{staff.first_name} {staff.last_name}</dd>
                     </div>
-                    <div>
-                      <dt className="text-xs font-medium text-gray-500">User ID</dt>
-                      <dd className="text-sm text-gray-900 flex items-center">
-                        <EnvelopeIcon className="h-3 w-3 mr-1" />
-                        {staff.user_id}
-                      </dd>
-                    </div>
+                    {staff.staff_id && (
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 flex items-center">
+                          <IdentificationIcon className="h-3 w-3 mr-1" />
+                          Staff ID
+                        </dt>
+                        <dd className="text-sm text-gray-900">{staff.staff_id}</dd>
+                      </div>
+                    )}
+                    {staff.gender && (
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500">Gender</dt>
+                        <dd className="text-sm text-gray-900">{staff.gender === 'M' ? 'Male' : 'Female'}</dd>
+                      </div>
+                    )}
+                    {staff.position && (
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 flex items-center">
+                          <BriefcaseIcon className="h-3 w-3 mr-1" />
+                          Position
+                        </dt>
+                        <dd className="text-sm text-gray-900 capitalize">{staff.position}</dd>
+                      </div>
+                    )}
                     <div>
                       <dt className="text-xs font-medium text-gray-500">Status</dt>
                       <dd className="text-sm">
@@ -135,6 +156,10 @@ export function ViewStaffModal({ isOpen, onClose, onEdit, staff }: ViewStaffModa
                       <dd className="text-sm text-gray-900">School Staff</dd>
                     </div>
                     <div>
+                      <dt className="text-xs font-medium text-gray-500">User ID</dt>
+                      <dd className="text-sm text-gray-900 font-mono text-xs">{staff.user_id}</dd>
+                    </div>
+                    <div>
                       <dt className="text-xs font-medium text-gray-500">Created</dt>
                       <dd className="text-sm text-gray-900">{formatDate(staff.created_at)}</dd>
                     </div>
@@ -145,6 +170,45 @@ export function ViewStaffModal({ isOpen, onClose, onEdit, staff }: ViewStaffModa
                   </dl>
                 </div>
               </div>
+
+              {/* Contact Information */}
+              {(staff.work_email || staff.phone || staff.home_address) && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h5 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                    <EnvelopeIcon className="h-4 w-4 mr-2" />
+                    Contact Information
+                  </h5>
+                  <dl className="space-y-2">
+                    {staff.work_email && (
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 flex items-center">
+                          <EnvelopeIcon className="h-3 w-3 mr-1" />
+                          Work Email
+                        </dt>
+                        <dd className="text-sm text-gray-900">{staff.work_email}</dd>
+                      </div>
+                    )}
+                    {staff.phone && (
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 flex items-center">
+                          <PhoneIcon className="h-3 w-3 mr-1" />
+                          Phone Number
+                        </dt>
+                        <dd className="text-sm text-gray-900">{staff.phone}</dd>
+                      </div>
+                    )}
+                    {staff.home_address && (
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500 flex items-center">
+                          <HomeIcon className="h-3 w-3 mr-1" />
+                          Home Address
+                        </dt>
+                        <dd className="text-sm text-gray-900">{staff.home_address}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
 
               {/* Permissions */}
               <div className="bg-gray-50 rounded-lg p-4">

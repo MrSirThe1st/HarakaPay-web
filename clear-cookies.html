@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Supabase Cookies</title>
+</head>
+<body>
+    <h1>Clearing old cookies...</h1>
+    <script>
+        // Clear all cookies
+        document.cookie.split(";").forEach(function(c) {
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Clear localStorage
+        localStorage.clear();
+        
+        // Clear sessionStorage
+        sessionStorage.clear();
+        
+        alert('All cookies and storage cleared! Close this tab and restart your dev server.');
+    </script>
+</body>
+</html>

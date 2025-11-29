@@ -26,6 +26,7 @@ export function ReceiptTemplatesList() {
 
   useEffect(() => {
     loadTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadTemplates = async () => {
@@ -63,7 +64,7 @@ export function ReceiptTemplatesList() {
       } else {
         setError(response.error || 'Failed to duplicate template');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred while duplicating the template');
     }
   };
@@ -78,7 +79,7 @@ export function ReceiptTemplatesList() {
       } else {
         setError(response.error || 'Failed to delete template');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred while deleting the template');
     }
   };
@@ -118,7 +119,7 @@ export function ReceiptTemplatesList() {
           setError(response.error || 'Failed to set default template');
         }
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred while setting the default template');
     }
   };

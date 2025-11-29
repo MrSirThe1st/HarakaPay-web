@@ -1,44 +1,19 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { generatePassword } from '@/lib/utils';
 
 export async function GET(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     // Only school admins can view staff
     if (profile.role !== 'school_admin') {
@@ -124,43 +99,21 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient, user } = authResult;
 
     // Only school admins can create staff
     if (profile.role !== 'school_admin') {
       return NextResponse.json(
-        { success: false, error: 'Only school admins can create staff' }, 
+        { success: false, error: 'Only school admins can create staff' },
         { status: 403 }
       );
     }
@@ -177,7 +130,13 @@ export async function POST(req: Request) {
       email, 
       first_name, 
       last_name, 
-      permissions = {}
+      permissions = {},
+      gender,
+      work_email,
+      home_address,
+      phone,
+      position,
+      staff_id
     } = body;
 
     // Validate required fields
@@ -186,6 +145,39 @@ export async function POST(req: Request) {
         { success: false, error: 'Email, first name, and last name are required' }, 
         { status: 400 }
       );
+    }
+
+    // Validate gender if provided
+    if (gender && !['M', 'F'].includes(gender)) {
+      return NextResponse.json(
+        { success: false, error: 'Gender must be M or F' }, 
+        { status: 400 }
+      );
+    }
+
+    // Validate position if provided
+    if (position && !['teacher', 'principal', 'nurse', 'security', 'cashier', 'prefect'].includes(position)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid position. Must be one of: teacher, principal, nurse, security, cashier, prefect' }, 
+        { status: 400 }
+      );
+    }
+
+    // Check if staff_id already exists (if provided)
+    if (staff_id) {
+      const { data: existingStaffId } = await adminClient
+        .from('profiles')
+        .select('id')
+        .eq('staff_id', staff_id)
+        .eq('role', 'school_staff')
+        .single();
+      
+      if (existingStaffId) {
+        return NextResponse.json(
+          { success: false, error: 'Staff ID already exists' }, 
+          { status: 409 }
+        );
+      }
     }
 
     // Check if email already exists
@@ -232,7 +224,13 @@ export async function POST(req: Request) {
         role: 'school_staff',
         school_id: profile.school_id,
         is_active: true,
-        permissions: permissions
+        permissions: permissions,
+        gender: gender || null,
+        work_email: work_email?.trim() || null,
+        home_address: home_address?.trim() || null,
+        phone: phone?.trim() || null,
+        position: position || null,
+        staff_id: staff_id?.trim() || null
       })
       .select('*')
       .single();

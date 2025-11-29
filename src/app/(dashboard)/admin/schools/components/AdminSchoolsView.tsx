@@ -6,9 +6,6 @@ import { BuildingOfficeIcon, UsersIcon, PlusIcon, CheckCircleIcon, ClockIcon } f
 import CreateSchoolForm from './CreateSchoolForm';
 import { SchoolsList } from './SchoolsList';
 import { useSchoolStats } from '@/hooks/useSchoolStats';
-import { Database } from '@/types/supabase';
-
-type School = Database['public']['Tables']['schools']['Row'];
 
 export function AdminSchoolsView() {
   const [showCreateForm, setShowCreateForm] = useState(false);

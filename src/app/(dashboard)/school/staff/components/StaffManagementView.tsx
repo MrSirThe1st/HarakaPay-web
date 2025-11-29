@@ -235,7 +235,7 @@ export function StaffManagementView() {
                           {t('Status')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {t('Created')}
+                          {t('Position')}
                         </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {t('Actions')}
@@ -271,7 +271,13 @@ export function StaffManagementView() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(staffMember.created_at).toLocaleDateString()}
+                          {staffMember.position ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800 capitalize">
+                              {staffMember.position}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 italic">{t('Not specified')}</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">

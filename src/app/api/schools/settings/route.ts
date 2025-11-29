@@ -1,30 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
 
 type SchoolUpdate = Database['public']['Tables']['schools']['Update'];
 
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user's profile to check school access
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id, role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
+    const { profile, adminClient } = authResult;
 
     // Check if user has permission to update school settings
     if (!['school_admin', 'school_staff'].includes(profile.role)) {
@@ -67,7 +58,7 @@ export async function PUT(request: NextRequest) {
     };
 
     // Update school
-    const { data: updatedSchool, error: updateError } = await supabase
+    const { data: updatedSchool, error: updateError } = await adminClient
       .from('schools')
       .update(updateData)
       .eq('id', profile.school_id)
@@ -92,36 +83,23 @@ export async function PUT(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user's profile to check school access
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('school_id, role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has permission to view school settings
-    if (!['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-    }
+    const { profile, adminClient } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json({ error: 'No school associated with user' }, { status: 400 });
     }
 
     // Get school data
-    const { data: school, error: schoolError } = await supabase
+    const { data: school, error: schoolError } = await adminClient
       .from('schools')
       .select('*')
       .eq('id', profile.school_id)

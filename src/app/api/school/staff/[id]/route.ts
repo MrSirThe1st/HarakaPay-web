@@ -5,7 +5,7 @@ import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -135,7 +135,13 @@ export async function PUT(
       first_name, 
       last_name, 
       is_active,
-      permissions
+      permissions,
+      gender,
+      work_email,
+      home_address,
+      phone,
+      position,
+      staff_id
     } = body;
 
     // Validate required fields
@@ -146,10 +152,26 @@ export async function PUT(
       );
     }
 
+    // Validate gender if provided
+    if (gender !== undefined && gender !== null && !['M', 'F'].includes(gender)) {
+      return NextResponse.json(
+        { success: false, error: 'Gender must be M or F' }, 
+        { status: 400 }
+      );
+    }
+
+    // Validate position if provided
+    if (position !== undefined && position !== null && !['teacher', 'principal', 'nurse', 'security', 'cashier', 'prefect'].includes(position)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid position. Must be one of: teacher, principal, nurse, security, cashier, prefect' }, 
+        { status: 400 }
+      );
+    }
+
     // First, get the staff member to check permissions
     const { data: existingStaff, error: staffError } = await adminClient
       .from('profiles')
-      .select('id, school_id, user_id, is_active, permissions')
+      .select('id, school_id, user_id, is_active, permissions, staff_id')
       .eq('id', staffId)
       .eq('school_id', profile.school_id)
       .eq('role', 'school_staff')
@@ -162,13 +184,39 @@ export async function PUT(
       );
     }
 
+    // Check if staff_id already exists (if provided and different from current)
+    if (staff_id && staff_id !== existingStaff.staff_id) {
+      const { data: existingStaffId } = await adminClient
+        .from('profiles')
+        .select('id')
+        .eq('staff_id', staff_id)
+        .eq('role', 'school_staff')
+        .neq('id', staffId)
+        .single();
+      
+      if (existingStaffId) {
+        return NextResponse.json(
+          { success: false, error: 'Staff ID already exists' }, 
+          { status: 409 }
+        );
+      }
+    }
+
     // Update the staff member
-    const updateData = {
+    const updateData: Record<string, unknown> = {
       first_name: first_name.trim(),
       last_name: last_name.trim(),
       is_active: is_active !== undefined ? is_active : existingStaff.is_active,
       permissions: permissions || existingStaff.permissions,
     };
+
+    // Add new fields if provided
+    if (gender !== undefined) updateData.gender = gender || null;
+    if (work_email !== undefined) updateData.work_email = work_email?.trim() || null;
+    if (home_address !== undefined) updateData.home_address = home_address?.trim() || null;
+    if (phone !== undefined) updateData.phone = phone?.trim() || null;
+    if (position !== undefined) updateData.position = position || null;
+    if (staff_id !== undefined) updateData.staff_id = staff_id?.trim() || null;
 
     const { data: updatedStaff, error: updateError } = await adminClient
       .from('profiles')

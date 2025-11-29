@@ -1,8 +1,9 @@
 // src/middleware.ts
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import type { Database } from '@/types/supabase';
 
 // In-memory cache for user profiles (middleware runs in edge runtime)
 interface CachedProfile {
@@ -71,13 +72,56 @@ async function getCachedProfile(userId: string) {
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
 
-  // Add security headers
-  res.headers.set('X-Frame-Options', 'DENY');
-  res.headers.set('X-Content-Type-Options', 'nosniff');
-  res.headers.set('Referrer-Policy', 'origin-when-cross-origin');
-  res.headers.set('X-XSS-Protection', '1; mode=block');
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          res.cookies.set({
+            name,
+            value: '',
+            ...options,
+            maxAge: 0,
+          });
+        },
+      },
+    }
+  );
+
+  // SECURITY HEADERS
+  res.headers.set('X-Frame-Options', 'DENY'); // Prevent clickjacking
+  res.headers.set('X-Content-Type-Options', 'nosniff'); // Prevent MIME sniffing
+  res.headers.set('Referrer-Policy', 'origin-when-cross-origin'); // Control referrer info
+  res.headers.set('X-XSS-Protection', '1; mode=block'); // XSS protection for older browsers
+
+  // Strict Transport Security (HSTS) - force HTTPS in production
+  if (process.env.NODE_ENV === 'production') {
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+
+  // Content Security Policy - helps prevent XSS attacks
+  res.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " + // Note: unsafe-inline/eval needed for Next.js dev
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data: https: blob:; " +
+    "font-src 'self' data:; " +
+    "connect-src 'self' https://*.supabase.co; " +
+    "frame-ancestors 'none';"
+  );
 
   const { pathname } = req.nextUrl;
 
@@ -111,29 +155,22 @@ export async function middleware(req: NextRequest) {
       }
     } else {
       // Fall back to cookie-based session
-      let { data: { session: cookieSession }, error } = await supabase.auth.getSession();
+      // SECURITY: Use getUser() to validate session with Supabase server
+      const { data: { user }, error } = await supabase.auth.getUser();
 
-      // If session is expired or invalid, try to refresh it
-      if (error || !cookieSession) {
-        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (!refreshError && refreshedSession) {
-          cookieSession = refreshedSession;
-          error = null;
-        } else {
-          // If refresh fails, check if it's a real error or just no session
-          if (error && error.message !== 'Session not found') {
-            console.error('Auth error in middleware:', error);
-          }
-          // Only redirect non-API routes
-          if (!pathname.startsWith('/api/')) {
-            return NextResponse.redirect(new URL('/login', req.url));
-          }
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (error || !user) {
+        // If auth fails, check if it's a real error or just no session
+        if (error && error.message !== 'Session not found') {
+          console.error('Auth error in middleware:', error);
         }
+        // Only redirect non-API routes
+        if (!pathname.startsWith('/api/')) {
+          return NextResponse.redirect(new URL('/login', req.url));
+        }
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
-      session = cookieSession;
+      session = { user };
     }
 
     // If no session, redirect to login for protected routes

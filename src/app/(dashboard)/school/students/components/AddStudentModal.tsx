@@ -21,6 +21,7 @@ interface StudentFormData {
   student_id: string;
   first_name: string;
   last_name: string;
+  gender: string;
   grade_level: string;
   level: string;
   enrollment_date: string;
@@ -28,19 +29,32 @@ interface StudentFormData {
   parent_name: string;
   parent_phone: string;
   parent_email: string;
+  home_address: string;
+  date_of_birth: string;
+  blood_type: string;
+  allergies: string;
+  guardian_relationship: string;
+  chronic_conditions: string;
 }
 
 const initialFormData: StudentFormData = {
   student_id: '',
   first_name: '',
   last_name: '',
+  gender: '',
   grade_level: '',
   level: '',
   enrollment_date: new Date().toISOString().split('T')[0],
   status: 'active',
   parent_name: '',
   parent_phone: '',
-  parent_email: ''
+  parent_email: '',
+  home_address: '',
+  date_of_birth: '',
+  blood_type: '',
+  allergies: '',
+  guardian_relationship: '',
+  chronic_conditions: ''
 };
 
 export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalProps) {
@@ -66,12 +80,32 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
     setError(null);
 
     try {
+      // Convert comma-separated strings to arrays
+      const allergiesArray = formData.allergies
+        ? formData.allergies.split(',').map(item => item.trim()).filter(item => item.length > 0)
+        : [];
+
+      const chronicConditionsArray = formData.chronic_conditions
+        ? formData.chronic_conditions.split(',').map(item => item.trim()).filter(item => item.length > 0)
+        : [];
+
+      const submissionData = {
+        ...formData,
+        gender: formData.gender || null,
+        allergies: allergiesArray.length > 0 ? allergiesArray : null,
+        chronic_conditions: chronicConditionsArray.length > 0 ? chronicConditionsArray : null,
+        home_address: formData.home_address.trim() || null,
+        date_of_birth: formData.date_of_birth || null,
+        blood_type: formData.blood_type || null,
+        guardian_relationship: formData.guardian_relationship || null
+      };
+
       const response = await fetch('/api/students', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       });
 
       const result = await response.json();
@@ -180,7 +214,7 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                 </div>
 
                 {/* Name Fields */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
                     <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
                       {t('First Name')} *
@@ -210,6 +244,22 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                       placeholder="Enter last name"
                     />
+                  </div>
+                  <div>
+                    <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                      {t('Gender')}
+                    </label>
+                    <select
+                      name="gender"
+                      id="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    >
+                      <option value="">{t('Select gender')}</option>
+                      <option value="M">{t('Male')}</option>
+                      <option value="F">{t('Female')}</option>
+                    </select>
                   </div>
                 </div>
 
@@ -265,23 +315,143 @@ export function AddStudentModal({ isOpen, onClose, onSuccess }: AddStudentModalP
                   />
                 </div>
 
-                {/* Parent Information */}
+                {/* Personal Information */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Parent/Guardian Information')}</h4>
-                  
-                  <div>
-                    <label htmlFor="parent_name" className="block text-sm font-medium text-gray-700">
-                      {t('Parent Name')}
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Personal Information')}</h4>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="date_of_birth" className="block text-sm font-medium text-gray-700">
+                        {t('Date of Birth')}
+                      </label>
+                      <input
+                        type="date"
+                        name="date_of_birth"
+                        id="date_of_birth"
+                        value={formData.date_of_birth}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="blood_type" className="block text-sm font-medium text-gray-700">
+                        {t('Blood Type')}
+                      </label>
+                      <select
+                        name="blood_type"
+                        id="blood_type"
+                        value={formData.blood_type}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                      >
+                        <option value="">{t('Select blood type')}</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label htmlFor="home_address" className="block text-sm font-medium text-gray-700">
+                      {t('Home Address')}
                     </label>
                     <input
                       type="text"
-                      name="parent_name"
-                      id="parent_name"
-                      value={formData.parent_name}
+                      name="home_address"
+                      id="home_address"
+                      value={formData.home_address}
                       onChange={handleInputChange}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                      placeholder="Enter parent/guardian name"
+                      placeholder="Enter home address"
                     />
+                  </div>
+                </div>
+
+                {/* Medical Information */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Medical Information')}</h4>
+
+                  <div>
+                    <label htmlFor="allergies" className="block text-sm font-medium text-gray-700">
+                      {t('Allergies')}
+                    </label>
+                    <input
+                      type="text"
+                      name="allergies"
+                      id="allergies"
+                      value={formData.allergies}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                      placeholder="Enter allergies (comma-separated)"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">{t('Separate multiple allergies with commas (e.g., peanuts, latex, penicillin)')}</p>
+                  </div>
+
+                  <div className="mt-4">
+                    <label htmlFor="chronic_conditions" className="block text-sm font-medium text-gray-700">
+                      {t('Chronic Conditions')}
+                    </label>
+                    <input
+                      type="text"
+                      name="chronic_conditions"
+                      id="chronic_conditions"
+                      value={formData.chronic_conditions}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                      placeholder="Enter chronic conditions (comma-separated)"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">{t('Separate multiple conditions with commas (e.g., asthma, epilepsy, diabetes)')}</p>
+                  </div>
+                </div>
+
+                {/* Parent Information */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Parent/Guardian Information')}</h4>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="parent_name" className="block text-sm font-medium text-gray-700">
+                        {t('Parent Name')}
+                      </label>
+                      <input
+                        type="text"
+                        name="parent_name"
+                        id="parent_name"
+                        value={formData.parent_name}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="Enter parent/guardian name"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="guardian_relationship" className="block text-sm font-medium text-gray-700">
+                        {t('Relationship')}
+                      </label>
+                      <select
+                        name="guardian_relationship"
+                        id="guardian_relationship"
+                        value={formData.guardian_relationship}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                      >
+                        <option value="">{t('Select relationship')}</option>
+                        <option value="mother">{t('Mother')}</option>
+                        <option value="father">{t('Father')}</option>
+                        <option value="guardian">{t('Guardian')}</option>
+                        <option value="uncle">{t('Uncle')}</option>
+                        <option value="aunt">{t('Aunt')}</option>
+                        <option value="grandmother">{t('Grandmother')}</option>
+                        <option value="grandfather">{t('Grandfather')}</option>
+                        <option value="sibling">{t('Sibling')}</option>
+                        <option value="other">{t('Other')}</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">

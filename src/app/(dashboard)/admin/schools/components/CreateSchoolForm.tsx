@@ -84,12 +84,13 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
     setError(null);
 
     try {
-      // Get the current session token
+      // Verify user is authenticated
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        throw new Error('No authentication token available');
+      // SECURITY: Use getUser() to validate with server
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error('Not authenticated');
       }
 
       const schoolData = {
@@ -99,13 +100,15 @@ export default function CreateSchoolForm({ onClose, onSuccess }: CreateSchoolFor
 
       console.log('Submitting school data:', schoolData);
 
+      // SECURITY: Use cookie-based auth (HTTPOnly cookies)
+      // Cookies are automatically sent with credentials: 'include'
+      // DO NOT manually add Authorization header - tokens should be in HTTPOnly cookies
       const response = await fetch('/api/admin/create-school', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`, // Add auth header
         },
-        credentials: 'include',
+        credentials: 'include', // Automatically sends HTTPOnly cookies
         body: JSON.stringify(schoolData),
       });
 

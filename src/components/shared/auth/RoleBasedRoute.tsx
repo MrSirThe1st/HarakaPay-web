@@ -20,21 +20,14 @@ export function RoleBasedRoute({
   fallback,
   minRole 
 }: RoleBasedRouteProps) {
-  const { 
-    isSuperAdmin, 
-    isPlatformAdmin, 
-    isSupportAdmin, 
-    isSchoolAdmin, 
-    isSchoolStaff, 
+  const {
     canAccessAdminPanel,
     canAccessSchoolPanel,
     hasRole,
     hasAnyRole,
     hasHigherRoleThan,
-    loading, 
-    isAuthenticated,
-    profile,
-    user
+    loading,
+    isAuthenticated
   } = useDualAuth();
   
   const router = useRouter();

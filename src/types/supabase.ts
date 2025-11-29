@@ -22,6 +22,11 @@ export interface Database {
           avatar_url: string | null;
           permissions: Json;
           is_active: boolean;
+          gender: string | null;
+          work_email: string | null;
+          home_address: string | null;
+          position: string | null;
+          staff_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -37,6 +42,11 @@ export interface Database {
           avatar_url?: string | null;
           permissions?: Json;
           is_active?: boolean;
+          gender?: string | null;
+          work_email?: string | null;
+          home_address?: string | null;
+          position?: string | null;
+          staff_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -52,6 +62,11 @@ export interface Database {
           avatar_url?: string | null;
           permissions?: Json;
           is_active?: boolean;
+          gender?: string | null;
+          work_email?: string | null;
+          home_address?: string | null;
+          position?: string | null;
+          staff_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

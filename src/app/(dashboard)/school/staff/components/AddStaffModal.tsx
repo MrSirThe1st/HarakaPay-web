@@ -7,7 +7,11 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  PhoneIcon,
+  HomeIcon,
+  IdentificationIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 
 interface AddStaffModalProps {
@@ -19,6 +23,12 @@ interface AddStaffModalProps {
     first_name: string;
     last_name: string;
     permissions?: Record<string, unknown>;
+    gender?: string | null;
+    work_email?: string | null;
+    home_address?: string | null;
+    phone?: string | null;
+    position?: string | null;
+    staff_id?: string | null;
   }) => Promise<{
     success: boolean;
     error?: string;
@@ -35,6 +45,12 @@ interface StaffFormData {
   email: string;
   first_name: string;
   last_name: string;
+  gender: string;
+  work_email: string;
+  home_address: string;
+  phone: string;
+  position: string;
+  staff_id: string;
   permissions: {
     canManageStudents: boolean;
     canViewReports: boolean;
@@ -46,6 +62,12 @@ const initialFormData: StaffFormData = {
   email: '',
   first_name: '',
   last_name: '',
+  gender: '',
+  work_email: '',
+  home_address: '',
+  phone: '',
+  position: '',
+  staff_id: '',
   permissions: {
     canManageStudents: true,
     canViewReports: false,
@@ -61,7 +83,7 @@ export function AddStaffModal({ isOpen, onClose, onSuccess, createStaff }: AddSt
   const [showCredentials, setShowCredentials] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState<{email: string, password: string} | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -91,6 +113,12 @@ export function AddStaffModal({ isOpen, onClose, onSuccess, createStaff }: AddSt
         email: formData.email,
         first_name: formData.first_name,
         last_name: formData.last_name,
+        gender: formData.gender || null,
+        work_email: formData.work_email || null,
+        home_address: formData.home_address || null,
+        phone: formData.phone || null,
+        position: formData.position || null,
+        staff_id: formData.staff_id || null,
         permissions: formData.permissions
       });
 
@@ -136,7 +164,7 @@ export function AddStaffModal({ isOpen, onClose, onSuccess, createStaff }: AddSt
           &#8203;
         </span>
 
-        <div className="relative inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div className="relative inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl sm:align-middle">
           <form onSubmit={handleSubmit}>
             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="sm:flex sm:items-start">
@@ -254,6 +282,130 @@ export function AddStaffModal({ isOpen, onClose, onSuccess, createStaff }: AddSt
                       required
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
                       placeholder="Enter last name"
+                    />
+                  </div>
+                </div>
+
+                {/* Staff ID and Gender */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="staff_id" className="block text-sm font-medium text-gray-700">
+                      Staff ID
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <IdentificationIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        name="staff_id"
+                        id="staff_id"
+                        value={formData.staff_id}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="Enter unique staff ID"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                      Gender
+                    </label>
+                    <select
+                      name="gender"
+                      id="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="M">Male (M)</option>
+                      <option value="F">Female (F)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Position */}
+                <div>
+                  <label htmlFor="position" className="block text-sm font-medium text-gray-700">
+                    Position / Title
+                  </label>
+                  <select
+                    name="position"
+                    id="position"
+                    value={formData.position}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                  >
+                    <option value="">Select position</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="principal">Principal</option>
+                    <option value="nurse">Nurse</option>
+                    <option value="security">Security</option>
+                    <option value="cashier">Cashier</option>
+                    <option value="prefect">Prefect</option>
+                  </select>
+                </div>
+
+                {/* Contact Information */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="work_email" className="block text-sm font-medium text-gray-700">
+                      Work Email
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <EnvelopeIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="email"
+                        name="work_email"
+                        id="work_email"
+                        value={formData.work_email}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="work@example.com"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                      Phone Number
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <PhoneIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="tel"
+                        name="phone"
+                        id="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        placeholder="+243 900 000 000"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Home Address */}
+                <div>
+                  <label htmlFor="home_address" className="block text-sm font-medium text-gray-700">
+                    Home Address
+                  </label>
+                  <div className="mt-1 relative">
+                    <div className="absolute top-3 left-3 flex items-center pointer-events-none">
+                      <HomeIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <textarea
+                      name="home_address"
+                      id="home_address"
+                      rows={3}
+                      value={formData.home_address}
+                      onChange={handleInputChange}
+                      className="block w-full pl-10 border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                      placeholder="Enter home address"
                     />
                   </div>
                 </div>

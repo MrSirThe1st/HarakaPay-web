@@ -43,7 +43,7 @@ interface AmountsStepProps {
   }[]) => void;
 }
 
-export function AmountsStep({ selectedCategories, academicYear, paymentSchedule, onChange }: AmountsStepProps) {
+export function AmountsStep({ selectedCategories, onChange }: AmountsStepProps) {
   const { t } = useTranslation();
   const updateCategoryAmount = (index: number, value: string) => {
     // Remove leading zeros and convert to number
@@ -101,7 +101,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                       {t('Tuition Fees')}
                     </span>
                   </h3>
-                  {tuitionCategories.map((category, index) => {
+                  {tuitionCategories.map((category) => {
                     const originalIndex = selectedCategories.findIndex(cat => cat.categoryId === category.categoryId);
                     return (
                       <div key={category.categoryId} className="bg-white border border-gray-200 rounded-lg p-6">
@@ -164,7 +164,7 @@ export function AmountsStep({ selectedCategories, academicYear, paymentSchedule,
                       {t('Additional Fees')}
                     </span>
                   </h3>
-                  {additionalCategories.map((category, index) => {
+                  {additionalCategories.map((category) => {
                     const originalIndex = selectedCategories.findIndex(cat => cat.categoryId === category.categoryId);
                     return (
                       <div key={category.categoryId} className="bg-white border border-gray-200 rounded-lg p-6">

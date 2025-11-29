@@ -158,17 +158,23 @@ export async function POST(req: Request) {
     const { profile, adminClient } = authResult;
 
     const body = await req.json();
-    const { 
-      student_id, 
-      first_name, 
-      last_name, 
-      grade_level, 
-      enrollment_date, 
+    const {
+      student_id,
+      first_name,
+      last_name,
+      grade_level,
+      enrollment_date,
       status = 'active',
       parent_name,
       parent_phone,
       parent_email,
-      school_id 
+      home_address,
+      date_of_birth,
+      blood_type,
+      allergies,
+      guardian_relationship,
+      chronic_conditions,
+      school_id
     } = body;
 
     // Validate required fields
@@ -238,6 +244,12 @@ export async function POST(req: Request) {
       parent_name: parent_name?.trim() || null,
       parent_phone: parent_phone?.trim() || null,
       parent_email: parent_email?.trim() || null,
+      home_address: home_address?.trim() || null,
+      date_of_birth: date_of_birth || null,
+      blood_type: blood_type || null,
+      allergies: allergies || null,
+      guardian_relationship: guardian_relationship || null,
+      chronic_conditions: chronic_conditions || null
     };
 
     const { data: newStudent, error: insertError } = await adminClient

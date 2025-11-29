@@ -17,13 +17,27 @@ export default function SendNotificationForm() {
 
   // Target audience
   const [sendToAll, setSendToAll] = useState(true);
+  const [sendToSpecificParent, setSendToSpecificParent] = useState(false);
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
+  const [selectedParentId, setSelectedParentId] = useState<string>('');
   const [availableGrades, setAvailableGrades] = useState<Array<{
     value: string;
     label: string;
     level: string;
     order: number;
   }>>([]);
+  const [availableParents, setAvailableParents] = useState<Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string | null;
+    phone: string | null;
+    students: Array<{
+      first_name: string;
+      last_name: string;
+    }>;
+  }>>([]);
+  const [parentSearch, setParentSearch] = useState('');
 
   // Channel
   const [channel, setChannel] = useState<'in_app' | 'push' | 'all'>('in_app');
@@ -46,6 +60,33 @@ export default function SendNotificationForm() {
       });
   }, []);
 
+  // Load parents when searching
+  useEffect(() => {
+    if (parentSearch.length >= 2) {
+      console.log('🔍 Searching for parents:', parentSearch);
+      const timeoutId = setTimeout(() => {
+        fetch(`/api/school/parents?search=${encodeURIComponent(parentSearch)}`)
+          .then(res => res.json())
+          .then(data => {
+            console.log('📥 Parents API response:', data);
+            if (data.success) {
+              setAvailableParents(data.parents || []);
+              console.log(`✅ Loaded ${data.parents?.length || 0} parents`);
+            } else {
+              console.error('❌ API returned error:', data.error);
+            }
+          })
+          .catch(err => {
+            console.error('❌ Error loading parents:', err);
+          });
+      }, 300); // Debounce search
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setAvailableParents([]);
+    }
+  }, [parentSearch]);
+
   const insertVariable = (variable: string) => {
     setMessage(prev => prev + `{${variable}}`);
   };
@@ -67,11 +108,17 @@ export default function SendNotificationForm() {
     setLoading(true);
 
     try {
-      const targetAudience = sendToAll
-        ? {}
-        : {
-            gradeLevels: selectedGrades,
-          };
+      let targetAudience = {};
+      
+      if (sendToSpecificParent && selectedParentId) {
+        targetAudience = {
+          parentIds: [selectedParentId]
+        };
+      } else if (!sendToAll) {
+        targetAudience = {
+          gradeLevels: selectedGrades,
+        };
+      }
 
       const response = await fetch('/api/notifications/send', {
         method: 'POST',
@@ -97,7 +144,10 @@ export default function SendNotificationForm() {
         setTitle('');
         setMessage('');
         setSendToAll(true);
+        setSendToSpecificParent(false);
         setSelectedGrades([]);
+        setSelectedParentId('');
+        setParentSearch('');
         setChannel('in_app');
         setSuccess(null);
       }, 3000);
@@ -165,15 +215,95 @@ export default function SendNotificationForm() {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="all"
-                    checked={sendToAll}
-                    onCheckedChange={(checked) => setSendToAll(checked as boolean)}
+                    checked={sendToAll && !sendToSpecificParent}
+                    onCheckedChange={(checked) => {
+                      setSendToAll(checked as boolean);
+                      if (checked) {
+                        setSendToSpecificParent(false);
+                        setSelectedParentId('');
+                        setParentSearch('');
+                      }
+                    }}
                   />
                   <Label htmlFor="all" className="cursor-pointer">
                     All Students & Parents
                   </Label>
                 </div>
 
-                {!sendToAll && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="specific-parent"
+                    checked={sendToSpecificParent}
+                    onCheckedChange={(checked) => {
+                      setSendToSpecificParent(checked as boolean);
+                      if (checked) {
+                        setSendToAll(false);
+                        setSelectedGrades([]);
+                      } else {
+                        setSendToAll(true);
+                        setSelectedParentId('');
+                        setParentSearch('');
+                      }
+                    }}
+                  />
+                  <Label htmlFor="specific-parent" className="cursor-pointer">
+                    Specific Parent
+                  </Label>
+                </div>
+
+                {sendToSpecificParent && (
+                  <div className="ml-6 space-y-4 border-l-2 pl-4">
+                    <div>
+                      <Label className="text-sm">Search Parent</Label>
+                      <Input
+                        type="text"
+                        placeholder="Search by name, email, or phone..."
+                        value={parentSearch}
+                        onChange={(e) => setParentSearch(e.target.value)}
+                        className="mt-2"
+                      />
+                      {availableParents.length > 0 && (
+                        <div className="mt-2 max-h-60 overflow-y-auto border rounded-md">
+                          {availableParents.map(parent => (
+                            <div
+                              key={parent.id}
+                              onClick={() => {
+                                setSelectedParentId(parent.id);
+                                setParentSearch(`${parent.first_name} ${parent.last_name}`);
+                                setAvailableParents([]);
+                              }}
+                              className={`p-3 cursor-pointer hover:bg-gray-100 border-b last:border-b-0 ${
+                                selectedParentId === parent.id ? 'bg-green-50' : ''
+                              }`}
+                            >
+                              <div className="font-medium">
+                                {parent.first_name} {parent.last_name}
+                              </div>
+                              {parent.email && (
+                                <div className="text-sm text-gray-500">{parent.email}</div>
+                              )}
+                              {parent.phone && (
+                                <div className="text-sm text-gray-500">{parent.phone}</div>
+                              )}
+                              {parent.students && parent.students.length > 0 && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Students: {parent.students.map(s => `${s.first_name} ${s.last_name}`).join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {selectedParentId && (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md text-sm">
+                          ✓ Parent selected
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!sendToAll && !sendToSpecificParent && (
                   <div className="ml-6 space-y-4 border-l-2 pl-4">
                     {availableGrades.length > 0 ? (
                       <div>
@@ -242,7 +372,7 @@ export default function SendNotificationForm() {
             {/* Send Button */}
             <Button
               onClick={handleSend}
-              disabled={loading || !title || !message}
+              disabled={loading || !title || !message || (sendToSpecificParent && !selectedParentId)}
               className="w-full"
               size="lg"
             >
@@ -308,7 +438,11 @@ export default function SendNotificationForm() {
               <div>
                 <div className="text-xs text-gray-500 uppercase mb-1">Audience</div>
                 <div className="text-sm">
-                  {sendToAll ? 'All students' : `${selectedGrades.length} grade(s) selected`}
+                  {sendToAll 
+                    ? 'All students' 
+                    : sendToSpecificParent && selectedParentId
+                    ? '1 specific parent'
+                    : `${selectedGrades.length} grade(s) selected`}
                 </div>
               </div>
             </div>

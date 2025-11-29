@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function DELETE(
   req: Request,
@@ -10,38 +8,17 @@ export async function DELETE(
 ) {
   try {
     const { id: studentId } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     // First, get the student to check permissions
     const { data: student, error: studentError } = await adminClient
@@ -104,38 +81,17 @@ export async function GET(
 ) {
   try {
     const { id: studentId } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
 
     // Get the student
     const { data: student, error: studentError } = await adminClient
@@ -184,49 +140,34 @@ export async function PUT(
 ) {
   try {
     const { id: studentId } = await params;
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
+
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireActive: true
+    });
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
+    const { profile, adminClient } = authResult;
     const body = await req.json();
-    const { 
-      student_id, 
-      first_name, 
-      last_name, 
-      grade_level, 
-      enrollment_date, 
+    const {
+      student_id,
+      first_name,
+      last_name,
+      grade_level,
+      enrollment_date,
       status,
       parent_name,
       parent_phone,
-      parent_email
+      parent_email,
+      home_address,
+      date_of_birth,
+      blood_type,
+      allergies,
+      guardian_relationship,
+      chronic_conditions
     } = body;
 
     // Validate required fields
@@ -288,6 +229,12 @@ export async function PUT(
       parent_name: parent_name?.trim() || null,
       parent_phone: parent_phone?.trim() || null,
       parent_email: parent_email?.trim() || null,
+      home_address: home_address?.trim() || null,
+      date_of_birth: date_of_birth || null,
+      blood_type: blood_type || null,
+      allergies: allergies || null,
+      guardian_relationship: guardian_relationship || null,
+      chronic_conditions: chronic_conditions || null
     };
 
     const { data: updatedStudent, error: updateError } = await adminClient

@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { CheckCircleIcon, CalendarIcon, ClipboardDocumentListIcon, BuildingOfficeIcon, ReceiptPercentIcon, CreditCardIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ClipboardDocumentListIcon, BuildingOfficeIcon, CreditCardIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { WizardData } from '../../types/feeTypes';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -57,64 +57,7 @@ export function PublishStep({ wizardData, onPublish, isSaving = false }: Publish
           <p className="text-lg text-gray-600">{t('Please review all details before finalizing your fee structure')}</p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          {/* Academic Context */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200 shadow-sm">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CalendarIcon className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h4 className="text-sm font-medium text-gray-900">{t('Academic Year')}</h4>
-                <p className="text-lg font-semibold text-gray-900">{wizardData.academicContext.academicYear}</p>
-                <p className="text-xs text-gray-500">{formatGradeLevel()}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Structure Name */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ClipboardDocumentListIcon className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <h4 className="text-sm font-medium text-gray-900">{t('Structure Name')}</h4>
-                <p className="text-lg font-semibold text-gray-900 truncate">{wizardData.academicContext.structureName}</p>
-                <p className="text-xs text-gray-500">{t('Fee Structure')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Fee Items */}
-          <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-6 rounded-xl border border-purple-200 shadow-sm">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ReceiptPercentIcon className="h-8 w-8 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <h4 className="text-sm font-medium text-gray-900">{t('Fee Items')}</h4>
-                <p className="text-lg font-semibold text-gray-900">{wizardData.feeItems.length}</p>
-                <p className="text-xs text-gray-500">{t('Categories configured')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Plans */}
-          <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-xl border border-orange-200 shadow-sm">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CreditCardIcon className="h-8 w-8 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <h4 className="text-sm font-medium text-gray-900">{t('Payment Plans')}</h4>
-                <p className="text-lg font-semibold text-gray-900">{getTotalPaymentPlansCount()}</p>
-                <p className="text-xs text-gray-500">{t('Payment options')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      
 
         {/* Detailed Summary */}
         <div className="space-y-8">

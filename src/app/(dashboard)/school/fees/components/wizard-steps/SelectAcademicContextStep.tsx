@@ -50,7 +50,6 @@ const academicYears = generateAcademicYears();
 export function SelectAcademicContextStep({ data, onChange, schoolGradeLevels = [] }: SelectAcademicContextStepProps) {
   const { t } = useTranslation();
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-  const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false);
   const [selectedGrades, setSelectedGrades] = useState<string[]>([]);
 
   // Use school's grade levels if available, otherwise fallback to all grades
@@ -70,6 +69,7 @@ export function SelectAcademicContextStep({ data, onChange, schoolGradeLevels = 
         setSelectedGrades([data.gradeLevel]);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.appliesTo, data.gradeLevel]);
 
   const handleChange = (newData: {

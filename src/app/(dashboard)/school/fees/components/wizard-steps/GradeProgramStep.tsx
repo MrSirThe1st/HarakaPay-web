@@ -26,7 +26,6 @@ interface GradeProgramStepProps {
 export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
   const { t } = useTranslation();
   const [isProgramDropdownOpen, setIsProgramDropdownOpen] = useState(false);
-  const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false);
   
   const handleChange = (newData: {
     gradeLevel: string;
@@ -52,7 +51,6 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
       gradeLevel: grade,
       appliesTo: data.appliesTo
     });
-    setIsGradeDropdownOpen(false);
   };
 
   const selectedProgram = CONGOLESE_PROGRAM_TYPES.find(program => program.value === data.programType);
@@ -125,7 +123,7 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
             <Label className="text-sm font-semibold text-gray-900">{t('Grade Level')} *</Label>
             <div className="flex space-x-3">
               <div className="flex-1">
-                <DropdownMenu.Root open={isGradeDropdownOpen} onOpenChange={setIsGradeDropdownOpen}>
+                <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
                     <Button
                       variant="outline"
@@ -204,7 +202,7 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
                   name="appliesTo"
                   value="grade"
                   checked={data.appliesTo !== 'school'}
-                  onChange={(e) => handleChange({ ...data, appliesTo: [data.gradeLevel] })}
+                  onChange={(_e) => handleChange({ ...data, appliesTo: [data.gradeLevel] })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                 />
                 <div>

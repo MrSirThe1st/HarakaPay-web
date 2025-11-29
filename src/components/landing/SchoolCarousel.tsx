@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "@/hooks/useTranslation";
+
 const schoolLogos = [
   { name: "Academy School", color: "bg-blue-500" },
   { name: "Bright Future", color: "bg-indigo-500" },
@@ -14,15 +16,17 @@ const schoolLogos = [
 ];
 
 export function SchoolCarousel() {
+  const { t } = useTranslation();
+
   return (
     <section className="py-12 bg-gray-50 overflow-hidden">
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Trusted by Leading Schools
+            {t("Trusted by Leading Schools")}
           </h2>
           <p className="text-gray-600">
-            Join hundreds of institutions managing their fees with HarakaPay
+            {t("Join hundreds of institutions managing their fees with HarakaPay")}
           </p>
         </div>
         

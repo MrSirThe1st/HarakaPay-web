@@ -62,9 +62,10 @@ export default function LoginPage() {
 
       // Fetch user profile to determine redirect
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.user) {
+      // SECURITY: Use getUser() to validate with server
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
         setError(t("Failed to get user session"));
         setIsLoading(false);
         return;
@@ -74,7 +75,7 @@ export default function LoginPage() {
       const response = await fetch('/api/auth/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: session.user.id })
+        body: JSON.stringify({ userId: user.id })
       });
 
       if (!response.ok) {

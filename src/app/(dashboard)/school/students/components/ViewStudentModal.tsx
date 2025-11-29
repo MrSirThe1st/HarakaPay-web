@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  XMarkIcon, 
+import {
   EyeIcon,
   ExclamationTriangleIcon,
   UserIcon,
@@ -11,7 +10,9 @@ import {
   CalendarIcon,
   PhoneIcon,
   EnvelopeIcon,
-  PencilIcon
+  PencilIcon,
+  HomeIcon,
+  HeartIcon
 } from '@heroicons/react/24/outline';
 import { Student } from '@/hooks/useStudents';
 
@@ -32,6 +33,7 @@ export function ViewStudentModal({ isOpen, onClose, onEdit, student }: ViewStude
     if (isOpen && student) {
       fetchStudentDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, student]);
 
   const fetchStudentDetails = async () => {
@@ -181,6 +183,14 @@ export function ViewStudentModal({ isOpen, onClose, onEdit, student }: ViewStude
                           {formatDate(studentData.enrollment_date)}
                         </dd>
                       </div>
+                      <div>
+                        <dt className="text-xs font-medium text-gray-500">Status</dt>
+                        <dd className="text-sm">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(studentData.status)}`}>
+                            {studentData.status.charAt(0).toUpperCase() + studentData.status.slice(1)}
+                          </span>
+                        </dd>
+                      </div>
                     </dl>
                   </div>
 
@@ -194,20 +204,82 @@ export function ViewStudentModal({ isOpen, onClose, onEdit, student }: ViewStude
                         <dt className="text-xs font-medium text-gray-500">Student ID</dt>
                         <dd className="text-sm text-gray-900 font-mono">{studentData.student_id}</dd>
                       </div>
-                      <div>
-                        <dt className="text-xs font-medium text-gray-500">Status</dt>
-                        <dd className="text-sm">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(studentData.status)}`}>
-                            {studentData.status.charAt(0).toUpperCase() + studentData.status.slice(1)}
-                          </span>
-                        </dd>
-                      </div>
+                      {studentData.gender && (
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">Gender</dt>
+                          <dd className="text-sm text-gray-900">{studentData.gender === 'M' ? 'Male' : 'Female'}</dd>
+                        </div>
+                      )}
+                      {studentData.date_of_birth && (
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">Date of Birth</dt>
+                          <dd className="text-sm text-gray-900 flex items-center">
+                            <CalendarIcon className="h-3 w-3 mr-1" />
+                            {formatDate(studentData.date_of_birth)}
+                          </dd>
+                        </div>
+                      )}
+                      {studentData.blood_type && (
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">Blood Type</dt>
+                          <dd className="text-sm text-gray-900">{studentData.blood_type}</dd>
+                        </div>
+                      )}
+                      {studentData.home_address && (
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">Home Address</dt>
+                          <dd className="text-sm text-gray-900 flex items-start">
+                            <HomeIcon className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                            <span>{studentData.home_address}</span>
+                          </dd>
+                        </div>
+                      )}
                     </dl>
                   </div>
                 </div>
 
+                {/* Medical Information */}
+                {(studentData.allergies || studentData.chronic_conditions) && (
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <h5 className="text-sm font-medium text-red-900 mb-3 flex items-center">
+                      <HeartIcon className="h-4 w-4 mr-2" />
+                      Medical Information
+                    </h5>
+                    <dl className="space-y-3">
+                      {studentData.allergies && studentData.allergies.length > 0 && (
+                        <div>
+                          <dt className="text-xs font-medium text-red-700">Allergies</dt>
+                          <dd className="text-sm text-red-900 mt-1">
+                            <div className="flex flex-wrap gap-2">
+                              {studentData.allergies.map((allergy, index) => (
+                                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  {allergy}
+                                </span>
+                              ))}
+                            </div>
+                          </dd>
+                        </div>
+                      )}
+                      {studentData.chronic_conditions && studentData.chronic_conditions.length > 0 && (
+                        <div>
+                          <dt className="text-xs font-medium text-red-700">Chronic Conditions</dt>
+                          <dd className="text-sm text-red-900 mt-1">
+                            <div className="flex flex-wrap gap-2">
+                              {studentData.chronic_conditions.map((condition, index) => (
+                                <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  {condition}
+                                </span>
+                              ))}
+                            </div>
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
+
                 {/* Parent/Guardian Information */}
-                {(studentData.parent_name || studentData.parent_phone || studentData.parent_email) && (
+                {(studentData.parent_name || studentData.parent_phone || studentData.parent_email || studentData.guardian_relationship) && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h5 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                       <UserIcon className="h-4 w-4 mr-2" />
@@ -218,6 +290,16 @@ export function ViewStudentModal({ isOpen, onClose, onEdit, student }: ViewStude
                         <div>
                           <dt className="text-xs font-medium text-gray-500">Name</dt>
                           <dd className="text-sm text-gray-900">{studentData.parent_name}</dd>
+                        </div>
+                      )}
+                      {studentData.guardian_relationship && (
+                        <div>
+                          <dt className="text-xs font-medium text-gray-500">Relationship</dt>
+                          <dd className="text-sm text-gray-900">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                              {studentData.guardian_relationship}
+                            </span>
+                          </dd>
                         </div>
                       )}
                       {studentData.parent_phone && (

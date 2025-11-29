@@ -12,7 +12,6 @@ import {
   PencilIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
-import { createClient } from '@/lib/supabaseClient';
 import { Database } from '@/types/supabase';
 import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 
@@ -83,10 +82,9 @@ export function SchoolStaffSettingsView() {
     end_date: '',
   });
 
-  const supabase = createClient();
-
   useEffect(() => {
     loadSchoolData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadSchoolData = async () => {

@@ -38,6 +38,7 @@ export function ReceiptDesigner() {
     if (templateId) {
       loadTemplate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId]);
 
   const loadTemplate = async () => {
@@ -61,7 +62,7 @@ export function ReceiptDesigner() {
       } else {
         setError(response.error || 'Failed to load template');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred while loading the template');
     } finally {
       setIsLoading(false);
@@ -94,7 +95,7 @@ export function ReceiptDesigner() {
       } else {
         setError(response.error || 'Failed to save template');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred while saving the template');
     } finally {
       setIsSaving(false);

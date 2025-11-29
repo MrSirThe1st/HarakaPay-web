@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useFeesAPI } from '@/hooks/useFeesAPI';
 import { 
-  CheckCircleIcon, 
+  CheckCircleIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
   UserGroupIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { useTranslation } from '@/hooks/useTranslation';
 import { FeeStructure } from '@/hooks/useFeesAPI';
 
 interface TemplateAutoAssignProps {
@@ -26,11 +24,7 @@ interface PreviewData {
 }
 
 export function TemplateAutoAssign({ structure, onClose, onActivationComplete }: TemplateAutoAssignProps) {
-  const { t } = useTranslation();
-  const feesAPI = useFeesAPI();
-  
   // All hooks must be called before any early returns
-  const [loading, setLoading] = useState(false);
   const [activating, setActivating] = useState(false);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -225,7 +219,7 @@ export function TemplateAutoAssign({ structure, onClose, onActivationComplete }:
           <div className="mt-6 flex flex-col sm:flex-row gap-4">
             <button
               onClick={handlePreview}
-              disabled={activating || loading}
+              disabled={activating}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <InformationCircleIcon className="h-4 w-4 mr-2" />
@@ -234,7 +228,7 @@ export function TemplateAutoAssign({ structure, onClose, onActivationComplete }:
             
             <button
               onClick={handleActivate}
-              disabled={activating || loading || !previewData || previewData.activated_students === 0}
+              disabled={activating || !previewData || previewData.activated_students === 0}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {activating ? (

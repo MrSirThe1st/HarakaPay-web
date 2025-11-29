@@ -1,6 +1,9 @@
 import { ArrowTrendingUpIcon, UsersIcon, BuildingOfficeIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function StatsSection() {
+  const { t } = useTranslation();
+
   const stats = [
     {
       icon: BuildingOfficeIcon,
@@ -46,10 +49,10 @@ export function StatsSection() {
                   {stat.value}
                 </div>
                 <div className="text-sm md:text-base font-medium text-gray-700 mb-1">
-                  {stat.label}
+                  {t(stat.label)}
                 </div>
                 <div className="text-xs md:text-sm text-gray-500">
-                  {stat.description}
+                  {t(stat.description)}
                 </div>
               </div>
             );

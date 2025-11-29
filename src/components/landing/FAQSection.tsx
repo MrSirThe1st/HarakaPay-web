@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const faqs = [
   {
@@ -51,16 +52,18 @@ const faqs = [
 ];
 
 export function FAQSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Frequently Asked Questions
+              {t("Frequently Asked Questions")}
             </h2>
             <p className="text-lg text-gray-600">
-              Everything you need to know about HarakaPay
+              {t("Everything you need to know about HarakaPay")}
             </p>
           </div>
 
@@ -72,10 +75,10 @@ export function FAQSection() {
                 className="border-gray-200 px-4"
               >
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:text-blue-600">
-                  {faq.question}
+                  {t(faq.question)}
                 </AccordionTrigger>
                 <AccordionContent className="text-gray-600 leading-relaxed pt-2">
-                  {faq.answer}
+                  {t(faq.answer)}
                 </AccordionContent>
               </AccordionItem>
             ))}

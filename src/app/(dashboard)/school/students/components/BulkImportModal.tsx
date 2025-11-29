@@ -2,13 +2,12 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { 
-  XMarkIcon, 
-  DocumentArrowUpIcon, 
+import {
+  XMarkIcon,
+  DocumentArrowUpIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  InformationCircleIcon,
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';

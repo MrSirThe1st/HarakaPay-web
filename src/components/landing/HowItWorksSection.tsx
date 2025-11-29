@@ -1,4 +1,5 @@
 import { ArrowRightIcon, UserPlusIcon, CreditCardIcon, DocumentTextIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const steps = [
   {
@@ -32,15 +33,17 @@ const steps = [
 ];
 
 export function HowItWorksSection() {
+  const { t } = useTranslation();
+
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            How It Works
+            {t("How It Works")}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Get started in minutes with our streamlined setup process
+            {t("Get started in minutes with our streamlined setup process")}
           </p>
         </div>
 
@@ -71,10 +74,10 @@ export function HowItWorksSection() {
                     </div>
                     
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                      {step.title}
+                      {t(step.title)}
                     </h3>
                     <p className="text-gray-600 leading-relaxed">
-                      {step.description}
+                      {t(step.description)}
                     </p>
                   </div>
                 </div>

@@ -67,7 +67,7 @@ const PLAN_TYPES = [
   }
 ];
 
-export function DefinePaymentPlansStep({ paymentPlans, feeItems, academicYear, onChange, onFeeItemsChange }: DefinePaymentPlansStepProps) {
+export function DefinePaymentPlansStep({ feeItems, academicYear, onFeeItemsChange }: Omit<DefinePaymentPlansStepProps, 'paymentPlans' | 'onChange'> & Partial<Pick<DefinePaymentPlansStepProps, 'paymentPlans' | 'onChange'>>) {
   const { t } = useTranslation();
   const [selectedFeeItemIndex, setSelectedFeeItemIndex] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -100,42 +100,55 @@ export function DefinePaymentPlansStep({ paymentPlans, feeItems, academicYear, o
 
     console.log('💰 Generating installments:', { type, baseAmount, discountPercentage, discountedAmount });
 
+    // Helper function to distribute amount evenly with smart rounding
+    // The last installment absorbs any rounding differences
+    const distributeAmount = (total: number, count: number, labels: string[], dueDates: string[]) => {
+      const baseInstallment = Math.round((total / count) * 100) / 100;
+      const result: PaymentPlan['installments'] = [];
+      let sumSoFar = 0;
+
+      for (let i = 0; i < count; i++) {
+        if (i === count - 1) {
+          // Last installment: calculate as remainder to ensure exact total
+          const lastAmount = Math.round((total - sumSoFar) * 100) / 100;
+          result.push({
+            label: labels[i],
+            amount: lastAmount,
+            dueDate: dueDates[i]
+          });
+        } else {
+          result.push({
+            label: labels[i],
+            amount: baseInstallment,
+            dueDate: dueDates[i]
+          });
+          sumSoFar += baseInstallment;
+        }
+      }
+
+      return result;
+    };
+
     switch (type) {
       case 'monthly':
-        const monthlyAmount = discountedAmount / 12;
-        installments = Array.from({ length: 12 }, (_, i) => {
-          const monthNames = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
-          ];
-          return {
-            label: monthNames[i],
-            amount: Math.round(monthlyAmount * 100) / 100,
-            dueDate: `${academicYear.split('-')[0]}-${String(i + 1).padStart(2, '0')}-15`
-          };
-        });
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthlyDueDates = Array.from({ length: 12 }, (_, i) =>
+          `${academicYear.split('-')[0]}-${String(i + 1).padStart(2, '0')}-15`
+        );
+        installments = distributeAmount(discountedAmount, 12, monthNames, monthlyDueDates);
         break;
 
       case 'termly':
-        // Default to 3 trimesters for Congo
-        const termAmount = discountedAmount / 3;
-        installments = [
-          {
-            label: 'Term 1',
-            amount: Math.round(termAmount * 100) / 100,
-            dueDate: `${academicYear.split('-')[0]}-09-15`
-          },
-          {
-            label: 'Term 2',
-            amount: Math.round(termAmount * 100) / 100,
-            dueDate: `${academicYear.split('-')[0]}-01-15`
-          },
-          {
-            label: 'Term 3',
-            amount: Math.round(termAmount * 100) / 100,
-            dueDate: `${academicYear.split('-')[0]}-05-15`
-          }
+        const termLabels = ['Term 1', 'Term 2', 'Term 3'];
+        const termDueDates = [
+          `${academicYear.split('-')[0]}-09-15`,
+          `${academicYear.split('-')[0]}-01-15`,
+          `${academicYear.split('-')[0]}-05-15`
         ];
+        installments = distributeAmount(discountedAmount, 3, termLabels, termDueDates);
         break;
 
       case 'one_time':
@@ -148,18 +161,12 @@ export function DefinePaymentPlansStep({ paymentPlans, feeItems, academicYear, o
 
       case 'installment':
         // Start with 2 installments for custom
-        installments = [
-          {
-            label: 'Installment 1',
-            amount: Math.round(discountedAmount / 2 * 100) / 100,
-            dueDate: `${academicYear.split('-')[0]}-09-01`
-          },
-          {
-            label: 'Installment 2',
-            amount: Math.round(discountedAmount / 2 * 100) / 100,
-            dueDate: `${academicYear.split('-')[0]}-01-01`
-          }
+        const customLabels = ['Installment 1', 'Installment 2'];
+        const customDueDates = [
+          `${academicYear.split('-')[0]}-09-01`,
+          `${academicYear.split('-')[0]}-01-01`
         ];
+        installments = distributeAmount(discountedAmount, 2, customLabels, customDueDates);
         break;
     }
 
@@ -485,15 +492,72 @@ export function DefinePaymentPlansStep({ paymentPlans, feeItems, academicYear, o
                   handleInstallmentsChange(newInstallments);
                 }}
                 onAddInstallment={() => {
+                  // Calculate the current total amount from existing installments
+                  const currentTotal = formData.installments.reduce((sum, inst) => sum + inst.amount, 0);
+                  const newInstallmentCount = formData.installments.length + 1;
+                  const baseAmount = Math.round((currentTotal / newInstallmentCount) * 100) / 100;
+
+                  // Recalculate all installments with smart rounding
+                  // Last installment absorbs any rounding differences
+                  let sumSoFar = 0;
+                  const updatedInstallments = formData.installments.map((inst, idx) => {
+                    if (idx === formData.installments.length - 1) {
+                      // This will become the second-to-last, so give it base amount
+                      sumSoFar += baseAmount;
+                      return { ...inst, amount: baseAmount };
+                    }
+                    sumSoFar += baseAmount;
+                    return { ...inst, amount: baseAmount };
+                  });
+
+                  // Add the new installment as the last one - it absorbs rounding differences
+                  const lastAmount = Math.round((currentTotal - sumSoFar) * 100) / 100;
                   const newInstallment = {
-                    label: `Installment ${formData.installments.length + 1}`,
-                    amount: 0,
+                    label: `Installment ${newInstallmentCount}`,
+                    amount: lastAmount,
                     dueDate: `${academicYear.split('-')[0]}-12-31`
                   };
-                  handleInstallmentsChange([...formData.installments, newInstallment]);
+
+                  handleInstallmentsChange([...updatedInstallments, newInstallment]);
                 }}
                 onRemoveInstallment={(index) => {
-                  const updatedInstallments = formData.installments.filter((_, i) => i !== index);
+                  // Calculate the current total amount from existing installments
+                  const currentTotal = formData.installments.reduce((sum, inst) => sum + inst.amount, 0);
+
+                  // Remove the installment
+                  const filteredInstallments = formData.installments.filter((_, i) => i !== index);
+
+                  if (filteredInstallments.length === 0) {
+                    handleInstallmentsChange([]);
+                    return;
+                  }
+
+                  // Recalculate amounts with smart rounding
+                  // Last installment absorbs any rounding differences
+                  const baseAmount = Math.round((currentTotal / filteredInstallments.length) * 100) / 100;
+                  let sumSoFar = 0;
+
+                  const updatedInstallments = filteredInstallments.map((inst, idx) => {
+                    const newLabel = inst.label.includes('Installment') ? `Installment ${idx + 1}` : inst.label;
+
+                    if (idx === filteredInstallments.length - 1) {
+                      // Last installment: absorb rounding differences
+                      const lastAmount = Math.round((currentTotal - sumSoFar) * 100) / 100;
+                      return {
+                        ...inst,
+                        amount: lastAmount,
+                        label: newLabel
+                      };
+                    }
+
+                    sumSoFar += baseAmount;
+                    return {
+                      ...inst,
+                      amount: baseAmount,
+                      label: newLabel
+                    };
+                  });
+
                   handleInstallmentsChange(updatedInstallments);
                 }}
                 onUpdateInstallment={(index, field, value) => {
