@@ -6,6 +6,7 @@ import { BuildingOfficeIcon, UsersIcon, PlusIcon, CheckCircleIcon, ClockIcon } f
 import CreateSchoolForm from './CreateSchoolForm';
 import { SchoolsList } from './SchoolsList';
 import { useSchoolStats } from '@/hooks/useSchoolStats';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function AdminSchoolsView() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -66,7 +67,7 @@ export function AdminSchoolsView() {
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                      <Skeleton className="h-6 w-12" />
                     ) : (
                       stats.totalSchools
                     )}
@@ -90,7 +91,7 @@ export function AdminSchoolsView() {
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                      <Skeleton className="h-6 w-12" />
                     ) : (
                       stats.activeSchools
                     )}
@@ -114,7 +115,7 @@ export function AdminSchoolsView() {
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                      <Skeleton className="h-6 w-12" />
                     ) : (
                       stats.pendingSchools
                     )}
@@ -138,7 +139,7 @@ export function AdminSchoolsView() {
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
+                      <Skeleton className="h-6 w-12" />
                     ) : (
                       stats.newThisMonth
                     )}

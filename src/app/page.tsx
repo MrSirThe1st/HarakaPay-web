@@ -1,6 +1,12 @@
 import dynamic from 'next/dynamic';
 import { LandingNav } from '@/components/landing/LandingNav';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { HomePageStructuredData } from '@/components/seo/StructuredDataScripts';
+import type { Metadata } from 'next';
+import { HOME_METADATA } from '@/lib/seo/metadata';
+
+// Override metadata for homepage specifically
+export const metadata: Metadata = HOME_METADATA;
 
 // Code splitting: Lazy load below-the-fold components for better performance
 const FeaturesSection = dynamic(() => import('@/components/landing/FeaturesSection').then(mod => ({ default: mod.FeaturesSection })), {
@@ -26,6 +32,7 @@ const LandingFooter = dynamic(() => import('@/components/landing/LandingFooter')
 export default function RootPage() {
   return (
     <div className="min-h-screen">
+      <HomePageStructuredData />
       <LandingNav />
       <main>
         <HeroSection />

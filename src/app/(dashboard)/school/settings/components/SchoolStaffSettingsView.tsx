@@ -14,6 +14,7 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { Database } from '@/types/supabase';
 import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
+import { SettingsPageSkeleton } from '@/components/skeletons/SettingsPageSkeleton';
 
 type School = Database['public']['Tables']['schools']['Row'];
 type AcademicYear = Database['public']['Tables']['academic_years']['Row'];
@@ -275,11 +276,7 @@ export function SchoolStaffSettingsView() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <SettingsPageSkeleton />;
   }
 
   return (

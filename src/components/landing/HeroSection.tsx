@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -10,20 +9,7 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-20 md:py-32">
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      
-      {/* Left Illustration - Centered vertically */}
-      <div className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 w-[22rem] xl:w-[32rem] 2xl:w-[40rem] h-[650px] xl:h-[850px] 2xl:h-[1000px] z-0">
-        <div className="relative w-full h-full">
-          <Image
-            src="/girl_nb.png"
-            alt="Student illustration"
-            fill
-            className="object-contain object-center"
-            priority
-          />
-        </div>
-      </div>
-      
+
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex items-center justify-center min-h-[500px] md:min-h-[600px]">
           {/* Center Content */}

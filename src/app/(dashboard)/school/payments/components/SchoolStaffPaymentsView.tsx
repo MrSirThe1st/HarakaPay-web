@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PaymentsByGradeView } from './PaymentsByGradeView';
+import { Skeleton, StatCardSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 
 interface Payment {
   id: string;
@@ -277,86 +278,97 @@ const SchoolStaffPaymentsViewComponent = () => {
       {viewMode === 'list' && (
         <>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CreditCardIcon className="h-6 w-6 text-blue-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    {t('Total Revenue')}
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    ${stats.totalRevenue.toFixed(2)}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+            {isLoading ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : (
+              <>
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <CreditCardIcon className="h-6 w-6 text-blue-400" />
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">
+                            {t('Total Revenue')}
+                          </dt>
+                          <dd className="text-lg font-medium text-gray-900">
+                            ${stats.totalRevenue.toFixed(2)}
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CheckCircleIcon className="h-6 w-6 text-green-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    {t('Successful')}
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {stats.successfulCount}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">
+                            {t('Successful')}
+                          </dt>
+                          <dd className="text-lg font-medium text-gray-900">
+                            {stats.successfulCount}
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ClockIcon className="h-6 w-6 text-yellow-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    {t('Pending')}
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {stats.pendingCount}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <ClockIcon className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">
+                            {t('Pending')}
+                          </dt>
+                          <dd className="text-lg font-medium text-gray-900">
+                            {stats.pendingCount}
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <XCircleIcon className="h-6 w-6 text-red-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    {t('Failed')}
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {stats.failedCount}
-                  </dd>
-                </dl>
-              </div>
-            </div>
+                <div className="bg-white overflow-hidden shadow rounded-lg">
+                  <div className="p-5">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <XCircleIcon className="h-6 w-6 text-red-400" />
+                      </div>
+                      <div className="ml-5 w-0 flex-1">
+                        <dl>
+                          <dt className="text-sm font-medium text-gray-500 truncate">
+                            {t('Failed')}
+                          </dt>
+                          <dd className="text-lg font-medium text-gray-900">
+                            {stats.failedCount}
+                          </dd>
+                        </dl>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-        </div>
-      </div>
 
       {/* Search and Filters */}
       <div className="bg-white shadow rounded-lg">
@@ -401,12 +413,9 @@ const SchoolStaffPaymentsViewComponent = () => {
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
             {t('Recent Payments')}
           </h3>
-          
+
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="mt-2 text-sm text-gray-500">{t('Loading payments...')}</p>
-            </div>
+            <TableSkeleton rows={8} columns={7} showHeader={true} />
           ) : filteredPayments.length === 0 ? (
             <div className="text-center py-12">
               <CreditCardIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -532,7 +541,7 @@ const SchoolStaffPaymentsViewComponent = () => {
 
       {/* Grade-Level View */}
       {viewMode === 'byGrade' && (
-        <PaymentsByGradeView />
+        <PaymentsByGradeView isParentLoading={isLoading} />
       )}
     </div>
   );

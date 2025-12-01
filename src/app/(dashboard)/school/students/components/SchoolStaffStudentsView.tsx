@@ -20,6 +20,7 @@ import { StudentImportData } from '@/lib/csvParser';
 import { useStudents, Student } from '@/hooks/useStudents';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGradeByValue, CONGOLESE_GRADES } from '@/lib/congoleseGrades';
+import { Skeleton, TableSkeleton } from '@/components/ui/skeleton';
 
 // Lazy load modals - they're only rendered when needed
 const BulkImportModal = dynamic(() => import('./BulkImportModal').then(mod => ({ default: mod.BulkImportModal })), {
@@ -261,7 +262,11 @@ const SchoolStaffStudentsViewComponent = () => {
                     {t('Total Students')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {loading ? '...' : stats.total}
+                    {loading ? (
+                      <Skeleton className="h-7 w-16" />
+                    ) : (
+                      stats.total
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -281,7 +286,11 @@ const SchoolStaffStudentsViewComponent = () => {
                     {t('Active Students')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {loading ? '...' : stats.active}
+                    {loading ? (
+                      <Skeleton className="h-7 w-16" />
+                    ) : (
+                      stats.active
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -301,7 +310,11 @@ const SchoolStaffStudentsViewComponent = () => {
                     {t('New This Month')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {loading ? '...' : stats.newThisMonth}
+                    {loading ? (
+                      <Skeleton className="h-7 w-16" />
+                    ) : (
+                      stats.newThisMonth
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -321,7 +334,11 @@ const SchoolStaffStudentsViewComponent = () => {
                     {t('Graduating')}
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {loading ? '...' : stats.graduating}
+                    {loading ? (
+                      <Skeleton className="h-7 w-16" />
+                    ) : (
+                      stats.graduating
+                    )}
                   </dd>
                 </dl>
               </div>
@@ -400,10 +417,7 @@ const SchoolStaffStudentsViewComponent = () => {
           )}
 
           {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-500">{t('Loading students...')}</p>
-            </div>
+            <TableSkeleton rows={10} columns={6} showHeader={true} />
           ) : students.length === 0 ? (
             <div className="text-center py-12">
               <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />

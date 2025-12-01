@@ -6,6 +6,7 @@ import { useDualAuth } from "@/hooks/shared/hooks/useDualAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import type { UserRole } from "@/types/user";
+import { DashboardGridSkeleton } from "@/components/ui/skeleton";
 
 interface RoleBasedRouteProps {
   requiredRole: UserRole | UserRole[] | 'admin_type' | 'school_level' | 'any';
@@ -38,16 +39,11 @@ export function RoleBasedRoute({
     }
   }, [loading, isAuthenticated, router]);
 
-  // Show loading state
+  // Show skeleton loading state instead of "Loading..."
   if (loading) {
     return (
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "center", 
-        alignItems: "center", 
-        height: "100vh" 
-      }}>
-        <div>Loading...</div>
+      <div className="p-6">
+        <DashboardGridSkeleton />
       </div>
     );
   }

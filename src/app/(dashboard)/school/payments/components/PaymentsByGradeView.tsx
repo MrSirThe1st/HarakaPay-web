@@ -11,6 +11,7 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Skeleton, CardSkeleton } from "@/components/ui/skeleton";
 
 interface PaidInstallment {
   installmentNumber: number | null;
@@ -42,7 +43,11 @@ interface StudentPaymentData {
   }>;
 }
 
-export function PaymentsByGradeView() {
+interface PaymentsByGradeViewProps {
+  isParentLoading?: boolean;
+}
+
+export function PaymentsByGradeView({ isParentLoading = false }: PaymentsByGradeViewProps) {
   const { t } = useTranslation();
   const [byGrade, setByGrade] = useState<Record<string, StudentPaymentData[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -182,11 +187,19 @@ export function PaymentsByGradeView() {
   // Get unique grade levels for filter
   const gradeLevels = Array.from(new Set(Object.keys(byGrade))).sort();
 
-  if (isLoading) {
+  if (isLoading || isParentLoading) {
     return (
-      <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <p className="mt-2 text-sm text-gray-500">{t('Loading payment data...')}</p>
+      <div className="space-y-4">
+        {/* Filter Skeleton */}
+        <div className="bg-white shadow rounded-lg p-4">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <Skeleton className="h-10 w-64" />
+        </div>
+
+        {/* Grade Cards Skeleton */}
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
       </div>
     );
   }
