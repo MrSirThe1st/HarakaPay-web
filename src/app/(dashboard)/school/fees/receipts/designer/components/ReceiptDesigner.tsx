@@ -62,7 +62,7 @@ export function ReceiptDesigner() {
       } else {
         setError(response.error || 'Failed to load template');
       }
-    } catch (_err) {
+    } catch {
       setError('An error occurred while loading the template');
     } finally {
       setIsLoading(false);
@@ -95,7 +95,7 @@ export function ReceiptDesigner() {
       } else {
         setError(response.error || 'Failed to save template');
       }
-    } catch (_err) {
+    } catch {
       setError('An error occurred while saving the template');
     } finally {
       setIsSaving(false);

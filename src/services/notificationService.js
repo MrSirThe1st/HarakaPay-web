@@ -291,6 +291,8 @@ async function sendNotification({
   }
 }
 
-export default {
+const notificationService = {
   sendNotification
 };
+
+export default notificationService;

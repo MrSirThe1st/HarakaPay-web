@@ -10,7 +10,7 @@ interface TabsProps {
   children: React.ReactNode;
 }
 
-export function Tabs({ value, onValueChange, defaultValue, className, children }: TabsProps) {
+export function Tabs({ value, onValueChange, className, children }: TabsProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
   // Find tab names from children
@@ -59,7 +59,6 @@ export function TabsList({ className, children }: { className?: string; children
 }
 
 export function TabsTrigger({
-  value,
   className,
   children
 }: {
@@ -82,7 +81,6 @@ export function TabsTrigger({
 }
 
 export function TabsContent({
-  value,
   className,
   children
 }: {

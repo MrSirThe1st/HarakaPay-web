@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 import { PaymentsByGradeView } from './PaymentsByGradeView';
-import { Skeleton, StatCardSkeleton, TableSkeleton } from "@/components/ui/skeleton";
+import { StatCardSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 
 interface Payment {
   id: string;

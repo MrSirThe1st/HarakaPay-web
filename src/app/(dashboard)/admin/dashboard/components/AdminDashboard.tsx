@@ -53,7 +53,6 @@ export function AdminDashboard() {
     };
 
     fetchStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const formatCurrency = (amount: number) => {

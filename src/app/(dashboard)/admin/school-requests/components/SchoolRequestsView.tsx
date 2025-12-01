@@ -41,6 +41,7 @@ export function SchoolRequestsView() {
 
   useEffect(() => {
     filterRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requests, searchQuery, statusFilter]);
 
   const fetchRequests = async () => {

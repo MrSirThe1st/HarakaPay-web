@@ -4,7 +4,7 @@ import { Database } from '@/types/supabase';
 
 type AcademicYearInsert = Database['public']['Tables']['academic_years']['Insert'];
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],

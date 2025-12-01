@@ -57,6 +57,7 @@ export function PaymentsByGradeView({ isParentLoading = false }: PaymentsByGrade
 
   useEffect(() => {
     fetchPaymentsByGrade();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGrade]);
 
   const fetchPaymentsByGrade = async () => {

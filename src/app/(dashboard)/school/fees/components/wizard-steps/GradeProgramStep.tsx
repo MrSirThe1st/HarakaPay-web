@@ -202,7 +202,7 @@ export function GradeProgramStep({ data, onChange }: GradeProgramStepProps) {
                   name="appliesTo"
                   value="grade"
                   checked={data.appliesTo !== 'school'}
-                  onChange={(_e) => handleChange({ ...data, appliesTo: [data.gradeLevel] })}
+                  onChange={() => handleChange({ ...data, appliesTo: [data.gradeLevel] })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                 />
                 <div>

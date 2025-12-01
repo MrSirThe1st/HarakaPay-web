@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 import { hasRoleLevel, type UserRole } from "@/lib/roleUtils";
-import { apiCache, createCacheKey, cachedApiCall } from "@/lib/apiCache";
+import { createCacheKey, cachedApiCall } from "@/lib/apiCache";
 
 interface UserProfile {
   id: string;

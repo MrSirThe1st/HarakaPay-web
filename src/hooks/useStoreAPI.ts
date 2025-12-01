@@ -1,5 +1,5 @@
 // src/hooks/useStoreAPI.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
 import { 
   StoreCategory, 

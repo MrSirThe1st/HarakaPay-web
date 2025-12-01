@@ -31,6 +31,7 @@ export function FeeManagementView({}: FeeManagementViewProps) {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadAllData = async () => {

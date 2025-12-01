@@ -120,6 +120,7 @@ export function useStaff(initialFilters: Partial<StaffFilters> = {}) {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateFilters = useCallback((newFilters: Partial<StaffFilters>) => {

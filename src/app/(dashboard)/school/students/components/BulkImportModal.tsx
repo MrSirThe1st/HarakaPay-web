@@ -56,7 +56,7 @@ export function BulkImportModal({ isOpen, onClose, onImport }: BulkImportModalPr
     reader.onload = async (e) => {
       const content = e.target?.result as string;
       const { parseCSV } = await loadCSVParser();
-      const result = parseCSV(content, selectedFile.name);
+      const result = parseCSV(content);
       setParseResult(result);
       
       // Always move to preview step, even with errors

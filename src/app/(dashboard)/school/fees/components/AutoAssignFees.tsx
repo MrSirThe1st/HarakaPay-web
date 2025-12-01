@@ -66,6 +66,7 @@ export function AutoAssignFees({ onAssignmentComplete }: AutoAssignFeesProps) {
   // Load initial data
   useEffect(() => {
     loadInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadInitialData = async () => {

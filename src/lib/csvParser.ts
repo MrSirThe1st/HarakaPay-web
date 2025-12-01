@@ -160,7 +160,7 @@ const COLUMN_MAPPINGS = {
   }
 };
 
-export function parseCSV(csvContent: string, _filename: string): CSVParseResult {
+export function parseCSV(csvContent: string): CSVParseResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   
@@ -201,8 +201,8 @@ export function parseCSV(csvContent: string, _filename: string): CSVParseResult 
       
       try {
         const values = parseCSVLine(line);
-        const studentData = mapRowToStudentData(values, columnMap, i + 1);
-        
+        const studentData = mapRowToStudentData(values, columnMap);
+
         if (studentData) {
           data.push(studentData);
         }
@@ -309,42 +309,42 @@ function validateRequiredColumns(columnMap: Record<string, number>): string[] {
   return required.filter(field => columnMap[field] === undefined);
 }
 
-function mapRowToStudentData(values: string[], columnMap: Record<string, number>, _rowNumber: number): StudentImportData | null {
-  const student_id = getValue(values, columnMap, 'student_id', _rowNumber);
-  const first_name = getValue(values, columnMap, 'first_name', _rowNumber);
-  const last_name = getValue(values, columnMap, 'last_name', _rowNumber);
+function mapRowToStudentData(values: string[], columnMap: Record<string, number>): StudentImportData | null {
+  const student_id = getValue(values, columnMap, 'student_id');
+  const first_name = getValue(values, columnMap, 'first_name');
+  const last_name = getValue(values, columnMap, 'last_name');
 
   if (!student_id || !first_name || !last_name) {
     throw new Error('Missing required fields: student_id, first_name, or last_name');
   }
 
-  const rawLevel = getValue(values, columnMap, 'level', _rowNumber)?.trim();
+  const rawLevel = getValue(values, columnMap, 'level')?.trim();
   const normalizedLevel = normalizeLevelValue(rawLevel);
 
   const result = {
     student_id: student_id.trim(),
     first_name: first_name.trim(),
     last_name: last_name.trim(),
-    gender: getValue(values, columnMap, 'gender', _rowNumber)?.trim() || undefined,
-    grade_level: getValue(values, columnMap, 'grade_level', _rowNumber)?.trim() || undefined,
+    gender: getValue(values, columnMap, 'gender')?.trim() || undefined,
+    grade_level: getValue(values, columnMap, 'grade_level')?.trim() || undefined,
     level: normalizedLevel,
-    enrollment_date: getValue(values, columnMap, 'enrollment_date', _rowNumber)?.trim() || undefined,
-    status: getValue(values, columnMap, 'status', _rowNumber)?.trim() as "active" | "inactive" | "graduated" || 'active',
-    parent_name: getValue(values, columnMap, 'parent_name', _rowNumber)?.trim() || undefined,
-    parent_phone: getValue(values, columnMap, 'parent_phone', _rowNumber)?.trim() || undefined,
-    parent_email: getValue(values, columnMap, 'parent_email', _rowNumber)?.trim() || undefined,
-    home_address: getValue(values, columnMap, 'home_address', _rowNumber)?.trim() || undefined,
-    date_of_birth: getValue(values, columnMap, 'date_of_birth', _rowNumber)?.trim() || undefined,
-    blood_type: getValue(values, columnMap, 'blood_type', _rowNumber)?.trim() || undefined,
-    allergies: getValue(values, columnMap, 'allergies', _rowNumber)?.trim() || undefined,
-    guardian_relationship: getValue(values, columnMap, 'guardian_relationship', _rowNumber)?.trim() || undefined,
-    chronic_conditions: getValue(values, columnMap, 'chronic_conditions', _rowNumber)?.trim() || undefined,
+    enrollment_date: getValue(values, columnMap, 'enrollment_date')?.trim() || undefined,
+    status: getValue(values, columnMap, 'status')?.trim() as "active" | "inactive" | "graduated" || 'active',
+    parent_name: getValue(values, columnMap, 'parent_name')?.trim() || undefined,
+    parent_phone: getValue(values, columnMap, 'parent_phone')?.trim() || undefined,
+    parent_email: getValue(values, columnMap, 'parent_email')?.trim() || undefined,
+    home_address: getValue(values, columnMap, 'home_address')?.trim() || undefined,
+    date_of_birth: getValue(values, columnMap, 'date_of_birth')?.trim() || undefined,
+    blood_type: getValue(values, columnMap, 'blood_type')?.trim() || undefined,
+    allergies: getValue(values, columnMap, 'allergies')?.trim() || undefined,
+    guardian_relationship: getValue(values, columnMap, 'guardian_relationship')?.trim() || undefined,
+    chronic_conditions: getValue(values, columnMap, 'chronic_conditions')?.trim() || undefined,
   };
-  
+
   return result;
 }
 
-function getValue(values: string[], columnMap: Record<string, number>, field: string, __rowNumber: number): string | undefined {
+function getValue(values: string[], columnMap: Record<string, number>, field: string): string | undefined {
   const index = columnMap[field];
   if (index === undefined || index >= values.length) {
     return undefined;

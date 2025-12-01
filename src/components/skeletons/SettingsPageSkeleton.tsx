@@ -1,7 +1,7 @@
 // Settings Page Skeleton
 // Skeleton loader for settings pages with multiple sections
 
-import { Skeleton, CardSkeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function SettingsPageSkeleton() {
   return (

@@ -359,4 +359,5 @@ class ScheduledNotificationService {
   }
 }
 
-export default new ScheduledNotificationService();
+const service = new ScheduledNotificationService();
+export default service;

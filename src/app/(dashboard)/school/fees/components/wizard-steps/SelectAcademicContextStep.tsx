@@ -69,7 +69,6 @@ export function SelectAcademicContextStep({ data, onChange, schoolGradeLevels = 
         setSelectedGrades([data.gradeLevel]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.appliesTo, data.gradeLevel]);
 
   const handleChange = (newData: {

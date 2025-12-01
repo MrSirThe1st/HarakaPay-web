@@ -64,7 +64,7 @@ export function ReceiptTemplatesList() {
       } else {
         setError(response.error || 'Failed to duplicate template');
       }
-    } catch (_err) {
+    } catch {
       setError('An error occurred while duplicating the template');
     }
   };
@@ -79,7 +79,7 @@ export function ReceiptTemplatesList() {
       } else {
         setError(response.error || 'Failed to delete template');
       }
-    } catch (_err) {
+    } catch {
       setError('An error occurred while deleting the template');
     }
   };
@@ -119,7 +119,7 @@ export function ReceiptTemplatesList() {
           setError(response.error || 'Failed to set default template');
         }
       }
-    } catch (_err) {
+    } catch {
       setError('An error occurred while setting the default template');
     }
   };

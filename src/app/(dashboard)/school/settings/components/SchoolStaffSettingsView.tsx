@@ -85,7 +85,6 @@ export function SchoolStaffSettingsView() {
 
   useEffect(() => {
     loadSchoolData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadSchoolData = async () => {
@@ -103,7 +102,7 @@ export function SchoolStaffSettingsView() {
           const text = await res.text();
           try {
             return JSON.parse(text);
-          } catch (e) {
+          } catch {
             console.error('Failed to parse school settings response:', text);
             throw new Error('Invalid JSON response from server');
           }
@@ -136,7 +135,7 @@ export function SchoolStaffSettingsView() {
           const text = await res.text();
           try {
             return JSON.parse(text);
-          } catch (e) {
+          } catch {
             console.error('Failed to parse academic years response:', text);
             throw new Error('Invalid JSON response from server');
           }

@@ -73,7 +73,6 @@ export default function ScheduledNotificationsManager() {
 
   useEffect(() => {
     loadScheduledNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openCreateDialog = () => {
