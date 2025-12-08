@@ -1,8 +1,6 @@
 // src/app/api/school/receipts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { ReceiptTemplateForm } from '@/types/receipt';
 
 export async function GET(
@@ -11,30 +9,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies });
-    const adminClient = createAdminClient();
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
-    }
+    // Authenticate request
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     // Fetch specific receipt template
     const { data: template, error: templateError } = await adminClient
@@ -66,30 +49,15 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies });
-    const adminClient = createAdminClient();
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
-    }
+    // Authenticate request
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     const body: ReceiptTemplateForm = await request.json();
 
@@ -176,30 +144,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies });
-    const adminClient = createAdminClient();
 
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
-    }
+    // Authenticate request
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     // Check if template exists and belongs to school
     const { data: existingTemplate } = await adminClient

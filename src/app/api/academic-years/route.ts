@@ -9,7 +9,7 @@ export async function GET(_request: NextRequest) {
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, _request);
 
     if (isAuthError(authResult)) {
       return authResult;
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, request);
 
     if (isAuthError(authResult)) {
       return authResult;

@@ -1,59 +1,16 @@
 // src/app/api/school/fees/payment-plans/route.ts
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { Database } from '@/types/supabase';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Only school admins can view payment plans
-    if (profile.role !== 'school_admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only school admins can view payment plans' }, 
-        { status: 403 }
-      );
-    }
-
-    if (!profile.school_id) {
-      return NextResponse.json(
-        { success: false, error: 'School not found' }, 
-        { status: 404 }
-      );
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin'],
+      requireSchool: true,
+      requireActive: true
+    }, req);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     // Parse query parameters
     const { searchParams } = new URL(req.url);
@@ -140,53 +97,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Only school admins can create payment plans
-    if (profile.role !== 'school_admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only school admins can create payment plans' }, 
-        { status: 403 }
-      );
-    }
-
-    if (!profile.school_id) {
-      return NextResponse.json(
-        { success: false, error: 'School not found' }, 
-        { status: 404 }
-      );
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin'],
+      requireSchool: true,
+      requireActive: true
+    }, req);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient, user } = authResult;
 
     const body = await req.json();
     const {

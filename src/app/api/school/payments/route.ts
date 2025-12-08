@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
       requiredRoles: ['school_admin', 'school_staff'],
       requireSchool: true,
       requireActive: true
-    });
+    }, req);
 
     // Check if authentication failed
     if (isAuthError(authResult)) {

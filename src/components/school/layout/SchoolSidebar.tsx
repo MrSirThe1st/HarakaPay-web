@@ -25,12 +25,16 @@ const navigation = [
   { name: 'Settings', href: '/school/settings', icon: Cog6ToothIcon },
 ];
 
-export default function SchoolSidebar() {
+interface SchoolSidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function SchoolSidebar({ onNavigate }: SchoolSidebarProps) {
   const { t } = useTranslation();
   const pathname = usePathname();
 
   return (
-    <div className="w-64 bg-white shadow-lg h-full">
+    <div className="w-64 bg-white shadow-lg h-full flex flex-col">
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
@@ -40,6 +44,7 @@ export default function SchoolSidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                 isActive
                   ? 'bg-green-100 text-green-700'

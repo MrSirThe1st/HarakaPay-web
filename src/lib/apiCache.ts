@@ -84,9 +84,14 @@ export async function cachedApiCall<T>(
 
   // Make API call
   const result = await apiCall();
-  
+
   // Cache the result (no TTL - persists until manually cleared)
   apiCache.set(cacheKey, result);
-  
+
   return result;
+}
+
+// Synchronous cache check helper for React components
+export function getCachedData<T>(cacheKey: string): T | null {
+  return apiCache.get<T>(cacheKey);
 }

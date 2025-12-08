@@ -1,43 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { createAdminClient } from "@/lib/supabaseServerOnly";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: "User profile not found" },
-        { status: 403 }
-      );
-    }
-
-    const isAdmin = ["super_admin", "platform_admin", "support_admin"].includes(profile.role);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 }
-      );
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin', 'support_admin']
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;

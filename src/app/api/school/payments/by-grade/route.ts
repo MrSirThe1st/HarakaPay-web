@@ -1,57 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Only school admins and staff can view payments
-    if (!['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' }, 
-        { status: 403 }
-      );
-    }
-
-    if (!profile.school_id) {
-      return NextResponse.json(
-        { success: false, error: 'School not found' }, 
-        { status: 404 }
-      );
-    }
+    // Authenticate request
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    }, req);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     // Get URL parameters
     const { searchParams } = new URL(req.url);

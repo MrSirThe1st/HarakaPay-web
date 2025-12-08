@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;

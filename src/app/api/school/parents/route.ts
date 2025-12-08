@@ -184,6 +184,14 @@ export async function GET(req: Request) {
 
     console.log(`👥 Total unique parents: ${parents.length}`);
 
+    // DEBUG: Log actual parent names
+    console.log('📋 Parent names in DB:', parents.map(p => ({
+      firstName: p.first_name,
+      lastName: p.last_name,
+      email: p.email,
+      phone: p.phone
+    })));
+
     // Apply search filter if provided
     if (search) {
       const searchLower = search.toLowerCase();

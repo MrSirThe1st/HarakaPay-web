@@ -8,7 +8,7 @@ export async function GET(req: Request) {
       requiredRoles: ['school_admin', 'school_staff', 'super_admin', 'platform_admin', 'support_admin'],
       requireSchool: false, // Platform admins might not have a school
       requireActive: true
-    });
+    }, req);
 
     // Check if authentication failed
     if (isAuthError(authResult)) {
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
       requiredRoles: ['school_admin', 'school_staff'],
       requireSchool: true, // Must have a school to create students
       requireActive: true
-    });
+    }, req);
 
     // Check if authentication failed
     if (isAuthError(authResult)) {

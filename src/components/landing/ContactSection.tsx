@@ -6,13 +6,13 @@ const contactInfo = [
   {
     icon: EnvelopeIcon,
     title: "Email Us",
-    detail: "admin@harakapay.com",
+    detail: "info@harakapayment.com",
     description: "We'll respond within 24 hours",
   },
   {
     icon: PhoneIcon,
     title: "Call Us",
-    detail: "+243 XXX XXX XXX",
+    detail: "+243990111103",
     description: "Mon - Fri, 9am - 5pm",
   },
   {

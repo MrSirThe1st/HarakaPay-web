@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {  createCacheKey, cachedApiCall } from '@/lib/apiCache';
+import { createCacheKey, getCachedData, apiCache } from '@/lib/apiCache';
 import { 
   UsersIcon, 
   EllipsisVerticalIcon,
@@ -34,8 +34,13 @@ interface Admin {
 }
 
 export function AdminManagement() {
-  const [admins, setAdmins] = useState<Admin[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Initialize with cached data to avoid skeleton flash
+  const [admins, setAdmins] = useState<Admin[]>(() => {
+    const cached = getCachedData<{ admins: Admin[] }>(createCacheKey('admin:platform-users'));
+    return cached?.admins || [];
+  });
+
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState<Admin | null>(null);
@@ -47,31 +52,36 @@ export function AdminManagement() {
 
   const fetchAdmins = useCallback(async () => {
     const cacheKey = createCacheKey('admin:platform-users');
-    
+
     try {
-      setLoading(true);
       setError(null);
-      
-      const result = await cachedApiCall(
-        cacheKey,
-        async () => {
-          const response = await fetch('/api/admin/list', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to fetch admins');
-          }
+      // Check cache synchronously first
+      const cached = getCachedData<{ admins: Admin[] }>(cacheKey);
+      if (cached) {
+        setAdmins(cached.admins || []);
+        return;
+      }
 
-          return response.json();
-        }
-      );
+      // No cache - fetch from API
+      setLoading(true);
+      const response = await fetch('/api/admin/list', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch admins');
+      }
+
+      const result = await response.json();
+
+      // Cache and set
+      apiCache.set(cacheKey, result);
       setAdmins(result.admins || []);
     } catch (err) {
       console.error('Admins fetch error:', err);

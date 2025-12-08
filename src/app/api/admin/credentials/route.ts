@@ -1,43 +1,16 @@
 // src/app/api/admin/credentials/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const adminClient = createAdminClient();
-
-    // Get user profile
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, is_active, first_name, last_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
-
-    // Check if user can view credentials
-    const canViewCredentials = profile.role === 'super_admin' || profile.role === 'platform_admin';
-    if (!canViewCredentials) {
-      return NextResponse.json({ 
-        error: `Role '${profile.role}' cannot view admin credentials` 
-      }, { status: 403 });
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     // Get school ID from query params
     const { searchParams } = new URL(request.url);
@@ -124,38 +97,13 @@ export async function GET(request: NextRequest) {
 // Reset password endpoint
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const adminClient = createAdminClient();
-
-    // Get user profile
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, is_active, first_name, last_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
-
-    // Check if user can reset passwords
-    const canResetPasswords = profile.role === 'super_admin' || profile.role === 'platform_admin';
-    if (!canResetPasswords) {
-      return NextResponse.json({ 
-        error: `Role '${profile.role}' cannot reset passwords` 
-      }, { status: 403 });
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     // Parse request body
     const { adminId, newPassword } = await request.json();

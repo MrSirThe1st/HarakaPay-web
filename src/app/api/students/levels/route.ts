@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;

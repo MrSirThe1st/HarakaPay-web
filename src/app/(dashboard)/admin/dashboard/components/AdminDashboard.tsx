@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect} from 'react';
-import { createCacheKey, cachedApiCall } from '@/lib/apiCache';
+import { createCacheKey, getCachedData, apiCache } from '@/lib/apiCache';
 import { 
   BuildingOfficeIcon, 
   UsersIcon, 
@@ -19,30 +19,39 @@ interface DashboardStats {
 }
 
 export function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize with cached data to avoid skeleton flash
+  const [stats, setStats] = useState<DashboardStats | null>(() => {
+    const cached = getCachedData<{ stats: DashboardStats }>(createCacheKey('admin:dashboard-stats'));
+    return cached?.stats || null;
+  });
+
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       const cacheKey = createCacheKey('admin:dashboard-stats');
-      
+
       try {
+        // Check cache synchronously first
+        const cached = getCachedData<{ stats: DashboardStats }>(cacheKey);
+        if (cached) {
+          setStats(cached.stats);
+          return;
+        }
+
+        // No cache - fetch from API
         setLoading(true);
-        
-        const data = await cachedApiCall(
-          cacheKey,
-          async () => {
-            const response = await fetch('/api/dashboard/stats');
-            
-            if (!response.ok) {
-              throw new Error('Failed to fetch dashboard stats');
-            }
-            
-            return response.json();
-          }
-        );
-        
+        const response = await fetch('/api/dashboard/stats');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard stats');
+        }
+
+        const data = await response.json();
+
+        // Cache and set
+        apiCache.set(cacheKey, data);
         setStats(data.stats);
       } catch (err) {
         console.error('Error fetching stats:', err);

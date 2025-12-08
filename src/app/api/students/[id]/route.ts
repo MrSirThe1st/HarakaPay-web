@@ -12,7 +12,7 @@ export async function DELETE(
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;
@@ -85,7 +85,7 @@ export async function GET(
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;
@@ -144,7 +144,7 @@ export async function PUT(
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;

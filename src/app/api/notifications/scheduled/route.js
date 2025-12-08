@@ -1,37 +1,16 @@
 // src/app/api/notifications/scheduled/route.js
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import scheduledNotificationService from '@/services/scheduledNotificationService';
 
 // GET - Fetch all scheduled notifications for a school
 export async function GET(request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const adminClient = createAdminClient();
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !profile.is_active) {
-      return NextResponse.json({ error: 'Profile not found or inactive' }, { status: 403 });
-    }
-
-    const allowedRoles = ['school_admin', 'school_staff'];
-    if (!allowedRoles.includes(profile.role)) {
-      return NextResponse.json({
-        error: 'Insufficient permissions'
-      }, { status: 403 });
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff']
+    });
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('activeOnly') !== 'false'; // Default to true
@@ -59,30 +38,11 @@ export async function GET(request) {
 // POST - Create a new scheduled notification
 export async function POST(request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const adminClient = createAdminClient();
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile || !profile.is_active) {
-      return NextResponse.json({ error: 'Profile not found or inactive' }, { status: 403 });
-    }
-
-    const allowedRoles = ['school_admin', 'school_staff'];
-    if (!allowedRoles.includes(profile.role)) {
-      return NextResponse.json({
-        error: 'Insufficient permissions'
-      }, { status: 403 });
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff']
+    });
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     const body = await request.json();
     const {

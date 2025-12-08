@@ -1,62 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function POST(req: NextRequest) {
   try {
     console.log('Auto-assign API called');
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    console.log('Auth check - user:', user?.id, 'error:', authError);
-    
-    if (authError || !user) {
-      console.log('Authentication failed');
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' }, 
-        { status: 401 }
-      );
-    }
-
-    // Get user profile to check role and school
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: 'Account inactive' }, 
-        { status: 403 }
-      );
-    }
-
-    // Only school admins can perform automatic fee assignments
-    if (profile.role !== 'school_admin') {
-      return NextResponse.json(
-        { success: false, error: 'Only school admins can perform automatic fee assignments' }, 
-        { status: 403 }
-      );
-    }
-
-    if (!profile.school_id) {
-      return NextResponse.json(
-        { success: false, error: 'School not found' }, 
-        { status: 404 }
-      );
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin'],
+      requireSchool: true,
+      requireActive: true
+    }, req);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     const body = await req.json();
     console.log('Request body:', body);

@@ -1,45 +1,17 @@
 // src/app/api/notifications/send/route.js
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
-import { cookies } from 'next/headers';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import notificationService from '@/services/notificationService';
 
 export async function POST(request) {
   try {
-    // 1. Authenticate user
-    const supabase = createRouteHandlerClient({ cookies });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff']
+    });
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // 2. Check permissions
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, school_id, is_active')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
-
-    // 3. Verify user can send notifications
-    const allowedRoles = ['school_admin', 'school_staff'];
-    if (!allowedRoles.includes(profile.role)) {
-      return NextResponse.json({
-        error: 'Insufficient permissions to send notifications'
-      }, { status: 403 });
-    }
-
-    // 4. Get request data
+    // Get request data
     const body = await request.json();
     const {
       title,

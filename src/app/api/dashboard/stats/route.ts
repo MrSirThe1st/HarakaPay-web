@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Authenticate and get user profile
     const authResult = await authenticateRequest({
       requiredRoles: ['super_admin', 'platform_admin', 'support_admin', 'school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, request);
 
     // Check if authentication failed
     if (isAuthError(authResult)) {

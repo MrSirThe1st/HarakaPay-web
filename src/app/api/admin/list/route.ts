@@ -1,43 +1,18 @@
 // src/app/api/admin/list/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function GET(_request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin']
+    }, _request);
+
+    if (isAuthError(authResult)) {
+      return authResult;
     }
 
-    const adminClient = createAdminClient();
-
-    // Get user profile
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, is_active, first_name, last_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
-
-    // Check if user can view platform admins
-    const canViewAdmins = profile.role === 'super_admin' || profile.role === 'platform_admin';
-    if (!canViewAdmins) {
-      return NextResponse.json({ 
-        error: `Role '${profile.role}' cannot view platform admins` 
-      }, { status: 403 });
-    }
+    const { user, profile, adminClient } = authResult;
 
     // Get all platform admins (excluding school admins)
     const { data: admins, error: adminsError } = await adminClient

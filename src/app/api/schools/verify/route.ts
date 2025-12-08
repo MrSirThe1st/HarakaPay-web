@@ -1,50 +1,18 @@
 // src/app/api/schools/verify/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function PATCH(request: NextRequest) {
   try {
-    // Fix 1: Await cookies() for Next.js 15+ compatibility
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication using regular client
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    console.log('Authenticated user in /api/schools/verify:', user.id);
-
-    // Use admin client for database operations
-    const adminClient = createAdminClient();
-
-    // Get user profile using admin client (bypasses RLS)
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, is_active, first_name, last_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('Profile fetch error:', profileError);
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     console.log('User profile found:', { role: profile.role });
-
-    // Check if user has permission to verify schools
-    const canVerifySchools = profile.role === 'super_admin' || profile.role === 'platform_admin';
-    if (!canVerifySchools) {
-      return NextResponse.json({ 
-        error: `Role '${profile.role}' cannot verify schools` 
-      }, { status: 403 });
-    }
 
     // Parse request body
     const { schoolId, verificationStatus } = await request.json();

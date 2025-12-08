@@ -1,44 +1,18 @@
 // src/app/api/admin/create-admin/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function POST(request: NextRequest) {
   try {
-    // Step 1: Authenticate user
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
-    // Step 2: Check permissions using admin client
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, is_active, first_name, last_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
-
-    // Step 3: Check if user can create platform admins
-    const canCreateAdmins = profile.role === 'super_admin';
-    if (!canCreateAdmins) {
-      return NextResponse.json({ 
-        error: `Role '${profile.role}' cannot create platform admins` 
-      }, { status: 403 });
-    }
-
-    // Step 4: Parse and validate request
+    // Parse and validate request
     const adminData = await request.json();
     console.log('Received admin data:', adminData);
 

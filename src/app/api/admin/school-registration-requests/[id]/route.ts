@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { createAdminClient } from "@/lib/supabaseServerOnly";
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function PATCH(
   request: NextRequest,
@@ -9,39 +7,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies });
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
-      .select("role, id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: "User profile not found" },
-        { status: 403 }
-      );
-    }
-
-    const isAdmin = ["super_admin", "platform_admin", "support_admin"].includes(profile.role);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 }
-      );
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin', 'support_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     const body = await request.json();
 
@@ -73,8 +46,7 @@ export async function PATCH(
     }
 
     // Update the request using admin client to bypass RLS
-    const adminClientForUpdate = createAdminClient();
-    const { data, error } = await adminClientForUpdate
+    const { data, error } = await adminClient
       .from("school_registration_requests")
       .update(updateData)
       .eq("id", id)
@@ -108,39 +80,14 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = createRouteHandlerClient({ cookies });
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Check if user is admin
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from("profiles")
-      .select("role, id")
-      .eq("user_id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { success: false, error: "User profile not found" },
-        { status: 403 }
-      );
-    }
-
-    const isAdmin = ["super_admin", "platform_admin", "support_admin"].includes(profile.role);
-    if (!isAdmin) {
-      return NextResponse.json(
-        { success: false, error: "Admin access required" },
-        { status: 403 }
-      );
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin', 'support_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { adminClient } = authResult;
 
     // Get the specific request using admin client to bypass RLS
     const { data, error } = await adminClient

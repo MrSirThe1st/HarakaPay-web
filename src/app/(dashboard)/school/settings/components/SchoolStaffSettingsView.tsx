@@ -6,15 +6,16 @@ import {
   BuildingOfficeIcon,
   AcademicCapIcon,
   CreditCardIcon,
-
+  BanknotesIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   PencilIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Database } from '@/types/supabase';
-import { apiCache, createCacheKey, cachedApiCall } from '@/lib/apiCache';
+import { apiCache, createCacheKey, getCachedData } from '@/lib/apiCache';
 import { SettingsPageSkeleton } from '@/components/skeletons/SettingsPageSkeleton';
+import { PaymentFeeRate } from '@/types/payment-fee';
 
 type School = Database['public']['Tables']['schools']['Row'];
 type AcademicYear = Database['public']['Tables']['academic_years']['Row'];
@@ -58,13 +59,29 @@ const PAYMENT_PROVIDERS = [
 
 export function SchoolStaffSettingsView() {
   const { t } = useTranslation();
-  const [school, setSchool] = useState<School | null>(null);
-  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Initialize with cached data to avoid skeleton flash
+  const [school, setSchool] = useState<School | null>(() => {
+    const cached = getCachedData<{ school: School }>(createCacheKey('school:settings'));
+    return cached?.school || null;
+  });
+
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>(() => {
+    const cached = getCachedData<{ academicYears: AcademicYear[] }>(createCacheKey('school:settings'));
+    return cached?.academicYears || [];
+  });
+
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingSchool, setEditingSchool] = useState(false);
   const [editingAcademicYear, setEditingAcademicYear] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // Payment fee states
+  const [feeRates, setFeeRates] = useState<PaymentFeeRate[]>([]);
+  const [activeRate, setActiveRate] = useState<PaymentFeeRate | null>(null);
+  const [pendingRates, setPendingRates] = useState<PaymentFeeRate[]>([]);
+  const [loadingFees, setLoadingFees] = useState(false);
   
   const [schoolForm, setSchoolForm] = useState<SchoolSettingsFormData>({
     name: '',
@@ -84,30 +101,59 @@ export function SchoolStaffSettingsView() {
   });
 
   useEffect(() => {
-    loadSchoolData();
-  }, []);
+    // Only load if we don't have data (no cache)
+    if (!school) {
+      loadSchoolData();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadFeeRates = async () => {
+    try {
+      setLoadingFees(true);
+      const res = await fetch('/api/school/payment-fees');
+      if (!res.ok) {
+        throw new Error(`Failed to fetch fee rates: ${res.status}`);
+      }
+      const result = await res.json();
+      if (result.success) {
+        const rates = result.data || [];
+        setFeeRates(rates);
+        const active = rates.find((rate: PaymentFeeRate) => rate.status === 'active');
+        setActiveRate(active || null);
+        const pending = rates.filter((rate: PaymentFeeRate) =>
+          rate.status === 'pending_school' || rate.status === 'pending_admin'
+        );
+        setPendingRates(pending);
+      }
+    } catch (error) {
+      console.error('Error loading fee rates:', error);
+    } finally {
+      setLoadingFees(false);
+    }
+  };
 
   const loadSchoolData = async () => {
-    try {
-      setLoading(true);
+    const cacheKey = createCacheKey('school:settings');
 
-      // Load school data with caching
-      const schoolData = await cachedApiCall(
-        createCacheKey('school:settings'),
-        async () => {
-          const res = await fetch('/api/schools/settings');
-          if (!res.ok) {
-            throw new Error(`Failed to fetch school settings: ${res.status}`);
-          }
-          const text = await res.text();
-          try {
-            return JSON.parse(text);
-          } catch {
-            console.error('Failed to parse school settings response:', text);
-            throw new Error('Invalid JSON response from server');
-          }
-        }
-      );
+    try {
+
+      // No cache - fetch from API
+      setLoading(true);
+      const res = await fetch('/api/schools/settings');
+      if (!res.ok) {
+        throw new Error(`Failed to fetch school settings: ${res.status}`);
+      }
+      const text = await res.text();
+      let schoolData;
+      try {
+        schoolData = JSON.parse(text);
+      } catch {
+        console.error('Failed to parse school settings response:', text);
+        throw new Error('Invalid JSON response from server');
+      }
+
+      // Cache the result
+      apiCache.set(cacheKey, schoolData);
 
       if (schoolData.school) {
         console.log('School logo URL:', schoolData.school.logo_url);
@@ -145,6 +191,9 @@ export function SchoolStaffSettingsView() {
       if (academicYearsData.academic_years) {
         setAcademicYears(academicYearsData.academic_years);
       }
+
+      // Load payment fee rates
+      await loadFeeRates();
 
     } catch (error) {
       console.error('Error loading school data:', error);
@@ -271,6 +320,55 @@ export function SchoolStaffSettingsView() {
       case 'pending': return <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600" />;
       case 'suspended': return <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />;
       default: return <ExclamationTriangleIcon className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const handleApproveFeeRate = async (rateId: string) => {
+    if (!confirm(t('Are you sure you want to approve this fee rate?'))) return;
+
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/school/payment-fees/${rateId}/approve`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to approve fee rate');
+      }
+
+      await loadFeeRates();
+    } catch (error) {
+      console.error('Error approving fee rate:', error);
+      alert(t('Failed to approve fee rate. Please try again.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRejectFeeRate = async (rateId: string) => {
+    const reason = prompt(t('Please provide a reason for rejection (optional):'));
+    if (reason === null) return; // User cancelled
+
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/school/payment-fees/${rateId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || undefined }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to reject fee rate');
+      }
+
+      await loadFeeRates();
+    } catch (error) {
+      console.error('Error rejecting fee rate:', error);
+      alert(t('Failed to reject fee rate. Please try again.'));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -512,6 +610,163 @@ export function SchoolStaffSettingsView() {
                     t('Not set')
                   }
                 </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Platform Payment Fees */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex items-center mb-4">
+            <BanknotesIcon className="h-6 w-6 text-orange-500 mr-3" />
+            <h3 className="text-lg font-medium text-gray-900">{t('Platform Payment Fees')}</h3>
+          </div>
+
+          {loadingFees ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-500">{t('Loading fee rates...')}</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Current Active Rate */}
+              {activeRate ? (
+                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-900">{t('Current Active Rate')}</h4>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {t('Active')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{activeRate.fee_percentage}%</p>
+                      <p className="text-sm text-gray-600">
+                        {t('Effective since')}: {new Date(activeRate.activated_at || activeRate.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <p className="text-sm text-gray-600">
+                    {t('No active fee rate. Using default platform rate of 2.5%')}
+                  </p>
+                </div>
+              )}
+
+              {/* Pending Approvals */}
+              {pendingRates.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Pending Approvals')}</h4>
+                  <div className="space-y-3">
+                    {pendingRates.map((rate) => (
+                      <div key={rate.id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg font-bold text-gray-900">{rate.fee_percentage}%</span>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                rate.status === 'pending_school' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {rate.status === 'pending_school' ? t('Awaiting School Approval') : t('Awaiting Admin Approval')}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-1">
+                              {t('Proposed by')}: {rate.proposed_by_role === 'admin' ? t('Platform Admin') : t('School')}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {t('Proposed on')}: {new Date(rate.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </p>
+                            {rate.notes && (
+                              <p className="text-sm text-gray-600 mt-2 italic">{t('Note')}: {rate.notes}</p>
+                            )}
+                          </div>
+
+                          {rate.status === 'pending_school' && (
+                            <div className="flex gap-2 ml-4">
+                              <button
+                                onClick={() => handleApproveFeeRate(rate.id)}
+                                disabled={saving}
+                                className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+                              >
+                                {t('Approve')}
+                              </button>
+                              <button
+                                onClick={() => handleRejectFeeRate(rate.id)}
+                                disabled={saving}
+                                className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+                              >
+                                {t('Reject')}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fee Rate History */}
+              {feeRates.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">{t('Fee Rate History')}</h4>
+                  <div className="overflow-hidden border border-gray-200 rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {t('Rate')}
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {t('Status')}
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {t('Proposed By')}
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {t('Date')}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {feeRates.slice(0, 5).map((rate) => (
+                          <tr key={rate.id}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {rate.fee_percentage}%
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                rate.status === 'active' ? 'bg-green-100 text-green-800' :
+                                rate.status === 'pending_school' || rate.status === 'pending_admin' ? 'bg-yellow-100 text-yellow-800' :
+                                rate.status === 'rejected_by_school' || rate.status === 'rejected_by_admin' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {rate.status.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                              {rate.proposed_by_role === 'admin' ? t('Platform Admin') : t('School')}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                              {new Date(rate.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Info Box */}
+              <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                <p className="text-sm text-gray-700">
+                  {t('Platform payment fees are charged on each transaction. Parents pay the base amount plus the fee. Schools receive the full amount and owe the platform the fee amount separately.')}
+                </p>
               </div>
             </div>
           )}

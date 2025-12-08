@@ -1,36 +1,17 @@
 // src/app/api/school/store/categories/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
-import { createAdminClient } from '@/lib/supabaseServerOnly';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { StoreCategory, StoreApiResponse, StorePaginationData, StoreStatsData } from '@/types/store';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -39,7 +20,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Get categories with pagination
-    const { data: categories, error: categoriesError, count } = await supabase
+    const { data: categories, error: categoriesError, count } = await adminClient
       .from('store_categories')
       .select('*', { count: 'exact' })
       .eq('school_id', profile.school_id)
@@ -52,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get stats
-    const { data: statsData } = await supabase
+    const { data: statsData } = await adminClient
       .from('store_categories')
       .select('is_active')
       .eq('school_id', profile.school_id);
@@ -92,29 +73,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
-      return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
-    }
+    const authResult = await authenticateRequest({
+      requiredRoles: ['school_admin', 'school_staff'],
+      requireSchool: true,
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { profile, adminClient } = authResult;
 
     // Parse request body
     const body = await request.json();
@@ -126,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if category with same name already exists
-    const { data: existingCategory } = await supabase
+    const { data: existingCategory } = await adminClient
       .from('store_categories')
       .select('id')
       .eq('school_id', profile.school_id)
@@ -138,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create category
-    const { data: category, error: createError } = await supabase
+    const { data: category, error: createError } = await adminClient
       .from('store_categories')
       .insert({
         school_id: profile.school_id,

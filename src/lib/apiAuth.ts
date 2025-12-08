@@ -51,7 +51,8 @@ interface AuthOptions {
  * ```
  */
 export async function authenticateRequest(
-  options: AuthOptions = {}
+  options: AuthOptions = {},
+  request?: Request
 ): Promise<AuthResult | NextResponse> {
   const {
     requiredRoles = [],
@@ -60,36 +61,55 @@ export async function authenticateRequest(
   } = options;
 
   try {
-    // Step 1: Authenticate user
-    const cookieStore = await cookies();
+    let user: User | null = null;
+    let authError: unknown = null;
 
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            try {
-              cookieStore.set({ name, value, ...options });
-            } catch {
-              // Cookie setting might fail in some contexts (e.g., after response sent)
-            }
-          },
-          remove(name: string, options: CookieOptions) {
-            try {
-              cookieStore.set({ name, value: '', ...options, maxAge: 0 });
-            } catch {
-              // Cookie removal might fail in some contexts
-            }
-          },
-        },
+    // Step 1: Try Authorization header first (for mobile apps)
+    if (request) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const adminClient = createAdminClient();
+        const { data, error } = await adminClient.auth.getUser(token);
+        user = data.user;
+        authError = error;
       }
-    );
+    }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Step 2: Fall back to cookie-based auth (for web)
+    if (!user) {
+      const cookieStore = await cookies();
+
+      const supabase = createServerClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value;
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              try {
+                cookieStore.set({ name, value, ...options });
+              } catch {
+                // Cookie setting might fail in some contexts (e.g., after response sent)
+              }
+            },
+            remove(name: string, options: CookieOptions) {
+              try {
+                cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+              } catch {
+                // Cookie removal might fail in some contexts
+              }
+            },
+          },
+        }
+      );
+
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+      user = cookieUser;
+      authError = cookieError;
+    }
 
     if (authError || !user) {
       return NextResponse.json(

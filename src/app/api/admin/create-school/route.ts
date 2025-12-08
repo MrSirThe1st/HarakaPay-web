@@ -1,63 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createAdminClient } from "@/lib/supabaseServerOnly";
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
 export async function POST(request: NextRequest) {
   try {
-    // Step 1: Use the same auth pattern as /api/schools
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    // Check authentication using cookies (same as other routes)
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('Auth error in create-school:', authError);
-      return NextResponse.json(
-        { success: false, error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    console.log('Authenticated user:', user.id);
-
-    // Step 2: Check permissions using admin client (bypasses RLS)
-    const adminClient = createAdminClient();
-    const { data: profile, error: profileError } = await adminClient
-      .from('profiles')
-      .select('role, is_active, first_name, last_name')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('Profile fetch error:', profileError);
-      return NextResponse.json(
-        { success: false, error: "User profile not found" },
-        { status: 403 }
-      );
-    }
-
-    if (!profile.is_active) {
-      return NextResponse.json(
-        { success: false, error: "Account inactive" },
-        { status: 403 }
-      );
-    }
-
-    // Step 3: Check if user can create schools (application-level check)
-    const canCreateSchools = profile.role === 'super_admin' || profile.role === 'platform_admin';
-    if (!canCreateSchools) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `Insufficient permissions. Role '${profile.role}' cannot create schools.` 
-        },
-        { status: 403 }
-      );
-    }
+    // Authenticate and authorize
+    const authResult = await authenticateRequest({
+      requiredRoles: ['super_admin', 'platform_admin'],
+      requireActive: true
+    }, request);
+    if (isAuthError(authResult)) return authResult;
+    const { user, profile, adminClient } = authResult;
 
     console.log('Permission check passed for user role:', profile.role);
 
-    // Step 4: Parse and validate request
+    // Parse and validate request
     const schoolData = await request.json();
     console.log('Received school data:', schoolData);
 

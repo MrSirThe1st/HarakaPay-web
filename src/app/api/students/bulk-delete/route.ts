@@ -16,7 +16,7 @@ export async function DELETE(req: NextRequest) {
     const authResult = await authenticateRequest({
       requiredRoles: ['super_admin', 'platform_admin', 'support_admin', 'school_admin', 'school_staff'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { initiateC2BPayment } from '@/lib/mpesa/c2b-payment';
 
 export async function POST(request) {
@@ -31,7 +30,8 @@ export async function POST(request) {
       console.log('✅ Payment API: Authenticated via bearer token');
     } else {
       // Cookie-based authentication (for web)
-      const supabase = createRouteHandlerClient({ cookies });
+      const cookieStore = await cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
       const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !cookieUser) {
@@ -113,12 +113,41 @@ export async function POST(request) {
     }
     
     if (!feeAssignment) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Fee assignment not found',
         details: `No fee assignment found for student ${studentId} with structure ${paymentPlan.structure_id}`
       }, { status: 404 });
     }
-    
+
+    // Get active payment fee rate for the school
+    const { data: activeFeeRate } = await supabaseAdmin
+      .from('payment_fee_rates')
+      .select('id, fee_percentage')
+      .eq('school_id', feeAssignment.students.school_id)
+      .eq('status', 'active')
+      .gte('effective_from', new Date().toISOString())
+      .or(`effective_until.is.null,effective_until.gt.${new Date().toISOString()}`)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const feePercentage = activeFeeRate?.fee_percentage ?? 2.5;
+    const baseAmount = parseFloat(amount);
+    const feeAmount = Number((baseAmount * (feePercentage / 100)).toFixed(2));
+    const totalAmountWithFee = baseAmount + feeAmount;
+    // Parent pays total (base + fee), school receives total, school later pays fee to platform
+
+    console.log('💰 Payment Fee Calculation:', {
+      baseAmount,
+      feePercentage,
+      feeAmount,
+      totalAmountWithFee,
+      schoolReceives: totalAmountWithFee,
+      schoolOwes: feeAmount,
+      schoolId: feeAssignment.students.school_id,
+      feeRateId: activeFeeRate?.id
+    });
+
     // Get the full payment plan details for the selected payment plan (not the one in fee assignment)
     const { data: selectedPaymentPlan } = await supabaseAdmin
       .from('payment_plans')
@@ -142,13 +171,13 @@ export async function POST(request) {
     // Use the provided payment method, or default to mobile_money
     const finalPaymentMethod = paymentMethod || 'mobile_money';
 
-    // Create pending payment record with installment info
+    // Create pending payment record with installment info (includes platform fee)
     const { data: pendingPayment, error: insertError } = await supabaseAdmin
       .from('payments')
       .insert({
         student_id: studentId,
         parent_id: parent.id,
-        amount: amount,
+        amount: totalAmountWithFee, // Parent pays base + platform fee
         payment_method: finalPaymentMethod,
         status: 'pending',
         description: `Payment for ${feeAssignment.students.first_name} ${feeAssignment.students.last_name}${installmentLabel ? ` - ${installmentLabel}` : ''}`,
@@ -161,15 +190,39 @@ export async function POST(request) {
     if (insertError) {
       throw new Error(`Failed to create payment record: ${insertError.message}`);
     }
-    
-    // Initiate M-Pesa payment
+
+    // Create transaction fee snapshot (immutable record for auditing)
+    // Parent pays total (base + fee), school receives total, school owes fee to platform
+    const { error: snapshotError } = await supabaseAdmin
+      .from('transaction_fee_snapshots')
+      .insert({
+        payment_id: pendingPayment.id,
+        student_id: studentId,
+        school_id: feeAssignment.students.school_id,
+        fee_rate_id: activeFeeRate?.id,
+        fee_percentage: feePercentage,
+        base_amount: baseAmount,
+        fee_amount: feeAmount,
+        total_amount: totalAmountWithFee, // What parent actually pays
+        payment_method: finalPaymentMethod,
+        payment_status: 'pending'
+      });
+
+    if (snapshotError) {
+      console.error('❌ Failed to create fee snapshot:', snapshotError);
+      // Don't fail the payment, just log the error
+    } else {
+      console.log('✅ Transaction fee snapshot created');
+    }
+
+    // Initiate M-Pesa payment (with platform fee included)
     const paymentResult = await initiateC2BPayment({
       customerMSISDN: phoneNumber,
-      amount: amount,
+      amount: totalAmountWithFee, // Parent pays base + platform fee
       studentId: studentId,
       parentId: parent.id,
       feeAssignmentId: feeAssignment.id,
-      description: `School fees payment for student ${feeAssignment.students.student_id}`
+      description: `School fees payment for student ${feeAssignment.students.student_id} (incl. ${feePercentage}% platform fee)`
     });
     
     // Update payment record with M-Pesa details
@@ -224,7 +277,15 @@ export async function POST(request) {
       message: paymentResult.responseDesc,
       responseCode: paymentResult.responseCode,
       details: paymentResult.rawResponse, // Include full M-Pesa response for debugging
-      simulated: autoSimulate // Indicate if webhook was auto-simulated
+      simulated: autoSimulate, // Indicate if webhook was auto-simulated
+      feeInfo: {
+        baseAmount,
+        feePercentage,
+        feeAmount,
+        totalAmount: totalAmountWithFee, // What parent pays
+        schoolReceives: totalAmountWithFee, // What school receives
+        schoolOwes: feeAmount // What school owes to platform
+      }
     });
     
   } catch (error) {
