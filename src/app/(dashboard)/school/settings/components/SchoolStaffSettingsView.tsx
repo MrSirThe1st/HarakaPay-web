@@ -13,7 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Database } from '@/types/supabase';
-import { apiCache, createCacheKey, getCachedData } from '@/lib/apiCache';
+import { apiCache, createCacheKey, getCachedData, cachedApiCall } from '@/lib/apiCache';
 import { SettingsPageSkeleton } from '@/components/skeletons/SettingsPageSkeleton';
 import { PaymentFeeRate } from '@/types/payment-fee';
 
@@ -675,7 +675,7 @@ export function SchoolStaffSettingsView() {
                               </span>
                             </div>
                             <p className="text-sm text-gray-600 mb-1">
-                              {t('Proposed by')}: {rate.proposed_by_role === 'admin' ? t('Platform Admin') : t('School')}
+                              {t('Proposed by')}: {rate.proposed_by_role === 'platform_admin' ? t('Platform Admin') : t('School')}
                             </p>
                             <p className="text-sm text-gray-600">
                               {t('Proposed on')}: {new Date(rate.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
@@ -749,7 +749,7 @@ export function SchoolStaffSettingsView() {
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                              {rate.proposed_by_role === 'admin' ? t('Platform Admin') : t('School')}
+                              {rate.proposed_by_role === 'platform_admin' ? t('Platform Admin') : t('School')}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                               {new Date(rate.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}

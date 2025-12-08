@@ -57,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const student = relationship.student as { id: string; school_id: string };
+    const student = (relationship.student as unknown) as { id: string; school_id: string };
 
     // Insert message
     const { data: newMessage, error: insertError } = await adminClient

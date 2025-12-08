@@ -4,6 +4,6 @@ import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
 
 export async function createClient() {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   return createRouteHandlerClient<Database>({ cookies: () => cookieStore });
 }

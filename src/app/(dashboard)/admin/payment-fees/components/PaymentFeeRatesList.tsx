@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { createCacheKey, cachedApiCall, getCachedData, apiCache } from '@/lib/apiCache';
+import { createCacheKey, getCachedData, apiCache } from '@/lib/apiCache';
 import { CheckCircleIcon, ClockIcon, XCircleIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import { PaymentFeeRateWithDetails, FEE_STATUS_LABELS, isPendingApproval } from '@/types/payment-fee';
 import { ApproveRejectModal } from './ApproveRejectModal';
@@ -123,7 +123,7 @@ export function PaymentFeeRatesList({ onRefresh, refreshTrigger }: PaymentFeeRat
       <div className="text-center py-12">
         <p className="text-red-600">{error}</p>
         <button
-          onClick={fetchRates}
+          onClick={() => fetchRates()}
           className="mt-4 text-blue-600 hover:text-blue-800"
         >
           Try again

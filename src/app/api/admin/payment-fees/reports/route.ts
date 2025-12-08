@@ -67,9 +67,10 @@ export async function GET(request: NextRequest) {
           existing.last_transaction_date = snapshot.created_at;
         }
       } else {
+        const schoolData = Array.isArray(snapshot.school) ? snapshot.school[0] : snapshot.school;
         schoolAggregates.set(schoolId, {
           school_id: schoolId,
-          school_name: snapshot.school?.name || "Unknown School",
+          school_name: schoolData?.name || "Unknown School",
           total_fees_owed: Number(snapshot.fee_amount),
           transaction_count: 1,
           last_transaction_date: snapshot.created_at,

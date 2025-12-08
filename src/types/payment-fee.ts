@@ -29,6 +29,7 @@ export interface PaymentFeeRate {
   // Proposal info
   proposed_by_id: string;
   proposed_by_role: ProposerRole;
+  notes?: string;
 
   // Approvals
   school_approved_at?: string;
@@ -45,6 +46,7 @@ export interface PaymentFeeRate {
   effective_from: string;
   effective_until?: string;
   expires_at?: string;
+  activated_at?: string;
 
   created_at: string;
   updated_at: string;

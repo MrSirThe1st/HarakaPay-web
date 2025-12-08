@@ -11,7 +11,6 @@ export function AdminPaymentFeeReportsView() {
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedSchoolId, setSelectedSchoolId] = useState('');
 
   useEffect(() => {
     // Set default dates (last 30 days)
@@ -27,7 +26,7 @@ export function AdminPaymentFeeReportsView() {
     if (startDate && endDate) {
       fetchReport();
     }
-  }, [startDate, endDate, selectedSchoolId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [startDate, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReport = async () => {
     try {
@@ -38,10 +37,6 @@ export function AdminPaymentFeeReportsView() {
         start_date: startDate,
         end_date: endDate,
       });
-
-      if (selectedSchoolId) {
-        params.append('school_id', selectedSchoolId);
-      }
 
       const response = await fetch(`/api/admin/payment-fees/reports?${params}`, {
         credentials: 'include',
@@ -165,7 +160,7 @@ export function AdminPaymentFeeReportsView() {
                         Total Fees Owed
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        KES {report.summary.total_fees_owed.toLocaleString()}
+                        KES {report.total_fees_owed.toLocaleString()}
                       </dd>
                     </dl>
                   </div>
@@ -185,7 +180,7 @@ export function AdminPaymentFeeReportsView() {
                         Total Transactions
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        {report.summary.total_transactions.toLocaleString()}
+                        {report.total_transactions.toLocaleString()}
                       </dd>
                     </dl>
                   </div>
@@ -205,7 +200,7 @@ export function AdminPaymentFeeReportsView() {
                         Schools
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">
-                        {report.summary.schools_count}
+                        {report.schools_count}
                       </dd>
                     </dl>
                   </div>
