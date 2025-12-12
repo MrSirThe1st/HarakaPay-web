@@ -77,37 +77,72 @@ export async function authenticateRequest(
     }
 
     // Step 2: Fall back to cookie-based auth (for web)
-    if (!user && request) {
-      // Use Request cookies directly to avoid Next.js 15 production issues
-      const getCookie = (name: string) => {
-        const cookieHeader = request.headers.get('cookie');
-        if (!cookieHeader) return undefined;
-        const cookies = cookieHeader.split(';').map(c => c.trim());
-        const cookie = cookies.find(c => c.startsWith(`${name}=`));
-        return cookie?.substring(name.length + 1);
-      };
+    if (!user) {
+      if (request) {
+        // Use Request cookies directly (production-safe for Next.js 15)
+        const getCookie = (name: string) => {
+          const cookieHeader = request.headers.get('cookie');
+          if (!cookieHeader) return undefined;
+          const cookies = cookieHeader.split(';').map(c => c.trim());
+          const cookie = cookies.find(c => c.startsWith(`${name}=`));
+          return cookie?.substring(name.length + 1);
+        };
 
-      const supabase = createServerClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name: string) {
-              return getCookie(name);
+        const supabase = createServerClient<Database>(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              get(name: string) {
+                return getCookie(name);
+              },
+              set() {
+                // No-op: cookies set via response headers
+              },
+              remove() {
+                // No-op: cookies removed via response headers
+              },
             },
-            set() {
-              // No-op: cookies set via response headers
-            },
-            remove() {
-              // No-op: cookies removed via response headers
-            },
-          },
-        }
-      );
+          }
+        );
 
-      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
-      user = cookieUser;
-      authError = cookieError;
+        const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+        user = cookieUser;
+        authError = cookieError;
+      } else {
+        // Fallback to Next.js cookies() for routes that don't pass Request
+        const cookieStore = await cookies();
+
+        const supabase = createServerClient<Database>(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              get(name: string) {
+                return cookieStore.get(name)?.value;
+              },
+              set(name: string, value: string, options: CookieOptions) {
+                try {
+                  cookieStore.set({ name, value, ...options });
+                } catch {
+                  // Cookie setting might fail in some contexts
+                }
+              },
+              remove(name: string, options: CookieOptions) {
+                try {
+                  cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+                } catch {
+                  // Cookie removal might fail in some contexts
+                }
+              },
+            },
+          }
+        );
+
+        const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+        user = cookieUser;
+        authError = cookieError;
+      }
     }
 
     if (authError || !user) {
