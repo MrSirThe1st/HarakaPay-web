@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+// Debug GET handler
+export async function GET() {
+  return NextResponse.json({
+    message: 'Profile API is working',
+    methods: ['POST'],
+    version: '1.0.0'
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json();
