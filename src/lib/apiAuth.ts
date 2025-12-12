@@ -77,8 +77,15 @@ export async function authenticateRequest(
     }
 
     // Step 2: Fall back to cookie-based auth (for web)
-    if (!user) {
-      const cookieStore = await cookies();
+    if (!user && request) {
+      // Use Request cookies directly to avoid Next.js 15 production issues
+      const getCookie = (name: string) => {
+        const cookieHeader = request.headers.get('cookie');
+        if (!cookieHeader) return undefined;
+        const cookies = cookieHeader.split(';').map(c => c.trim());
+        const cookie = cookies.find(c => c.startsWith(`${name}=`));
+        return cookie?.substring(name.length + 1);
+      };
 
       const supabase = createServerClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -86,21 +93,13 @@ export async function authenticateRequest(
         {
           cookies: {
             get(name: string) {
-              return cookieStore.get(name)?.value;
+              return getCookie(name);
             },
-            set(name: string, value: string, options: CookieOptions) {
-              try {
-                cookieStore.set({ name, value, ...options });
-              } catch {
-                // Cookie setting might fail in some contexts (e.g., after response sent)
-              }
+            set() {
+              // No-op: cookies set via response headers
             },
-            remove(name: string, options: CookieOptions) {
-              try {
-                cookieStore.set({ name, value: '', ...options, maxAge: 0 });
-              } catch {
-                // Cookie removal might fail in some contexts
-              }
+            remove() {
+              // No-op: cookies removed via response headers
             },
           },
         }

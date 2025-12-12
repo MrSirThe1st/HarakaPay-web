@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
-import { createAdminClient } from "@/lib/supabaseServerOnly";
 import { z } from "zod";
 
 // Validation schema for creating fee rate
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
       requiredRoles: ['super_admin', 'platform_admin']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { adminClient } = authResult;
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -90,7 +89,7 @@ export async function POST(request: NextRequest) {
       requiredRoles: ['super_admin', 'platform_admin']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { profile, adminClient } = authResult;
 
     // Parse and validate request body
     const body = await request.json();

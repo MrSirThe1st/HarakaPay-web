@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
-import { createAdminClient } from "@/lib/supabaseServerOnly";
 
 interface RouteParams {
   params: Promise<{
@@ -14,7 +13,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       requiredRoles: ['school_admin', 'school_staff']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { profile, adminClient } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json(

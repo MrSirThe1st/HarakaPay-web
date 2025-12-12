@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     // Add any experimental features you're using
   },
 
+  // Set workspace root to silence multiple lockfile warning
+  outputFileTracingRoot: '/Users/marcim/HarakaPay-web',
+
   // Enable gzip/brotli compression
   compress: true,
 
@@ -29,11 +32,22 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        // Only cache public API endpoints
+        source: '/api/public/:path*',
         headers: [
           {
             key: 'Cache-Control',
             value: 'public, max-age=60, stale-while-revalidate=300',
+          },
+        ],
+      },
+      {
+        // Auth-dependent endpoints: no cache
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, must-revalidate',
           },
         ],
       },

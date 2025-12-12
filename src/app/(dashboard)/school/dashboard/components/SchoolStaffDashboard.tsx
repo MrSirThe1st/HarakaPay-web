@@ -138,29 +138,6 @@ const SchoolStaffDashboardComponent = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="rounded-xl shadow-lg p-8 text-white overflow-hidden relative" style={{
-        background: 'linear-gradient(to right, #2563eb 0%, #3b82f6 40%, #60a5fa 42%, #eab308 45%, #fbbf24 48%, #dc2626 50%, #ef4444 68%, #fbbf24 70%, #eab308 73%, #60a5fa 75%, #3b82f6 78%, #2563eb 100%)'
-      }}>
-        {/* General blur overlay */}
-        <div className="absolute inset-0 backdrop-blur-md"></div>
-        <div className="flex items-center justify-between relative z-10">
-          <div className="hidden md:block">
-            <div className="bg-yellow-400/20 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-              <AcademicCapIcon className="h-12 w-12 text-yellow-400" />
-            </div>
-          </div>
-          <div className="flex-1 ml-6">
-            <h1 className="text-3xl font-bold mb-2">
-              {greeting && `${greeting},`} Welcome back!
-            </h1>
-            <p className="text-white/90 text-lg">
-              Here&apos;s an overview of your school&apos;s performance today
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Stats Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

@@ -51,6 +51,7 @@ export function PaymentsByGradeView({ isParentLoading = false }: PaymentsByGrade
   const { t } = useTranslation();
   const [byGrade, setByGrade] = useState<Record<string, StudentPaymentData[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
@@ -63,6 +64,7 @@ export function PaymentsByGradeView({ isParentLoading = false }: PaymentsByGrade
   const fetchPaymentsByGrade = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const searchParams = new URLSearchParams();
       if (selectedGrade !== 'all') {
         searchParams.set('grade_level', selectedGrade);
@@ -76,13 +78,14 @@ export function PaymentsByGradeView({ isParentLoading = false }: PaymentsByGrade
       }
 
       setByGrade(result.data.byGrade || {});
-      
+
       // Auto-expand all grades on first load
       if (Object.keys(result.data.byGrade || {}).length > 0 && expandedGrades.size === 0) {
         setExpandedGrades(new Set(Object.keys(result.data.byGrade || {})));
       }
     } catch (error) {
       console.error('Error fetching payments by grade:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load payment data');
     } finally {
       setIsLoading(false);
     }
@@ -201,6 +204,23 @@ export function PaymentsByGradeView({ isParentLoading = false }: PaymentsByGrade
         <CardSkeleton />
         <CardSkeleton />
         <CardSkeleton />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="text-red-800 font-semibold mb-2">Error Loading Data</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={() => fetchPaymentsByGrade()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

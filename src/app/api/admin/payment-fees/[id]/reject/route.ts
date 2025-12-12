@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
-import { createAdminClient } from "@/lib/supabaseServerOnly";
 import { z } from "zod";
 
 interface RouteParams {
@@ -19,7 +18,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       requiredRoles: ['super_admin', 'platform_admin']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { profile, adminClient } = authResult;
 
     // Parse and validate request body
     const body = await request.json();

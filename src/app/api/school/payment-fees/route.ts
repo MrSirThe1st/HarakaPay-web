@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
-import { createAdminClient } from "@/lib/supabaseServerOnly";
 import { z } from "zod";
 
 // Validation schema for creating fee rate proposal
@@ -15,7 +14,7 @@ export async function GET(request: NextRequest) {
       requiredRoles: ['school_admin', 'school_staff']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { profile, adminClient } = authResult;
 
     if (!profile.school_id) {
       return NextResponse.json(
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
       requiredRoles: ['school_admin', 'school_staff']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { profile, adminClient } = authResult;
 
     const isSchoolAdmin = profile.role === "school_admin";
     if (!isSchoolAdmin || !profile.school_id) {

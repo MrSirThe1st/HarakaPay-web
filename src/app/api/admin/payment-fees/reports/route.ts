@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
-import { createAdminClient } from "@/lib/supabaseServerOnly";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +7,7 @@ export async function GET(request: NextRequest) {
       requiredRoles: ['super_admin', 'platform_admin']
     }, request);
     if (isAuthError(authResult)) return authResult;
-    const { user, profile, adminClient } = authResult;
+    const { adminClient } = authResult;
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
