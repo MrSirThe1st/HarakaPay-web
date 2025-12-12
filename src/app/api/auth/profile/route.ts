@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+// Force Node.js runtime (not Edge)
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // Debug GET handler
 export async function GET() {
   return NextResponse.json({
     message: 'Profile API is working',
-    methods: ['POST'],
-    version: '1.0.0'
+    methods: ['GET', 'POST'],
+    version: '1.0.1',
+    timestamp: new Date().toISOString()
   });
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
+    const body = await request.json();
+    const { userId } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
