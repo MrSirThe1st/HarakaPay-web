@@ -288,7 +288,7 @@ export async function POST(req: NextRequest) {
       const batch = assignmentsToCreate.slice(i, i + batchSize);
       const { data: createdAssignments, error: insertError } = await adminClient
         .from('student_fee_assignments')
-        .insert(batch)
+        .insert(batch as any)
         .select('id, student_id');
 
       if (insertError) {

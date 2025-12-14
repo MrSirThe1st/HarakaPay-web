@@ -2,6 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
+interface AdminProfile {
+  id: string;
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  admin_type: string | null;
+  phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export async function GET(_request: NextRequest) {
   try {
     const authResult = await authenticateRequest({
@@ -34,14 +47,14 @@ export async function GET(_request: NextRequest) {
 
     if (adminsError) {
       console.error('Admins fetch error:', adminsError);
-      return NextResponse.json({ 
-        error: `Failed to fetch admins: ${adminsError.message}` 
+      return NextResponse.json({
+        error: `Failed to fetch admins: ${adminsError.message}`
       }, { status: 500 });
     }
 
     // Get auth user details for each admin
     const adminsWithAuth = await Promise.all(
-      (admins || []).map(async (admin) => {
+      ((admins as AdminProfile[]) || []).map(async (admin) => {
         try {
           const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(admin.user_id);
           

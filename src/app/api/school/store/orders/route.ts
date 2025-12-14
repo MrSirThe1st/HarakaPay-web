@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         payment_status: 'pending',
         notes: notes || null,
-      })
+      } as any)
       .select()
       .single();
 
@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
           unit_price: item.unitPrice,
           subtotal: item.subtotal,
-        })
+        } as any)
         .select()
         .single();
 
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
             hire_end_date: item.hireEndDate,
             expected_return_date: item.hireEndDate, // For now, same as end date
             deposit_paid: 0, // Will be updated when payment is processed
-          });
+          } as any);
 
         if (hireError) {
           console.error('Error creating hire record:', hireError);

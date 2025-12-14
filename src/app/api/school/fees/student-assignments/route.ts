@@ -199,7 +199,7 @@ export async function POST(req: Request) {
         total_amount,
         paid_amount: 0,
         status
-      })
+      } as any)
       .select('*')
       .single();
 

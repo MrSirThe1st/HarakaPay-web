@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
         requested_quantity: requestedQuantity,
         message: message?.trim() || null,
         status: 'pending',
-      })
+      } as any)
       .select()
       .single();
 

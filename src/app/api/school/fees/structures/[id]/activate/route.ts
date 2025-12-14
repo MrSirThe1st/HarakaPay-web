@@ -194,7 +194,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const { data: newAssignments, error: createError } = await adminClient
       .from('student_fee_assignments')
-      .insert(assignments)
+      .insert(assignments as any)
       .select('id, student_id');
 
     if (createError) {

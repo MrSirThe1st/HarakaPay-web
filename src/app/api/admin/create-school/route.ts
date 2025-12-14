@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
           grade_levels: schoolData.gradeLevels || [],
           status: "approved",
           verification_status: "pending"
-        })
+        } as any)
         .select()
         .single();
 
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log('School created:', school.id);
+      console.log('School created:', (school as any)?.id);
 
       // Step 9: Create profile using admin client (bypasses RLS)
       const { error: profileInsertError } = await adminClient
@@ -132,17 +132,17 @@ export async function POST(request: NextRequest) {
           last_name: schoolData.contactLastName,
           role: "school_admin", // Make them admin of their school
           admin_type: null, // School admins are not platform-level admins
-          school_id: school.id,
+          school_id: (school as any).id,
           phone: schoolData.contactPhone || null,
           avatar_url: null,
           permissions: {},
           is_active: true
-        });
+        } as any);
 
       if (profileInsertError) {
         console.error("Profile creation error:", profileInsertError);
         // Cleanup: delete both school and auth user
-        await adminClient.from("schools").delete().eq("id", school.id);
+        await adminClient.from("schools").delete().eq("id", (school as any).id);
         await adminClient.auth.admin.deleteUser(authData.user.id);
         
         return NextResponse.json(
@@ -158,13 +158,13 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         action: "CREATE_SCHOOL",
         entity_type: "school",
-        entity_id: school.id,
+        entity_id: (school as any).id,
         details: {
           school_name: schoolData.name,
           created_by_role: profile.role,
           admin_name: `${profile.first_name} ${profile.last_name}`
         }
-      });
+      } as any);
 
       console.log('School creation completed successfully');
 

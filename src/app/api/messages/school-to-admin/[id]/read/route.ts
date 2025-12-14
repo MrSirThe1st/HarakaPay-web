@@ -26,7 +26,7 @@ export async function PUT(
       .update({
         status: 'read',
         read_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('id', ticketId);
 
     if (updateError) {

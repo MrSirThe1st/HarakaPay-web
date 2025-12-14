@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
+interface School {
+  id: string;
+  name: string;
+}
+
+interface TransactionSnapshot {
+  school_id: string;
+  fee_amount: number;
+  created_at: string;
+  school: School | School[];
+  [key: string]: unknown;
+}
+
+interface FeeRate {
+  school_id: string;
+  fee_percentage: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const authResult = await authenticateRequest({
@@ -55,7 +73,7 @@ export async function GET(request: NextRequest) {
       last_transaction_date?: string;
     }>();
 
-    snapshots?.forEach((snapshot) => {
+    (snapshots as TransactionSnapshot[] | null)?.forEach((snapshot) => {
       const schoolId = snapshot.school_id;
       const existing = schoolAggregates.get(schoolId);
 
@@ -84,7 +102,7 @@ export async function GET(request: NextRequest) {
       .eq("status", "active");
 
     const feeRateMap = new Map(
-      activeFeeRates?.map((rate) => [rate.school_id, rate.fee_percentage]) || []
+      (activeFeeRates as FeeRate[] | null)?.map((rate) => [rate.school_id, rate.fee_percentage]) || []
     );
 
     // Convert to array and add current fee percentage

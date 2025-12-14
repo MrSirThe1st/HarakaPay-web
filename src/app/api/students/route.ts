@@ -254,7 +254,7 @@ export async function POST(req: Request) {
 
     const { data: newStudent, error: insertError } = await adminClient
       .from('students')
-      .insert(studentData)
+      .insert(studentData as any)
       .select('*')
       .single();
 

@@ -203,7 +203,7 @@ export async function POST(req: Request) {
         is_active,
         fee_category_id,  // Add the category link
         created_by: user.id || null  // Use user.id or null if not available
-      })
+      } as any)
       .select('*')
       .single();
 

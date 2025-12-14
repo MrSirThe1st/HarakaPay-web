@@ -161,7 +161,7 @@ export async function POST(req: Request) {
       const batch = studentsForDb.slice(i, i + batchSize);
       const { data: insertedStudents, error: insertError } = await adminClient
         .from('students')
-        .insert(batch)
+        .insert(batch as any)
         .select('student_id');
       if (insertError) {
         console.error(`Error inserting batch ${Math.floor(i / batchSize) + 1}:`, insertError);

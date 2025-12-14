@@ -139,7 +139,7 @@ export async function POST(req: Request) {
         schedule_type,
         discount_percentage,
         template_id
-      })
+      } as any)
       .select('*')
       .single();
 
@@ -171,7 +171,7 @@ export async function POST(req: Request) {
 
       const { error: installmentsError } = await adminClient
         .from('payment_installments')
-        .insert(scheduleInstallments);
+        .insert(scheduleInstallments as any);
 
       if (installmentsError) {
         console.error('Payment installments creation error:', installmentsError);

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         subject,
         message: description,
         status: 'unread', // unread = open ticket
-      })
+      } as any)
       .select()
       .single();
 

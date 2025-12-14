@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { z } from "zod";
 
+interface School {
+  id?: string;
+  name?: string;
+  verification_status: string;
+}
+
 // Validation schema for creating fee rate
 const CreateFeeRateSchema = z.object({
   school_id: z.string().uuid(),
@@ -30,7 +36,9 @@ export async function GET(request: NextRequest) {
         .eq("id", schoolId)
         .single();
 
-      if (!school || school.verification_status !== 'verified') {
+      const typedSchool = school as School | null;
+
+      if (!typedSchool || typedSchool.verification_status !== 'verified') {
         return NextResponse.json(
           { success: false, error: "Payment fees can only be viewed for verified schools" },
           { status: 403 }
@@ -118,8 +126,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const typedSchool = school as School;
+
     // Only allow fee management for verified schools
-    if (school.verification_status !== 'verified') {
+    if (typedSchool.verification_status !== 'verified') {
       return NextResponse.json(
         { success: false, error: "Payment fees can only be managed for verified schools" },
         { status: 403 }
@@ -151,7 +161,7 @@ export async function POST(request: NextRequest) {
         proposed_by_id: profile.id,
         proposed_by_role: "platform_admin",
         effective_from: effective_from || new Date().toISOString(),
-      })
+      } as any)
       .select(`
         *,
         school:schools(id, name)
@@ -169,7 +179,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: newRate,
-      message: `Fee rate proposal created for ${school.name}. Awaiting school approval.`
+      message: `Fee rate proposal created for ${typedSchool.name}. Awaiting school approval.`
     }, { status: 201 });
   } catch (error) {
     console.error("Error processing request:", error);

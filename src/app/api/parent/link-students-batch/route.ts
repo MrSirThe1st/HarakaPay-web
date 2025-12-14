@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
             relationship: 'parent',
             is_primary: true,
             created_at: new Date().toISOString(),
-          })
+          } as any)
           .select()
           .single();
 

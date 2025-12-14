@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         is_active: isActive,
-      })
+      } as any)
       .select()
       .single();
 

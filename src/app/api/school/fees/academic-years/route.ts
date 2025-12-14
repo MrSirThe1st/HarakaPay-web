@@ -125,7 +125,7 @@ export async function POST(req: Request) {
         term_structure,
         is_active,
         school_id: profile.school_id
-      })
+      } as any)
       .select('*')
       .single();
 

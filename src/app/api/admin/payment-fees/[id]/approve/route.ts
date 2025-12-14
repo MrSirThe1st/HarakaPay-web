@@ -7,6 +7,21 @@ interface RouteParams {
   }>;
 }
 
+interface School {
+  id: string;
+  name: string;
+  verification_status: string;
+}
+
+interface FeeRateWithSchool {
+  id: string;
+  school_id: string;
+  status: string;
+  school_approved_at: string | null;
+  school: School;
+  [key: string]: unknown;
+}
+
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const authResult = await authenticateRequest({
@@ -32,8 +47,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const typedFeeRate = feeRate as unknown as FeeRateWithSchool;
+
     // Verify school is verified
-    if (feeRate.school?.verification_status !== 'verified') {
+    if (typedFeeRate.school?.verification_status !== 'verified') {
       return NextResponse.json(
         { success: false, error: "Payment fees can only be managed for verified schools" },
         { status: 403 }
@@ -41,15 +58,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if this rate is pending admin approval
-    if (feeRate.status !== "pending_admin") {
+    if (typedFeeRate.status !== "pending_admin") {
       return NextResponse.json(
-        { success: false, error: `Cannot approve: rate status is ${feeRate.status}` },
+        { success: false, error: `Cannot approve: rate status is ${typedFeeRate.status}` },
         { status: 400 }
       );
     }
 
     // Check if already approved by school
-    if (!feeRate.school_approved_at) {
+    if (!typedFeeRate.school_approved_at) {
       return NextResponse.json(
         { success: false, error: "School has not approved yet" },
         { status: 400 }
@@ -62,8 +79,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .update({
         status: "expired",
         effective_until: new Date().toISOString()
-      })
-      .eq("school_id", feeRate.school_id)
+      } as never)
+      .eq("school_id", typedFeeRate.school_id)
       .eq("status", "active");
 
     if (deactivateError) {
@@ -77,7 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         status: "active",
         admin_approved_at: new Date().toISOString(),
         admin_approved_by: profile.id,
-      })
+      } as never)
       .eq("id", rateId)
       .select(`
         *,
@@ -96,7 +113,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({
       success: true,
       data: updatedRate,
-      message: `Fee rate approved for ${feeRate.school.name}. Rate is now active.`
+      message: `Fee rate approved for ${typedFeeRate.school.name}. Rate is now active.`
     });
   } catch (error) {
     console.error("Error processing request:", error);

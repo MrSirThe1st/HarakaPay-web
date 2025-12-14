@@ -208,7 +208,7 @@ export async function POST(req: Request) {
         is_published,
         school_id: profile.school_id,
         created_by: user.id || null  // Use user.id or null if not available
-      })
+      } as any)
       .select('*')
       .single();
 
@@ -232,7 +232,7 @@ export async function POST(req: Request) {
 
     const { error: itemsError } = await adminClient
       .from('fee_structure_items')
-      .insert(structureItems);
+      .insert(structureItems as any);
 
     if (itemsError) {
       console.error('Fee structure items creation error:', itemsError);
@@ -267,7 +267,7 @@ export async function DELETE(req: Request) {
     const authResult = await authenticateRequest({
       requiredRoles: ['school_admin'],
       requireActive: true
-    });
+    }, req);
 
     if (isAuthError(authResult)) {
       return authResult;

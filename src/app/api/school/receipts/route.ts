@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         is_default: false,
         is_active: true,
         created_by: profile.user_id || null,  // Use profile.user_id or null if not available
-      })
+      } as any)
       .select()
       .single();
 

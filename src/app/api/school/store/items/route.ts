@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
         low_stock_threshold: lowStockThreshold || 10,
         is_available: isAvailable !== false,
         images: images || [],
-      })
+      } as any)
       .select()
       .single();
 
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
           max_duration_days: hireSettings.maxDurationDays,
           deposit_amount: hireSettings.depositAmount || null,
           late_fee_per_day: hireSettings.lateFeePerDay || null,
-        })
+        } as any)
         .select()
         .single();
 

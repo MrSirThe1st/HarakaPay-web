@@ -171,7 +171,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { error: categoriesError } = await adminClient
       .from('fee_template_categories')
-      .insert(templateCategories);
+      .insert(templateCategories as any);
 
     if (categoriesError) {
       console.error('Fee template categories update error:', categoriesError);

@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .select()
         .single();
 
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         relationship,
         is_primary,
         created_at: new Date().toISOString(),
-      })
+      } as any)
       .select()
       .single();
 

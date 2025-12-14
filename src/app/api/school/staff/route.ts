@@ -231,7 +231,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         position: position || null,
         staff_id: staff_id?.trim() || null
-      })
+      } as any)
       .select('*')
       .single();
 

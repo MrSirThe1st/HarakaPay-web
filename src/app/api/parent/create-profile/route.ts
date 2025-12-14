@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           email: profileData.email,
           address: profileData.address || null,
           is_active: true
-        })
+        } as any)
         .select()
         .single();
 
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
           avatar_url: null,
           permissions: {},
           is_active: true
-        })
+        } as any)
         .select()
         .single();
 

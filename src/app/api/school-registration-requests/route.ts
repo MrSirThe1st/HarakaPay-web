@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await adminClient
       .from("school_registration_requests")
-      .insert(insertPayload)
+      .insert(insertPayload as any)
       .select()
       .single();
 

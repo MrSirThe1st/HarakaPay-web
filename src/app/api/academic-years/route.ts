@@ -94,20 +94,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     // Prepare insert data
-    const insertData: AcademicYearInsert = {
+    const insertData = {
       school_id: profile.school_id,
       name,
       start_date,
       end_date,
       is_active: !existingActiveYear, // Set as active if no other active year exists
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
 
     // Create academic year
     const { data: newYear, error: createError } = await adminClient
       .from('academic_years')
-      .insert(insertData)
+      .insert(insertData as any)
       .select()
       .single();
 

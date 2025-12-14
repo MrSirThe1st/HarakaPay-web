@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           avatar_url: null,
           permissions: adminData.permissions || {},
           is_active: true
-        });
+        } as any);
 
       if (profileInsertError) {
         console.error("Profile creation error:", profileInsertError);
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
           created_by_role: profile.role,
           creator_name: `${profile.first_name} ${profile.last_name}`
         }
-      });
+      } as any);
 
       console.log('Platform admin creation completed successfully');
 

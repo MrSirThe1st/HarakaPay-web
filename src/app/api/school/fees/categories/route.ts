@@ -125,7 +125,7 @@ export async function POST(req: Request) {
         supports_one_time,
         category_type,
         school_id: profile.school_id
-      })
+      } as any)
       .select('*')
       .single();
 

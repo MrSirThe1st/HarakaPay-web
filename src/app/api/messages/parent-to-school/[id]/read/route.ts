@@ -20,13 +20,20 @@ export async function PUT(
     const params = await context.params;
     const messageId = params.id;
 
+    if (!profile.school_id) {
+      return NextResponse.json(
+        { success: false, error: 'No school assigned to this account' },
+        { status: 400 }
+      );
+    }
+
     // Update message status
     const { error: updateError } = await adminClient
       .from('parent_school_messages')
       .update({
         status: 'read',
         read_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('id', messageId)
       .eq('school_id', profile.school_id);
 

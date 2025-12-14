@@ -8,6 +8,20 @@ interface RouteParams {
   }>;
 }
 
+interface School {
+  id: string;
+  name: string;
+  verification_status: string;
+}
+
+interface FeeRateWithSchool {
+  id: string;
+  school_id: string;
+  status: string;
+  school: School;
+  [key: string]: unknown;
+}
+
 const RejectSchema = z.object({
   rejection_reason: z.string().min(1, "Rejection reason is required"),
 });
@@ -49,8 +63,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const typedFeeRate = feeRate as unknown as FeeRateWithSchool;
+
     // Verify school is verified
-    if (feeRate.school?.verification_status !== 'verified') {
+    if (typedFeeRate.school?.verification_status !== 'verified') {
       return NextResponse.json(
         { success: false, error: "Payment fees can only be managed for verified schools" },
         { status: 403 }
@@ -58,9 +74,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if this rate can be rejected by admin
-    if (feeRate.status !== "pending_admin") {
+    if (typedFeeRate.status !== "pending_admin") {
       return NextResponse.json(
-        { success: false, error: `Cannot reject: rate status is ${feeRate.status}` },
+        { success: false, error: `Cannot reject: rate status is ${typedFeeRate.status}` },
         { status: 400 }
       );
     }
@@ -73,7 +89,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         rejection_reason,
         rejected_by: profile.id,
         rejected_at: new Date().toISOString(),
-      })
+      } as never)
       .eq("id", rateId)
       .select(`
         *,
@@ -92,7 +108,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({
       success: true,
       data: updatedRate,
-      message: `Fee rate proposal rejected for ${feeRate.school.name}.`
+      message: `Fee rate proposal rejected for ${typedFeeRate.school.name}.`
     });
   } catch (error) {
     console.error("Error processing request:", error);

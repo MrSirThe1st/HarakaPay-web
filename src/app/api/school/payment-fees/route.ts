@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         proposed_by_id: profile.id,
         proposed_by_role: "school_admin",
         effective_from: effective_from || new Date().toISOString(),
-      })
+      } as any)
       .select()
       .single();
 

@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       `)
       .eq('school_id', schoolId)
       .eq('role', 'school_admin')
-      .single();
+      .single() as any;
 
     if (adminError || !schoolAdmin) {
       return NextResponse.json({ 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         viewed_by_role: profile.role,
         admin_name: `${profile.first_name} ${profile.last_name}`
       }
-    });
+    } as any);
 
     return NextResponse.json({
       success: true,
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         reset_by_role: profile.role,
         admin_name: `${profile.first_name} ${profile.last_name}`
       }
-    });
+    } as any);
 
     return NextResponse.json({
       success: true,

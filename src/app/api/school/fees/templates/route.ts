@@ -224,7 +224,7 @@ export async function POST(req: Request) {
         total_amount,
         status,
         school_id: profile.school_id
-      })
+      } as any)
       .select('*')
       .single();
 
@@ -245,7 +245,7 @@ export async function POST(req: Request) {
 
     const { error: categoriesError } = await adminClient
       .from('fee_template_categories')
-      .insert(templateCategories);
+      .insert(templateCategories as any);
 
     if (categoriesError) {
       console.error('Fee template categories creation error:', categoriesError);

@@ -1,4 +1,4 @@
-// src/middleware.ts
+// src/proxy.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 import { NextResponse } from 'next/server';
@@ -40,12 +40,12 @@ const protectedRoutes = {
 async function getCachedProfile(userId: string) {
   const now = Date.now();
   const cached = profileCache.get(userId);
-  
+
   // Return cached profile if still valid
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
     return cached.profile;
   }
-  
+
   // Fetch fresh profile from database
   try {
     const adminClient = createAdminClient();
@@ -62,7 +62,7 @@ async function getCachedProfile(userId: string) {
 
     // Cache the profile
     profileCache.set(userId, { profile, timestamp: now });
-    
+
     return profile;
   } catch (error) {
     console.error('Unexpected error fetching profile in middleware:', error);
@@ -70,8 +70,8 @@ async function getCachedProfile(userId: string) {
   }
 }
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+export async function proxy(req: NextRequest) {
+  let res = NextResponse.next();
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -82,6 +82,14 @@ export async function middleware(req: NextRequest) {
           return req.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          res = NextResponse.next({
+            request: req,
+          });
           res.cookies.set({
             name,
             value,
@@ -89,6 +97,15 @@ export async function middleware(req: NextRequest) {
           });
         },
         remove(name: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+            maxAge: 0,
+          });
+          res = NextResponse.next({
+            request: req,
+          });
           res.cookies.set({
             name,
             value: '',
@@ -185,16 +202,16 @@ export async function middleware(req: NextRequest) {
     // Check role-based access for protected routes
     for (const [route, requiredRoles] of Object.entries(protectedRoutes)) {
       if (pathname.startsWith(route) && requiredRoles.length > 0) {
-        
+
         // Get profile from cache or database
         const profile = await getCachedProfile(session.user.id);
-        
+
         if (!profile) {
           return NextResponse.redirect(new URL('/login', req.url));
         }
 
         const userRole = profile.role;
-        
+
         // Check if user is active
         if (!profile.is_active) {
           return NextResponse.redirect(new URL('/login', req.url));
@@ -208,7 +225,7 @@ export async function middleware(req: NextRequest) {
     }
 
     return res;
-    
+
   } catch (error) {
     console.error('Middleware error:', error);
     return NextResponse.redirect(new URL('/login', req.url));

@@ -48,7 +48,7 @@ export async function PATCH(
     // Update the request using admin client to bypass RLS
     const { data, error } = await adminClient
       .from("school_registration_requests")
-      .update(updateData)
+      .update(updateData as never)
       .eq("id", id)
       .select()
       .single();

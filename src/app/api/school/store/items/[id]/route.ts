@@ -244,7 +244,7 @@ export async function PUT(
             max_duration_days: hireSettings.maxDurationDays,
             deposit_amount: hireSettings.depositAmount || null,
             late_fee_per_day: hireSettings.lateFeePerDay || null,
-          });
+          } as any);
 
         if (hireSettingsError) {
           console.error('Error creating hire settings:', hireSettingsError);

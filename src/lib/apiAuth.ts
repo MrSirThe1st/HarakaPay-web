@@ -3,7 +3,6 @@
 
 import { NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 import type { User } from '@supabase/supabase-js';
@@ -31,28 +30,32 @@ interface AuthOptions {
 
 /**
  * Authenticates API requests and returns user + profile
+ * Production-ready with @supabase/ssr and Next.js 16
  *
  * @param options - Authentication options
+ * @param request - Required Request object for cookie access
  * @returns AuthResult with user, profile, and adminClient, or NextResponse error
  *
  * @example
  * ```typescript
- * const authResult = await authenticateRequest({
- *   requiredRoles: ['school_admin', 'school_staff'],
- *   requireSchool: true
- * });
+ * export async function POST(request: Request) {
+ *   const authResult = await authenticateRequest({
+ *     requiredRoles: ['school_admin', 'school_staff'],
+ *     requireSchool: true
+ *   }, request);
  *
- * if (authResult instanceof NextResponse) {
- *   return authResult; // Error response
+ *   if (authResult instanceof NextResponse) {
+ *     return authResult; // Error response
+ *   }
+ *
+ *   const { user, profile, adminClient } = authResult;
+ *   // Continue with authenticated logic...
  * }
- *
- * const { user, profile, adminClient } = authResult;
- * // Continue with authenticated logic...
  * ```
  */
 export async function authenticateRequest(
   options: AuthOptions = {},
-  request?: Request
+  request: Request
 ): Promise<AuthResult | NextResponse> {
   const {
     requiredRoles = [],
@@ -65,84 +68,49 @@ export async function authenticateRequest(
     let authError: unknown = null;
 
     // Step 1: Try Authorization header first (for mobile apps)
-    if (request) {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        const adminClient = createAdminClient();
-        const { data, error } = await adminClient.auth.getUser(token);
-        user = data.user;
-        authError = error;
-      }
+    const authHeader = request.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const adminClient = createAdminClient();
+      const { data, error } = await adminClient.auth.getUser(token);
+      user = data.user;
+      authError = error;
     }
 
     // Step 2: Fall back to cookie-based auth (for web)
     if (!user) {
-      if (request) {
-        // Use Request cookies directly (production-safe for Next.js 15)
-        const getCookie = (name: string) => {
-          const cookieHeader = request.headers.get('cookie');
-          if (!cookieHeader) return undefined;
-          const cookies = cookieHeader.split(';').map(c => c.trim());
-          const cookie = cookies.find(c => c.startsWith(`${name}=`));
-          return cookie?.substring(name.length + 1);
-        };
+      // Parse cookies from Request header
+      const cookieHeader = request.headers.get('cookie') || '';
+      const cookies = new Map<string, string>();
 
-        const supabase = createServerClient<Database>(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            cookies: {
-              get(name: string) {
-                return getCookie(name);
-              },
-              set() {
-                // No-op: cookies set via response headers
-              },
-              remove() {
-                // No-op: cookies removed via response headers
-              },
+      cookieHeader.split(';').forEach(cookie => {
+        const [name, ...rest] = cookie.trim().split('=');
+        if (name && rest.length > 0) {
+          cookies.set(name, rest.join('='));
+        }
+      });
+
+      const supabase = createServerClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookies.get(name);
             },
-          }
-        );
-
-        const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
-        user = cookieUser;
-        authError = cookieError;
-      } else {
-        // Fallback to Next.js cookies() for routes that don't pass Request
-        const cookieStore = await cookies();
-
-        const supabase = createServerClient<Database>(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            cookies: {
-              get(name: string) {
-                return cookieStore.get(name)?.value;
-              },
-              set(name: string, value: string, options: CookieOptions) {
-                try {
-                  cookieStore.set({ name, value, ...options });
-                } catch {
-                  // Cookie setting might fail in some contexts
-                }
-              },
-              remove(name: string, options: CookieOptions) {
-                try {
-                  cookieStore.set({ name, value: '', ...options, maxAge: 0 });
-                } catch {
-                  // Cookie removal might fail in some contexts
-                }
-              },
+            set() {
+              // No-op: cookies are set via response headers in middleware
             },
-          }
-        );
+            remove() {
+              // No-op: cookies are removed via response headers
+            },
+          },
+        }
+      );
 
-        const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
-        user = cookieUser;
-        authError = cookieError;
-      }
+      const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+      user = cookieUser;
+      authError = cookieError;
     }
 
     if (authError || !user) {

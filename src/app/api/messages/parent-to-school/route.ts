@@ -3,6 +3,21 @@ import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { z } from 'zod';
 import type { ParentSchoolMessageWithDetails, MessageListResponse } from '@/types/message.types';
 
+interface Parent {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface Student {
+  id: string;
+  school_id: string;
+}
+
+interface ParentStudentRelationship {
+  student: Student | Student[];
+}
+
 const sendMessageSchema = z.object({
   student_id: z.string().uuid(),
   subject: z.string().min(1).max(255),
@@ -42,11 +57,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const typedParent = parent as Parent;
+
     // Verify parent-student relationship and get school_id
     const { data: relationship, error: relError } = await adminClient
       .from('parent_students')
       .select('student:students(id, school_id)')
-      .eq('parent_id', parent.id)
+      .eq('parent_id', typedParent.id)
       .eq('student_id', student_id)
       .single();
 
@@ -57,18 +74,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const student = (relationship.student as unknown) as { id: string; school_id: string };
+    const typedRelationship = relationship as ParentStudentRelationship;
+    const student = (Array.isArray(typedRelationship.student) ? typedRelationship.student[0] : typedRelationship.student) as Student;
 
     // Insert message
     const { data: newMessage, error: insertError } = await adminClient
       .from('parent_school_messages')
       .insert({
-        parent_id: parent.id,
+        parent_id: typedParent.id,
         school_id: student.school_id,
         student_id,
         subject,
         message,
-      })
+      } as never)
       .select()
       .single();
 
@@ -139,7 +157,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           { status: 404 }
         );
       }
-      query = query.eq('parent_id', parent.id);
+
+      const typedParent = parent as { id: string };
+      query = query.eq('parent_id', typedParent.id);
     }
 
     const { data: messages, error: fetchError, count } = await query;
@@ -153,28 +173,34 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Count unread messages
-    let filterKey: string;
-    let filterValue: string | undefined;
+    let unreadCount = 0;
 
     if (profile.role === 'school_admin' || profile.role === 'school_staff') {
-      filterKey = 'school_id';
-      filterValue = profile.school_id || undefined;
+      if (profile.school_id) {
+        const { count } = await adminClient
+          .from('parent_school_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'unread')
+          .eq('school_id', profile.school_id);
+        unreadCount = count || 0;
+      }
     } else {
-      filterKey = 'parent_id';
       const { data: parent } = await adminClient.from('parents').select('id').eq('user_id', user.id).single();
-      filterValue = parent?.id;
+      const typedParent = parent as { id: string } | null;
+      if (typedParent?.id) {
+        const { count } = await adminClient
+          .from('parent_school_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'unread')
+          .eq('parent_id', typedParent.id);
+        unreadCount = count || 0;
+      }
     }
-
-    const { count: unreadCount } = await adminClient
-      .from('parent_school_messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'unread')
-      .eq(filterKey, filterValue);
 
     const response: MessageListResponse<ParentSchoolMessageWithDetails> = {
       success: true,
       messages: messages as unknown as ParentSchoolMessageWithDetails[],
-      unreadCount: unreadCount || 0,
+      unreadCount,
       pagination: {
         page,
         limit,
