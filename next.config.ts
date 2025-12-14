@@ -7,15 +7,16 @@ const nextConfig: NextConfig = {
     // Add any experimental features you're using
   },
 
-  // Set workspace root to silence multiple lockfile warning
-  outputFileTracingRoot: '/Users/marcim/HarakaPay-web',
+  // Output configuration for production builds
+  // outputFileTracingRoot: Use default (project root)
 
   // Enable gzip/brotli compression
   compress: true,
 
-  // Turbopack is now the default in Next.js 16
-  // Setting empty config to acknowledge migration from webpack
-  turbopack: {},
+  // Turbopack configuration
+  turbopack: {
+    root: process.cwd(), // Set project root to silence lockfile warning
+  },
 
   images: {
     remotePatterns: [

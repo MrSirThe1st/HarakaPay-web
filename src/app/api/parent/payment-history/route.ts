@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 /**
  * Get payment history for a student
@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -44,12 +44,15 @@ export async function GET(req: NextRequest) {
 
     if (!parent) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 });
+
     }
+
+    const typedParent = parent as { id: string };
 
     const { data: parentStudent } = await adminClient
       .from('parent_students')
       .select('student_id')
-      .eq('parent_id', parent.id)
+      .eq('parent_id', typedParent.id)
       .eq('student_id', studentId)
       .single();
 
@@ -66,12 +69,14 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (!feeAssignment) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         payments: [],
         total_paid: 0,
         total_count: 0
       });
     }
+
+    const typedFeeAssignment = feeAssignment as { id: string };
 
     // Get all payment transactions for this student
     const { data: transactions, error: transactionsError } = await adminClient
@@ -107,7 +112,7 @@ export async function GET(req: NextRequest) {
           )
         )
       `)
-      .eq('student_fee_assignment_id', feeAssignment.id)
+      .eq('student_fee_assignment_id', typedFeeAssignment.id)
       .order('created_at', { ascending: false });
 
     if (transactionsError) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
     console.log('🔍 Token extracted:', token.substring(0, 20) + '...');
     
     // Create auth client to verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       console.error('❌ Auth error:', authError);
@@ -35,8 +35,6 @@ export async function POST(req: NextRequest) {
     // User is authenticated - that's sufficient for student searching
     console.log('✅ User authenticated for student search:', user.id);
 
-    // Use admin client for data access (bypasses RLS)
-    const supabase = createAdminClient();
 
     // Get parent record to find already linked students
     const { data: parent } = await supabase
@@ -48,12 +46,14 @@ export async function POST(req: NextRequest) {
     // Get already linked student IDs
     let linkedStudentIds: string[] = [];
     if (parent) {
+      const typedParent = parent as { id: string };
       const { data: linkedStudents } = await supabase
         .from('parent_students')
         .select('student_id')
-        .eq('parent_id', parent.id);
-      
-      linkedStudentIds = linkedStudents?.map(ls => ls.student_id) || [];
+        .eq('parent_id', typedParent.id);
+
+      const typedLinkedStudents = linkedStudents as { student_id: string }[] | null;
+      linkedStudentIds = typedLinkedStudents?.map(ls => ls.student_id) || [];
     }
 
     let students: Array<{

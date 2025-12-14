@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 // Handle CORS preflight requests
 export async function OPTIONS() {
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     console.log('🔐 Token extracted, length:', token.length);
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     console.log('🔐 Auth verification result:', { 
       hasUser: !!user, 
@@ -80,19 +80,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Parent profile not found' }, { status: 404 });
     }
 
+    const typedProfile = profile as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null };
+
     // Use upsert to ensure we get the existing parent record or create a new one
     // This handles race conditions where the parent might be created between check and insert
     const { data: parentRecord, error: parentUpsertError } = await adminClient
       .from('parents')
       .upsert({
         user_id: user.id,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        email: profile.email || user.email,
-        phone: profile.phone,
+        first_name: typedProfile.first_name,
+        last_name: typedProfile.last_name,
+        email: typedProfile.email || user.email,
+        phone: typedProfile.phone,
         is_active: true,
         updated_at: new Date().toISOString(),
-      }, {
+      } as never, {
         onConflict: 'user_id',
         ignoreDuplicates: false
       })
@@ -104,12 +106,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to get or create parent record' }, { status: 500 });
     }
 
-    const parentId = parentRecord.id;
-    console.log('✅ Parent record ready:', { 
-      id: parentId, 
-      user_id: user.id, 
-      name: `${profile.first_name} ${profile.last_name}`,
-      email: profile.email || user.email
+    const typedParentRecord = parentRecord as { id: string };
+    const parentId = typedParentRecord.id;
+    console.log('✅ Parent record ready:', {
+      id: parentId,
+      user_id: user.id,
+      name: `${typedProfile.first_name} ${typedProfile.last_name}`,
+      email: typedProfile.email || user.email
     });
     console.log('🔍 Will use this parent_id for linking students:', parentId);
 
@@ -136,12 +139,14 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        const typedStudent = student as { id: string; student_id: string; first_name: string | null; last_name: string | null; grade_level: string | null; school_id: string };
+
         // Check if relationship already exists
         const { data: existingRelationship } = await adminClient
           .from('parent_students')
           .select('id')
           .eq('parent_id', parentId)
-          .eq('student_id', student.id)
+          .eq('student_id', typedStudent.id)
           .single();
 
         if (existingRelationship) {
@@ -157,16 +162,16 @@ export async function POST(request: NextRequest) {
         console.log('🔗 Creating relationship for:', {
           parent_id: parentId,
           user_id: user.id,
-          student_id: student.id,
-          student_name: `${student.first_name} ${student.last_name}`,
-          student_number: student.student_id
+          student_id: typedStudent.id,
+          student_name: `${typedStudent.first_name} ${typedStudent.last_name}`,
+          student_number: typedStudent.student_id
         });
 
         const { data: relationship, error: relationshipError } = await adminClient
           .from('parent_students')
           .insert({
             parent_id: parentId,
-            student_id: student.id,
+            student_id: typedStudent.id,
             relationship: 'parent',
             is_primary: true,
             created_at: new Date().toISOString(),
@@ -179,7 +184,7 @@ export async function POST(request: NextRequest) {
           console.error('❌ Relationship data attempted:', {
             parent_id: parentId,
             user_id: user.id,
-            student_id: student.id,
+            student_id: typedStudent.id,
             relationship: 'parent',
             is_primary: true,
             created_at: new Date().toISOString(),
@@ -192,25 +197,26 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
+        const typedRelationship = relationship as { id: string };
         console.log('✅ Relationship created successfully:', relationship);
         console.log('✅ Relationship details:', {
-          relationship_id: relationship.id,
+          relationship_id: typedRelationship.id,
           parent_id: parentId,
-          student_id: student.id,
-          student_name: `${student.first_name} ${student.last_name}`
+          student_id: typedStudent.id,
+          student_name: `${typedStudent.first_name} ${typedStudent.last_name}`
         });
 
         linkedStudents.push({
-          id: student.id,
-          student_id: student.student_id,
-          first_name: student.first_name,
-          last_name: student.last_name,
-          grade_level: student.grade_level,
-          school_id: student.school_id,
-          relationship_id: relationship.id
+          id: typedStudent.id,
+          student_id: typedStudent.student_id,
+          first_name: typedStudent.first_name,
+          last_name: typedStudent.last_name,
+          grade_level: typedStudent.grade_level,
+          school_id: typedStudent.school_id,
+          relationship_id: typedRelationship.id
         });
 
-        console.log('✅ Student linked:', student.first_name, student.last_name, 'to parent_id:', parentId);
+        console.log('✅ Student linked:', typedStudent.first_name, typedStudent.last_name, 'to parent_id:', parentId);
 
       } catch (error) {
         console.error('❌ Error processing student:', studentInput, error);

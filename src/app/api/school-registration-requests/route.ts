@@ -100,17 +100,19 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Database error:", error);
       return NextResponse.json(
-        { success: false, error: "Failed to submit registration request" }, 
+        { success: false, error: "Failed to submit registration request" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      data: { 
-        id: data.id, 
-        message: "Registration request submitted successfully" 
-      } 
+    const typedData = data as { id: string };
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: typedData.id,
+        message: "Registration request submitted successfully"
+      }
     });
 
   } catch (error) {

@@ -11,6 +11,10 @@ export async function GET(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get URL parameters for filtering
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -31,19 +35,21 @@ export async function GET(req: Request) {
     if (academicYearsError) {
       console.error('Error fetching academic years:', academicYearsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch academic years' }, 
+        { success: false, error: 'Failed to fetch academic years' },
         { status: 500 }
       );
     }
 
+    const typedAcademicYears = academicYears as { is_active: boolean }[] | null;
+
     // Calculate statistics
     const totalYears = count || 0;
-    const activeYears = academicYears?.filter(y => y.is_active).length || 0;
+    const activeYears = typedAcademicYears?.filter(y => y.is_active).length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        academicYears: academicYears || [],
+        academicYears: typedAcademicYears || [],
         pagination: {
           page,
           limit,
@@ -79,6 +85,10 @@ export async function POST(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     const body = await req.json();
     const { 
       name, 
@@ -111,7 +121,7 @@ export async function POST(req: Request) {
     if (is_active) {
       await adminClient
         .from('academic_years')
-        .update({ is_active: false })
+        .update({ is_active: false } as never)
         .eq('school_id', profile.school_id);
     }
 
@@ -167,6 +177,10 @@ export async function PUT(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     const body = await req.json();
     const { 
       id,
@@ -215,7 +229,7 @@ export async function PUT(req: Request) {
     if (is_active) {
       await adminClient
         .from('academic_years')
-        .update({ is_active: false })
+        .update({ is_active: false } as never)
         .eq('school_id', profile.school_id)
         .neq('id', id);
     }
@@ -229,7 +243,7 @@ export async function PUT(req: Request) {
         end_date,
         term_structure,
         is_active: is_active || false
-      })
+      } as never)
       .eq('id', id)
       .eq('school_id', profile.school_id)
       .select('*')
@@ -273,6 +287,10 @@ export async function DELETE(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get ID from query parameters
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -307,7 +325,8 @@ export async function DELETE(req: Request) {
                 .select('id')
                 .eq('academic_year_id', id);
 
-              const templateIds = feeTemplates?.map(t => t.id) || [];
+              const typedFeeTemplates = feeTemplates as { id: string }[] | null;
+              const templateIds = typedFeeTemplates?.map(t => t.id) || [];
 
               if (templateIds.length > 0) {
                 // Get all payment schedule IDs for these templates
@@ -316,7 +335,8 @@ export async function DELETE(req: Request) {
                   .select('id')
                   .in('template_id', templateIds);
 
-                const scheduleIds = paymentSchedules?.map(s => s.id) || [];
+                const typedPaymentSchedules = paymentSchedules as { id: string }[] | null;
+                const scheduleIds = typedPaymentSchedules?.map(s => s.id) || [];
 
                 // Get all student fee assignment IDs for these templates
                 const { data: studentAssignments } = await adminClient
@@ -324,7 +344,8 @@ export async function DELETE(req: Request) {
                   .select('id')
                   .in('template_id', templateIds);
 
-                const assignmentIds = studentAssignments?.map(a => a.id) || [];
+                const typedStudentAssignments = studentAssignments as { id: string }[] | null;
+                const assignmentIds = typedStudentAssignments?.map(a => a.id) || [];
 
                 // 1. Delete payment installments (if they exist)
                 if (scheduleIds.length > 0) {

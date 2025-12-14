@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 /**
  * Get the payment plan that has been used for a student's fee category
@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -45,12 +45,15 @@ export async function GET(req: NextRequest) {
 
     if (!parent) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 });
+
     }
+
+    const typedParent = parent as { id: string };
 
     const { data: parentStudent } = await adminClient
       .from('parent_students')
       .select('student_id')
-      .eq('parent_id', parent.id)
+      .eq('parent_id', typedParent.id)
       .eq('student_id', studentId)
       .single();
 
@@ -67,39 +70,44 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (!feeAssignment) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         used_payment_plan_id: null
       });
     }
+
+    const typedFeeAssignment = feeAssignment as { id: string; structure_id: string };
 
     // Get payment plans for this category
     const { data: categoryPlans } = await adminClient
       .from('payment_plans')
       .select('id')
-      .eq('structure_id', feeAssignment.structure_id)
+      .eq('structure_id', typedFeeAssignment.structure_id)
       .eq('fee_category_id', categoryId);
 
     if (!categoryPlans || categoryPlans.length === 0) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         used_payment_plan_id: null
       });
     }
 
-    const planIds = categoryPlans.map(p => p.id);
+    const typedCategoryPlans = categoryPlans as { id: string }[];
+    const planIds = typedCategoryPlans.map(p => p.id);
 
     // Get the first completed payment transaction for any of these payment plans
     const { data: usedTransaction } = await adminClient
       .from('payment_transactions')
       .select('payment_plan_id')
-      .eq('student_fee_assignment_id', feeAssignment.id)
+      .eq('student_fee_assignment_id', typedFeeAssignment.id)
       .in('payment_plan_id', planIds)
       .eq('transaction_status', 'completed')
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
 
+    const typedUsedTransaction = usedTransaction as { payment_plan_id: string } | null;
+
     return NextResponse.json({
-      used_payment_plan_id: usedTransaction?.payment_plan_id || null
+      used_payment_plan_id: typedUsedTransaction?.payment_plan_id || null
     });
 
   } catch (error) {

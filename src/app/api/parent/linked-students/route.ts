@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: NextRequest) {
   console.log("🔥 /api/parent/linked-students - Request received");
@@ -15,15 +15,13 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Use admin client for data access
-    const supabase = createAdminClient();
 
     // First, find the parent ID using the user_id
     console.log('🔍 Looking up parent record for user_id:', user.id);
@@ -36,7 +34,7 @@ export async function GET(req: NextRequest) {
     if (parentError || !parent) {
       console.error('❌ Parent record not found:', parentError);
       console.error('❌ User ID:', user.id);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Parent record not found',
         details: 'No parent record exists for this user',
         user_id: user.id,
@@ -44,10 +42,12 @@ export async function GET(req: NextRequest) {
       }, { status: 404 });
     }
 
-    console.log('✅ Parent record found:', parent.id);
+    const typedParent = parent as { id: string; user_id: string; first_name: string | null; last_name: string | null };
+
+    console.log('✅ Parent record found:', typedParent.id);
 
     // Get linked students
-    console.log('🔍 Fetching linked students for parent_id:', parent.id);
+    console.log('🔍 Fetching linked students for parent_id:', typedParent.id);
     const { data: relationships, error } = await supabase
       .from('parent_students')
       .select(`
@@ -67,15 +67,15 @@ export async function GET(req: NextRequest) {
           schools!inner(name)
         )
       `)
-      .eq('parent_id', parent.id);
+      .eq('parent_id', typedParent.id);
 
     if (error) {
       console.error('❌ Error fetching linked students:', error);
-      console.error('❌ Parent ID used:', parent.id);
+      console.error('❌ Parent ID used:', typedParent.id);
       return NextResponse.json({ 
         error: 'Failed to fetch linked students',
         details: error.message,
-        parent_id: parent.id
+        parent_id: typedParent.id
       }, { status: 500 });
     }
 
@@ -99,13 +99,13 @@ export async function GET(req: NextRequest) {
         .select('id, parent_id, student_id')
         .limit(10);
       
-      console.log('⚠️ No linked students found for parent_id:', parent.id);
+      console.log('⚠️ No linked students found for parent_id:', typedParent.id);
       console.log('🔍 Sample parent_students records (first 10):', allRelationships);
       
       return NextResponse.json({ 
         students: [],
         message: 'No linked students found',
-        parent_id: parent.id,
+        parent_id: typedParent.id,
         debug: {
           sample_records: allRelationships
         }

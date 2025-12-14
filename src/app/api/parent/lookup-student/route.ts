@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+interface School {
+  name: string;
+}
+
+interface Student {
+  id: string;
+  student_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  grade_level: string | null;
+  school_id: string;
+  parent_name: string | null;
+  parent_email: string | null;
+  parent_phone: string | null;
+  schools: School | School[];
+}
+
 // Handle CORS preflight requests
 export async function OPTIONS() {
   const response = new NextResponse(null, { status: 200 });
@@ -67,22 +84,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const typedStudent = student as Student;
+
     // Return student information with parent details
     // Handle schools as either array or single object (Supabase type inference issue)
-    const schools = Array.isArray(student.schools) ? student.schools[0] : student.schools;
+    const schools = Array.isArray(typedStudent.schools) ? typedStudent.schools[0] : typedStudent.schools;
     const response = NextResponse.json({
       found: true,
       student: {
-        id: student.id,
-        student_id: student.student_id,
-        first_name: student.first_name,
-        last_name: student.last_name,
-        grade_level: student.grade_level,
-        school_id: student.school_id,
+        id: typedStudent.id,
+        student_id: typedStudent.student_id,
+        first_name: typedStudent.first_name,
+        last_name: typedStudent.last_name,
+        grade_level: typedStudent.grade_level,
+        school_id: typedStudent.school_id,
         school_name: schools?.name || '',
-        parent_name: student.parent_name,
-        parent_email: student.parent_email,
-        parent_phone: student.parent_phone
+        parent_name: typedStudent.parent_name,
+        parent_email: typedStudent.parent_email,
+        parent_phone: typedStudent.parent_phone
       }
     });
 

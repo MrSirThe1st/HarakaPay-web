@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,16 +17,13 @@ export async function POST(req: NextRequest) {
 
     const token = authHeader.split(' ')[1];
     
-    // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
-    
+    // Verify the token and use admin client for data access
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
-
-    // Use admin client for data access
-    const supabase = createAdminClient();
 
     // First, find the correct parent ID using the user_id
     console.log('🔍 Looking up parent record for user_id:', user.id);
@@ -55,15 +52,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Parent profile not found' }, { status: 404 });
       }
 
+      const typedProfile = profile as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null };
+
       // Create parent record
       const { data: newParent, error: createParentError } = await supabase
         .from('parents')
         .insert({
           user_id: user.id,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          email: profile.email || user.email,
-          phone: profile.phone,
+          first_name: typedProfile.first_name,
+          last_name: typedProfile.last_name,
+          email: typedProfile.email || user.email,
+          phone: typedProfile.phone,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -76,13 +75,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to create parent record' }, { status: 500 });
       }
 
-      actualParentId = newParent.id;
+      const typedNewParent = newParent as { id: string };
+      actualParentId = typedNewParent.id;
       console.log('✅ Parent record created:', newParent);
     } else if (parentCheckError) {
       console.error('❌ Error checking parent record:', parentCheckError);
       return NextResponse.json({ error: 'Failed to check parent record' }, { status: 500 });
     } else {
-      actualParentId = existingParent.id;
+      const typedExistingParent = existingParent as { id: string };
+      actualParentId = typedExistingParent.id;
       console.log('✅ Parent record exists:', existingParent);
     }
 

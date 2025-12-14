@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -43,17 +43,19 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (!parent) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Parent record not found',
         details: 'No parent record exists for this user'
       }, { status: 404 });
     }
 
+    const typedParent = parent as { id: string };
+
     // Verify the student is linked to this parent
     const { data: parentStudent } = await adminClient
       .from('parent_students')
       .select('student_id')
-      .eq('parent_id', parent.id)
+      .eq('parent_id', typedParent.id)
       .eq('student_id', studentId)
       .single();
 
@@ -137,15 +139,33 @@ export async function GET(req: NextRequest) {
     }
 
     if (!studentFeeAssignments || studentFeeAssignments.length === 0) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         installments: [],
         message: 'No fee assignments found for this student'
       });
     }
 
-    // Filter assignments that contain the specific category
-    interface FeeCategory {
+    // Define interfaces for type assertions
+    interface Student {
       id: string;
+      student_id: string;
+      first_name: string | null;
+      last_name: string | null;
+      grade_level: string | null;
+      school_id: string;
+      schools: unknown;
+    }
+
+    interface AcademicYear {
+      id: string;
+      name: string;
+      start_date: string;
+      end_date: string;
+      term_structure: unknown;
+    }
+
+    interface FeeCategory {
+      id?: string;
       name?: string;
       description?: string;
       is_mandatory?: boolean;
@@ -193,9 +213,15 @@ export async function GET(req: NextRequest) {
       paid_amount?: number;
       status?: string;
       academic_year_id?: string;
+      students: Student | Student[];
+      academic_years: AcademicYear | AcademicYear[];
       payment_schedules?: PaymentSchedule | PaymentSchedule[];
       [key: string]: unknown;
     }
+
+    const typedStudentFeeAssignments = studentFeeAssignments as StudentFeeAssignment[];
+
+    // Filter assignments that contain the specific category
 
     const relevantAssignments = studentFeeAssignments.filter((assignment: StudentFeeAssignment) => {
       // Handle payment_schedules as array or single object
@@ -275,9 +301,9 @@ export async function GET(req: NextRequest) {
 
     // Get student and academic year info
     // Handle students as array or single object (Supabase type inference issue)
-    const studentData = studentFeeAssignments[0]?.students;
+    const studentData = typedStudentFeeAssignments[0]?.students;
     const student = Array.isArray(studentData) ? studentData[0] : studentData;
-    const academicYearData = studentFeeAssignments[0]?.academic_years;
+    const academicYearData = typedStudentFeeAssignments[0]?.academic_years;
     const academicYear = Array.isArray(academicYearData) ? academicYearData[0] : academicYearData;
     
     // Handle schools as array or single object

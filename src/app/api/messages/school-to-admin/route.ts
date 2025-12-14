@@ -3,6 +3,33 @@ import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { z } from 'zod';
 import type { SupportTicketWithDetails, TicketListResponse } from '@/types/message.types';
 
+interface School {
+  id: string;
+  name: string;
+}
+
+interface Submitter {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+}
+
+interface RawTicket {
+  id: string;
+  school_id: string;
+  sent_by: string;
+  subject: string;
+  message: string;
+  status: string;
+  read_at: string | null;
+  created_at: string;
+  updated_at: string;
+  school: School | School[];
+  submitter: Submitter | Submitter[];
+  [key: string]: unknown;
+}
+
 const createTicketSchema = z.object({
   subject: z.string().min(1).max(255),
   description: z.string().min(1),
@@ -115,7 +142,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Map DB columns to ticket format
-    const tickets: SupportTicketWithDetails[] = (rawTickets || []).map((ticket) => ({
+    const tickets: SupportTicketWithDetails[] = ((rawTickets as RawTicket[] | null) || []).map((ticket) => ({
       id: ticket.id,
       school_id: ticket.school_id,
       submitted_by: ticket.sent_by,
@@ -125,8 +152,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       resolved_at: ticket.read_at,
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,
-      school: ticket.school,
-      submitter: ticket.submitter,
+      school: (Array.isArray(ticket.school) ? ticket.school[0] : ticket.school) as School,
+      submitter: (Array.isArray(ticket.submitter) ? ticket.submitter[0] : ticket.submitter) as Submitter,
     }));
 
     // Count open tickets (only for admins)

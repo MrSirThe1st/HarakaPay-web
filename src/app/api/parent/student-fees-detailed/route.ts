@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -30,11 +30,13 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (parentError || !parent) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Parent record not found',
         details: 'No parent record exists for this user'
       }, { status: 404 });
     }
+
+    const typedParent = parent as { id: string };
 
     // Get linked students
     const { data: linkedStudentsData, error: linkedStudentsError } = await adminClient
@@ -51,11 +53,11 @@ export async function GET(req: NextRequest) {
           schools!inner(name)
         )
       `)
-      .eq('parent_id', parent.id);
+      .eq('parent_id', typedParent.id);
 
     if (linkedStudentsError) {
       console.error('Error fetching linked students:', linkedStudentsError);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to fetch linked students',
         details: linkedStudentsError.message
       }, { status: 500 });
@@ -65,7 +67,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ student_fees: [] });
     }
 
-    const studentIds = linkedStudentsData.map(ls => ls.student_id);
+    const typedLinkedStudentsData = linkedStudentsData as { student_id: string }[];
+    const studentIds = typedLinkedStudentsData.map(ls => ls.student_id);
 
     // Get detailed fee assignments with all related data using NEW fee structure system
     const { data: studentFeeAssignments, error: assignmentsError } = await adminClient
@@ -133,7 +136,7 @@ export async function GET(req: NextRequest) {
 
     if (assignmentsError) {
       console.error('Error fetching student fee assignments:', assignmentsError);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to fetch student fee assignments',
         details: assignmentsError.message
       }, { status: 500 });
@@ -284,7 +287,10 @@ export async function GET(req: NextRequest) {
       }[];
       [key: string]: unknown;
     }
-    studentFeeAssignments?.forEach((assignment: StudentFeeAssignment) => {
+
+    const typedStudentFeeAssignments = studentFeeAssignments as StudentFeeAssignment[] | null;
+
+    typedStudentFeeAssignments?.forEach((assignment: StudentFeeAssignment) => {
       // Handle students as array or single object (Supabase type inference issue)
       const studentData = assignment.students;
       const student = Array.isArray(studentData) ? studentData[0] : studentData;
@@ -439,7 +445,7 @@ export async function GET(req: NextRequest) {
     // Use the same logic as paid-installments endpoint: calculate per payment plan
     for (const studentId in studentFeesMap) {
       const studentData = studentFeesMap[studentId];
-      const assignment = studentFeeAssignments?.find(a => a.student_id === studentId);
+      const assignment = typedStudentFeeAssignments?.find(a => a.student_id === studentId);
       
       if (!assignment) continue;
 
@@ -468,11 +474,13 @@ export async function GET(req: NextRequest) {
           .limit(1)
           .maybeSingle();
 
+        const typedUsedTransaction = usedTransaction as { payment_plan_id: string } | null;
+
         // If a payment plan has been used, calculate based on that plan only
         // Otherwise, use the first available plan (or calculate minimum)
         let targetPlan = null;
-        if (usedTransaction?.payment_plan_id) {
-          targetPlan = categoryPlans.find((p: { id: string }) => p.id === usedTransaction.payment_plan_id);
+        if (typedUsedTransaction?.payment_plan_id) {
+          targetPlan = categoryPlans.find((p: { id: string }) => p.id === typedUsedTransaction.payment_plan_id);
         }
         
         // If no plan has been used, use the first plan (or calculate from all plans)
@@ -502,7 +510,9 @@ export async function GET(req: NextRequest) {
           .eq('payment_plan_id', targetPlan.id) // Only payments for THIS payment plan
           .eq('transaction_status', 'completed');
 
-        const paidAmount = paidTransactions?.reduce(
+        const typedPaidTransactions = paidTransactions as { amount_paid: number | string }[] | null;
+
+        const paidAmount = typedPaidTransactions?.reduce(
           (sum, t) => sum + parseFloat(t.amount_paid?.toString() || '0'),
           0
         ) || 0;
@@ -517,7 +527,7 @@ export async function GET(req: NextRequest) {
       `${a.student.first_name} ${a.student.last_name}`.localeCompare(`${b.student.first_name} ${b.student.last_name}`)
     );
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       student_fees: studentFees,
       count: studentFees.length,
       summary: {

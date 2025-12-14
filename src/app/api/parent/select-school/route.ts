@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Update the parent's profile with the selected school
     const { error: updateError } = await adminClient
       .from('profiles')
-      .update({ school_id })
+      .update({ school_id } as never)
       .eq('user_id', user_id)
       .eq('role', 'parent');
 

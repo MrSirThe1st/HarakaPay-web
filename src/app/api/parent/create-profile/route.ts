@@ -2,6 +2,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+interface Profile {
+  id: string;
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  [key: string]: unknown;
+}
+
+interface Parent {
+  id: string;
+  user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  email: string | null;
+  created_at: string;
+  [key: string]: unknown;
+}
+
 // Handle CORS preflight requests
 export async function OPTIONS() {
   console.log('🚀 OPTIONS /api/parent/create-profile called');
@@ -59,28 +82,30 @@ export async function POST(request: NextRequest) {
     // If both profile and parent exist, return them
     if (existingProfile && existingParent) {
       console.log('Profile and parent already exist, returning existing data');
+      const typedProfile = existingProfile as Profile;
+      const typedParent = existingParent as Parent;
       return NextResponse.json({
         success: true,
         profile: {
-          id: existingProfile.id,
-          user_id: existingProfile.user_id,
-          first_name: existingProfile.first_name,
-          last_name: existingProfile.last_name,
-          phone: existingProfile.phone,
-          role: existingProfile.role,
-          is_active: existingProfile.is_active,
-          created_at: existingProfile.created_at
+          id: typedProfile.id,
+          user_id: typedProfile.user_id,
+          first_name: typedProfile.first_name,
+          last_name: typedProfile.last_name,
+          phone: typedProfile.phone,
+          role: typedProfile.role,
+          is_active: typedProfile.is_active,
+          created_at: typedProfile.created_at
         },
         parent: {
-          id: existingParent.id,
-          user_id: existingParent.user_id,
-          first_name: existingParent.first_name,
-          last_name: existingParent.last_name,
-          phone: existingParent.phone,
-          email: existingParent.email,
-          address: existingParent.address,
-          is_active: existingParent.is_active,
-          created_at: existingParent.created_at
+          id: typedParent.id,
+          user_id: typedParent.user_id,
+          first_name: typedParent.first_name,
+          last_name: typedParent.last_name,
+          phone: typedParent.phone,
+          email: typedParent.email,
+          address: typedParent.address,
+          is_active: typedParent.is_active,
+          created_at: typedParent.created_at
         }
       });
     }
@@ -111,28 +136,30 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const typedProfile = existingProfile as Profile;
+      const typedParent = parent as Parent;
       return NextResponse.json({
         success: true,
         profile: {
-          id: existingProfile.id,
-          user_id: existingProfile.user_id,
-          first_name: existingProfile.first_name,
-          last_name: existingProfile.last_name,
-          phone: existingProfile.phone,
-          role: existingProfile.role,
-          is_active: existingProfile.is_active,
-          created_at: existingProfile.created_at
+          id: typedProfile.id,
+          user_id: typedProfile.user_id,
+          first_name: typedProfile.first_name,
+          last_name: typedProfile.last_name,
+          phone: typedProfile.phone,
+          role: typedProfile.role,
+          is_active: typedProfile.is_active,
+          created_at: typedProfile.created_at
         },
         parent: {
-          id: parent.id,
-          user_id: parent.user_id,
-          first_name: parent.first_name,
-          last_name: parent.last_name,
-          phone: parent.phone,
-          email: parent.email,
-          address: parent.address,
-          is_active: parent.is_active,
-          created_at: parent.created_at
+          id: typedParent.id,
+          user_id: typedParent.user_id,
+          first_name: typedParent.first_name,
+          last_name: typedParent.last_name,
+          phone: typedParent.phone,
+          email: typedParent.email,
+          address: typedParent.address,
+          is_active: typedParent.is_active,
+          created_at: typedParent.created_at
         }
       });
     }
@@ -166,28 +193,30 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const typedProfile = profile as Profile;
+      const typedParent = existingParent as Parent;
       return NextResponse.json({
         success: true,
         profile: {
-          id: profile.id,
-          user_id: profile.user_id,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          phone: profile.phone,
-          role: profile.role,
-          is_active: profile.is_active,
-          created_at: profile.created_at
+          id: typedProfile.id,
+          user_id: typedProfile.user_id,
+          first_name: typedProfile.first_name,
+          last_name: typedProfile.last_name,
+          phone: typedProfile.phone,
+          role: typedProfile.role,
+          is_active: typedProfile.is_active,
+          created_at: typedProfile.created_at
         },
         parent: {
-          id: existingParent.id,
-          user_id: existingParent.user_id,
-          first_name: existingParent.first_name,
-          last_name: existingParent.last_name,
-          phone: existingParent.phone,
-          email: existingParent.email,
-          address: existingParent.address,
-          is_active: existingParent.is_active,
-          created_at: existingParent.created_at
+          id: typedParent.id,
+          user_id: typedParent.user_id,
+          first_name: typedParent.first_name,
+          last_name: typedParent.last_name,
+          phone: typedParent.phone,
+          email: typedParent.email,
+          address: typedParent.address,
+          is_active: typedParent.is_active,
+          created_at: typedParent.created_at
         }
       });
     }
@@ -206,7 +235,7 @@ export async function POST(request: NextRequest) {
         avatar_url: null,
         permissions: {}, // Empty permissions object for parents
         is_active: true
-      }, {
+      } as never, {
         onConflict: 'user_id',
         ignoreDuplicates: false
       })
@@ -221,7 +250,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Parent profile created successfully:', profile.id);
+    const typedProfile = profile as Profile;
+    console.log('Parent profile created successfully:', typedProfile.id);
 
     // Create the parent record using UPSERT to handle race conditions
     const { data: parent, error: parentInsertError } = await adminClient
@@ -234,7 +264,7 @@ export async function POST(request: NextRequest) {
         email: profileData.email,
         address: profileData.address || null,
         is_active: true
-      }, {
+      } as never, {
         onConflict: 'user_id',
         ignoreDuplicates: false
       })
@@ -243,43 +273,44 @@ export async function POST(request: NextRequest) {
 
     if (parentInsertError) {
       console.error('Parent record creation error:', parentInsertError);
-      
+
       // Rollback: Delete the profile we just created
       await adminClient
         .from('profiles')
         .delete()
-        .eq('id', profile.id);
-      
+        .eq('id', typedProfile.id);
+
       return NextResponse.json(
         { error: `Failed to create parent record: ${parentInsertError.message}` },
         { status: 400 }
       );
     }
 
-    console.log('Parent record created successfully:', parent.id);
+    const typedParent = parent as Parent;
+    console.log('Parent record created successfully:', typedParent.id);
 
     const response = NextResponse.json({
       success: true,
       profile: {
-        id: profile.id,
-        user_id: profile.user_id,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        phone: profile.phone,
-        role: profile.role,
-        is_active: profile.is_active,
-        created_at: profile.created_at
+        id: typedProfile.id,
+        user_id: typedProfile.user_id,
+        first_name: typedProfile.first_name,
+        last_name: typedProfile.last_name,
+        phone: typedProfile.phone,
+        role: typedProfile.role,
+        is_active: typedProfile.is_active,
+        created_at: typedProfile.created_at
       },
       parent: {
-        id: parent.id,
-        user_id: parent.user_id,
-        first_name: parent.first_name,
-        last_name: parent.last_name,
-        phone: parent.phone,
-        email: parent.email,
-        address: parent.address,
-        is_active: parent.is_active,
-        created_at: parent.created_at
+        id: typedParent.id,
+        user_id: typedParent.user_id,
+        first_name: typedParent.first_name,
+        last_name: typedParent.last_name,
+        phone: typedParent.phone,
+        email: typedParent.email,
+        address: typedParent.address,
+        is_active: typedParent.is_active,
+        created_at: typedParent.created_at
       }
     });
 

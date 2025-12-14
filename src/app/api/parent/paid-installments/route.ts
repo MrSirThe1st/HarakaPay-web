@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 /**
  * Get paid installments for a student's payment plan
@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
@@ -45,12 +45,15 @@ export async function GET(req: NextRequest) {
 
     if (!parent) {
       return NextResponse.json({ error: 'Parent not found' }, { status: 404 });
+
     }
+
+    const typedParent = parent as { id: string };
 
     const { data: parentStudent } = await adminClient
       .from('parent_students')
       .select('student_id')
-      .eq('parent_id', parent.id)
+      .eq('parent_id', typedParent.id)
       .eq('student_id', studentId)
       .single();
 
@@ -69,23 +72,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Payment plan not found' }, { status: 404 });
     }
 
+    const typedPaymentPlan = paymentPlan as { structure_id: string };
+
     // Get fee assignment (for reference, but we'll calculate per-category amounts)
     const { data: feeAssignment } = await adminClient
       .from('student_fee_assignments')
       .select('id')
       .eq('student_id', studentId)
-      .eq('structure_id', paymentPlan.structure_id)
+      .eq('structure_id', typedPaymentPlan.structure_id)
       .in('status', ['active', 'fully_paid'])
       .maybeSingle();
 
     if (!feeAssignment) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         paid_installments: [],
         paid_amount: 0,
         total_due: 0,
         remaining_balance: 0
       });
     }
+
+    const typedFeeAssignment = feeAssignment as { id: string };
 
     // Get the payment plan details to calculate total due for THIS category
     const { data: fullPaymentPlan, error: planError } = await adminClient
@@ -103,7 +110,9 @@ export async function GET(req: NextRequest) {
       amount?: number | string;
       [key: string]: unknown;
     }
-    const installments = (fullPaymentPlan.installments as Installment[]) || [];
+
+    const typedFullPaymentPlan = fullPaymentPlan as { installments: Installment[]; fee_category_id: string };
+    const installments = typedFullPaymentPlan.installments || [];
     const totalDueForCategory = installments.reduce((sum, inst) => {
       return sum + parseFloat(inst.amount?.toString() || '0');
     }, 0);
@@ -112,7 +121,7 @@ export async function GET(req: NextRequest) {
     const { data: paidTransactions, error: transactionsError } = await adminClient
       .from('payment_transactions')
       .select('installment_number, installment_label, amount_paid, transaction_status, created_at, payment_id')
-      .eq('student_fee_assignment_id', feeAssignment.id)
+      .eq('student_fee_assignment_id', typedFeeAssignment.id)
       .eq('payment_plan_id', paymentPlanId) // Only payments for THIS payment plan (category)
       .eq('transaction_status', 'completed')
       .order('created_at', { ascending: true }); // Get first payment to determine method
@@ -121,6 +130,17 @@ export async function GET(req: NextRequest) {
       console.error('Error fetching paid transactions:', transactionsError);
       return NextResponse.json({ error: 'Failed to fetch paid installments' }, { status: 500 });
     }
+
+    interface Transaction {
+      amount_paid: number;
+      installment_number: number;
+      installment_label: string | null;
+      transaction_status: string;
+      created_at: string;
+      payment_id: string;
+    }
+
+    const typedPaidTransactions = (paidTransactions as Transaction[] | null) || [];
 
     // Group by installment_number to handle multiple payments for same installment
     const paidInstallmentsMap = new Map<number, {
@@ -134,7 +154,7 @@ export async function GET(req: NextRequest) {
     // Calculate total paid for THIS payment plan (category) only
     let totalPaidForCategory = 0;
 
-    paidTransactions?.forEach((transaction) => {
+    typedPaidTransactions.forEach((transaction) => {
       const amount = parseFloat(transaction.amount_paid.toString());
       totalPaidForCategory += amount;
 
@@ -167,7 +187,7 @@ export async function GET(req: NextRequest) {
       paid_amount: totalPaidForCategory, // Amount paid for THIS category only
       total_due: totalDueForCategory, // Total due for THIS category only
       remaining_balance: remainingBalance, // Remaining for THIS category only
-      fee_assignment_id: feeAssignment.id
+      fee_assignment_id: typedFeeAssignment.id
     });
 
   } catch (error) {

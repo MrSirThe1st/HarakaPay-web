@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient, createServerAuthClient } from '@/lib/supabaseServerOnly';
+import { createAdminClient } from '@/lib/supabaseServerOnly';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,15 +12,13 @@ export async function GET(req: NextRequest) {
     const token = authHeader.split(' ')[1];
     
     // Verify the token
-    const authClient = createServerAuthClient();
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    const supabase = createAdminClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Use admin client for data access
-    const supabase = createAdminClient();
 
     // Get parent's linked students
     const { data: parent } = await supabase
@@ -30,11 +28,13 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (!parent) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Parent record not found',
         details: 'No parent record exists for this user'
       }, { status: 404 });
     }
+
+    const typedParent = parent as { id: string };
 
     // Get parent's linked students with their fee assignments
     const { data: linkedStudents, error: studentsError } = await supabase
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
           schools!inner(name)
         )
       `)
-      .eq('parent_id', parent.id);
+      .eq('parent_id', typedParent.id);
 
     if (studentsError) {
       console.error('Error fetching linked students:', studentsError);
@@ -150,14 +150,32 @@ export async function GET(req: NextRequest) {
 
     if (assignmentsError) {
       console.error('Error fetching fee assignments:', assignmentsError);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Failed to fetch fee assignments',
         details: assignmentsError.message
       }, { status: 500 });
     }
 
+    interface FeeAssignment {
+      id: string;
+      student_id: string;
+      template_id: string;
+      schedule_id?: string;
+      academic_year_id?: string;
+      total_amount: number;
+      paid_amount: number;
+      status?: string;
+      created_at?: string;
+      updated_at?: string;
+      fee_templates?: unknown;
+      payment_schedules?: unknown;
+      [key: string]: unknown;
+    }
+
+    const typedFeeAssignments = feeAssignments as FeeAssignment[] | null;
+
     // Get fee template categories for each template
-    const templateIds = feeAssignments?.map(assignment => assignment.template_id) || [];
+    const templateIds = typedFeeAssignments?.map(assignment => assignment.template_id) || [];
     
     const { data: templateCategories, error: categoriesError } = await supabase
       .from('fee_template_categories')
@@ -180,6 +198,13 @@ export async function GET(req: NextRequest) {
       // Continue without categories - not critical
     }
 
+    interface TemplateCategory {
+      template_id: string;
+      [key: string]: unknown;
+    }
+
+    const typedTemplateCategories = templateCategories as TemplateCategory[] | null;
+
     // Structure the response
     const studentsWithFees = linkedStudents.map((rel: LinkedStudent) => {
       // Handle students as array or single object (Supabase type inference issue)
@@ -188,7 +213,7 @@ export async function GET(req: NextRequest) {
       if (!student?.id) {
         return null;
       }
-      const studentAssignments = feeAssignments?.filter(assignment => assignment.student_id === student.id) || [];
+      const studentAssignments = typedFeeAssignments?.filter(assignment => assignment.student_id === student.id) || [];
       
       // Handle schools as array or single object
       const schools = student?.schools 
@@ -209,7 +234,7 @@ export async function GET(req: NextRequest) {
           parent_phone: student?.parent_phone,
         },
         fee_assignments: studentAssignments.map(assignment => {
-          const templateCategoriesForThisTemplate = templateCategories?.filter(
+          const templateCategoriesForThisTemplate = typedTemplateCategories?.filter(
             tc => tc.template_id === assignment.template_id
           ) || [];
 
@@ -262,7 +287,15 @@ export async function GET(req: NextRequest) {
               name: paymentSchedule?.name,
               schedule_type: paymentSchedule?.schedule_type,
               discount_percentage: paymentSchedule?.discount_percentage,
-              installments: paymentSchedule?.payment_installments?.map(installment => ({
+              installments: paymentSchedule?.payment_installments?.map((installment: {
+                id: string;
+                installment_number: number;
+                name: string;
+                amount: number;
+                percentage: number;
+                due_date: string;
+                term_id: string | null;
+              }) => ({
                 id: installment.id,
                 installment_number: installment.installment_number,
                 name: installment.name,
@@ -282,8 +315,8 @@ export async function GET(req: NextRequest) {
       count: studentsWithFees.length,
       summary: {
         total_students: studentsWithFees.length,
-        total_assignments: feeAssignments?.length || 0,
-        total_amount_due: feeAssignments?.reduce((sum, assignment) => 
+        total_assignments: typedFeeAssignments?.length || 0,
+        total_amount_due: typedFeeAssignments?.reduce((sum, assignment) => 
           sum + (assignment.total_amount - assignment.paid_amount), 0) || 0,
       }
     });
