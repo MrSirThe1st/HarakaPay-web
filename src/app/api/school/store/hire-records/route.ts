@@ -22,7 +22,15 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      id: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
@@ -74,12 +82,12 @@ export async function GET(request: NextRequest) {
         )
       `, { count: 'exact' });
 
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
+    if (['school_admin', 'school_staff'].includes(typedProfile.role)) {
       // School staff can see all hire records for their school
-      query = query.eq('store_order_items.store_orders.school_id', profile.school_id);
-    } else if (profile.role === 'parent') {
+      query = query.eq('store_order_items.store_orders.school_id', typedProfile.school_id!);
+    } else if (typedProfile.role === 'parent') {
       // Parents can only see their own hire records
-      query = query.eq('store_order_items.store_orders.parent_id', profile.id);
+      query = query.eq('store_order_items.store_orders.parent_id', typedProfile.id);
     } else {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -101,16 +109,21 @@ export async function GET(request: NextRequest) {
 
     // Get stats (only for school staff)
     let stats: StoreStatsData = { total: count || 0 };
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
+    if (['school_admin', 'school_staff'].includes(typedProfile.role)) {
       const { data: statsData } = await adminClient
         .from('hire_records')
         .select('status')
-        .eq('store_order_items.store_orders.school_id', profile.school_id);
+        .eq('store_order_items.store_orders.school_id', typedProfile.school_id!);
+
+      interface StatsRecord {
+        status: string;
+      }
+      const typedStatsData = statsData as StatsRecord[] | null;
 
       stats = {
         total: count || 0,
-        activeHires: statsData?.filter(r => r.status === 'active').length || 0,
-        overdueHires: statsData?.filter(r => r.status === 'overdue').length || 0,
+        activeHires: typedStatsData?.filter(r => r.status === 'active').length || 0,
+        overdueHires: typedStatsData?.filter(r => r.status === 'overdue').length || 0,
       };
     }
 
