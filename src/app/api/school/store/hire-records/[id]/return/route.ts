@@ -109,13 +109,20 @@ export async function POST(
             )
           )
         `)
-        .eq('id', typedHireRecord.order_item_id)
+        .eq('id', typedHireRecord.order_item_id!)
         .single();
 
+      interface OrderItem {
+        store_items?: unknown;
+      }
+      const typedOrderItem = orderItem as OrderItem | null;
+
       // Handle store_items as array or single object (Supabase type inference issue)
-      const storeItem = orderItem?.store_items ? (Array.isArray(orderItem.store_items) ? orderItem.store_items[0] : orderItem.store_items) : undefined;
-      const hireSettings = storeItem?.hire_settings ? (Array.isArray(storeItem.hire_settings) ? storeItem.hire_settings[0] : storeItem.hire_settings) : undefined;
-      const lateFeePerDay = hireSettings?.late_fee_per_day || 0;
+      const storeItem = typedOrderItem?.store_items ? (Array.isArray(typedOrderItem.store_items) ? (typedOrderItem.store_items as unknown[])[0] : typedOrderItem.store_items) : undefined;
+      const storeItemTyped = storeItem as { hire_settings?: unknown } | undefined;
+      const hireSettings = storeItemTyped?.hire_settings ? (Array.isArray(storeItemTyped.hire_settings) ? (storeItemTyped.hire_settings as unknown[])[0] : storeItemTyped.hire_settings) : undefined;
+      const hireSettingsTyped = hireSettings as { late_fee_per_day?: number } | undefined;
+      const lateFeePerDay = hireSettingsTyped?.late_fee_per_day || 0;
       calculatedLateFees = daysLate * lateFeePerDay;
     }
 
@@ -179,14 +186,20 @@ export async function POST(
     const { data: orderItem } = await adminClient
       .from('store_order_items')
       .select('item_id, quantity')
-      .eq('id', typedHireRecord.order_item_id)
+      .eq('id', typedHireRecord.order_item_id!)
       .single();
 
-    if (orderItem) {
+    interface StockOrderItem {
+      item_id: string;
+      quantity: number;
+    }
+    const typedStockOrderItem = orderItem as StockOrderItem | null;
+
+    if (typedStockOrderItem) {
       await supabase.rpc('increment_stock', {
-        item_id: orderItem.item_id,
-        quantity: orderItem.quantity
-      });
+        item_id: typedStockOrderItem.item_id,
+        quantity: typedStockOrderItem.quantity
+      } as never);
     }
 
     const response: StoreApiResponse<{ record: HireRecord }> = {
