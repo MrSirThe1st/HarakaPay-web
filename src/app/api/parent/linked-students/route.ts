@@ -81,13 +81,13 @@ export async function GET(req: NextRequest) {
 
     console.log('📊 Found relationships:', relationships?.length || 0);
     if (relationships && relationships.length > 0) {
-      console.log('📊 Relationship details:', relationships.map((r: { id: string; parent_id: string; student_id: string; students: { first_name: string; last_name: string } | { first_name: string; last_name: string }[] }) => {
+      console.log('📊 Relationship details:', relationships.map((r) => {
         const student = Array.isArray(r.students) ? r.students[0] : r.students;
         return {
           relationship_id: r.id,
           parent_id: r.parent_id,
           student_id: r.student_id,
-          student_name: `${student.first_name} ${student.last_name}`
+          student_name: student ? `${student.first_name} ${student.last_name}` : 'Unknown'
         };
       }));
     }
@@ -125,14 +125,7 @@ export async function GET(req: NextRequest) {
       schools?: { name: string } | { name: string }[];
     }
 
-    interface Relationship {
-      id: string;
-      parent_id: string;
-      student_id: string;
-      students: RelationshipStudent | RelationshipStudent[];
-    }
-
-    const students = relationships.map((rel: Relationship) => {
+    const students = relationships.map((rel) => {
       const student = Array.isArray(rel.students) ? rel.students[0] : rel.students;
       const schools = Array.isArray(student?.schools) ? student.schools[0] : (student?.schools || { name: '' });
       return {

@@ -121,20 +121,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform the data for easier consumption
-    const paymentHistory = (transactions || []).map((transaction: {
-      id: string;
-      payment_id: string;
-      installment_number: number;
-      installment_label: string;
-      amount_paid?: number | string;
-      transaction_status: string;
-      mpesa_transaction_id?: string;
-      notes?: string;
-      created_at: string;
-      updated_at: string;
-      payments?: { payment_method?: string; transaction_reference?: string; description?: string; payment_date?: string } | { payment_method?: string; transaction_reference?: string; description?: string; payment_date?: string }[];
-      payment_plans?: { type?: string; fee_category_id?: string; fee_categories?: { name?: string } | { name?: string }[] } | { type?: string; fee_category_id?: string; fee_categories?: { name?: string } | { name?: string }[] }[];
-    }) => {
+    const paymentHistory = (transactions || []).map((transaction) => {
       // Handle nested objects that might be arrays (Supabase type inference issue)
       const payment = Array.isArray(transaction.payments) ? transaction.payments[0] : transaction.payments;
       const paymentPlan = Array.isArray(transaction.payment_plans) ? transaction.payment_plans[0] : transaction.payment_plans;

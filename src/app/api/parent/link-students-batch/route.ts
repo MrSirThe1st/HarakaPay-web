@@ -80,18 +80,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Parent profile not found' }, { status: 404 });
     }
 
-    const typedProfile = profile as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null };
-
     // Use upsert to ensure we get the existing parent record or create a new one
     // This handles race conditions where the parent might be created between check and insert
     const { data: parentRecord, error: parentUpsertError } = await adminClient
       .from('parents')
       .upsert({
         user_id: user.id,
-        first_name: typedProfile.first_name,
-        last_name: typedProfile.last_name,
-        email: typedProfile.email || user.email,
-        phone: typedProfile.phone,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        email: user.email,
+        phone: profile.phone,
         is_active: true,
         updated_at: new Date().toISOString(),
       } as never, {
@@ -111,8 +109,8 @@ export async function POST(request: NextRequest) {
     console.log('✅ Parent record ready:', {
       id: parentId,
       user_id: user.id,
-      name: `${typedProfile.first_name} ${typedProfile.last_name}`,
-      email: typedProfile.email || user.email
+      name: `${profile.first_name} ${profile.last_name}`,
+      email: user.email
     });
     console.log('🔍 Will use this parent_id for linking students:', parentId);
 

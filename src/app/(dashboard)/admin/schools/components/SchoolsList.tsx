@@ -533,9 +533,9 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
                       {school.name}
                     </h3>
                     <div className="flex items-center mt-1">
-                      {getStatusIcon(school.status, school.verification_status || '')}
-                      <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(school.status, school.verification_status || '')}`}>
-                        {getStatusText(school.status, school.verification_status || '')}
+                      {getStatusIcon(school.status || 'pending', school.verification_status || '')}
+                      <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(school.status || 'pending', school.verification_status || '')}`}>
+                        {getStatusText(school.status || 'pending', school.verification_status || '')}
                       </span>
                     </div>
                   </div>
@@ -636,7 +636,7 @@ export function SchoolsList({ onRefresh, refreshTrigger }: SchoolsListProps) {
 
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>Created: {new Date(school.created_at).toLocaleDateString()}</span>
+                  <span>Created: {school.created_at ? new Date(school.created_at).toLocaleDateString() : 'N/A'}</span>
                   {school.registration_number && (
                     <span>Reg: {school.registration_number}</span>
                   )}

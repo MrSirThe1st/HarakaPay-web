@@ -22,7 +22,15 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      id: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
@@ -62,10 +70,10 @@ export async function GET(request: NextRequest) {
       `, { count: 'exact' });
 
     // Apply filters based on user role
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
+    if (['school_admin', 'school_staff'].includes(typedProfile.role)) {
       // School staff can see all items
-      query = query.eq('school_id', profile.school_id);
-    } else if (profile.role === 'parent') {
+      query = query.eq('school_id', typedProfile.school_id!);
+    } else if (typedProfile.role === 'parent') {
       // Parents can only see available items
       query = query.eq('is_available', true);
     } else {
@@ -102,17 +110,24 @@ export async function GET(request: NextRequest) {
 
     // Get stats (only for school staff)
     let stats: StoreStatsData = { total: count || 0 };
-    if (['school_admin', 'school_staff'].includes(profile.role)) {
+    if (['school_admin', 'school_staff'].includes(typedProfile.role)) {
       const { data: statsData } = await adminClient
         .from('store_items')
         .select('is_available, stock_quantity, low_stock_threshold')
-        .eq('school_id', profile.school_id);
+        .eq('school_id', typedProfile.school_id!);
+
+      interface StatsItem {
+        is_available: boolean;
+        stock_quantity: number;
+        low_stock_threshold: number;
+      }
+      const typedStatsData = statsData as StatsItem[] | null;
 
       stats = {
         total: count || 0,
-        active: statsData?.filter(i => i.is_available).length || 0,
-        inactive: statsData?.filter(i => !i.is_available).length || 0,
-        lowStock: statsData?.filter(i => i.stock_quantity <= i.low_stock_threshold).length || 0,
+        active: typedStatsData?.filter(i => i.is_available).length || 0,
+        inactive: typedStatsData?.filter(i => !i.is_available).length || 0,
+        lowStock: typedStatsData?.filter(i => i.stock_quantity <= i.low_stock_threshold).length || 0,
       };
     }
 
@@ -161,12 +176,19 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface ProfilePost {
+      school_id: string | null;
+      role: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as ProfilePost | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!typedProfile.school_id || !['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -207,7 +229,7 @@ export async function POST(request: NextRequest) {
       .from('store_categories')
       .select('id')
       .eq('id', categoryId)
-      .eq('school_id', profile.school_id)
+      .eq('school_id', typedProfile.school_id!)
       .single();
 
     if (categoryError || !category) {
@@ -232,7 +254,7 @@ export async function POST(request: NextRequest) {
     const { data: item, error: createError } = await adminClient
       .from('store_items')
       .insert({
-        school_id: profile.school_id,
+        school_id: typedProfile.school_id,
         category_id: categoryId,
         name: name.trim(),
         description: description?.trim() || null,
@@ -242,11 +264,17 @@ export async function POST(request: NextRequest) {
         low_stock_threshold: lowStockThreshold || 10,
         is_available: isAvailable !== false,
         images: images || [],
-      } as any)
+      } as never)
       .select()
       .single();
 
-    if (createError) {
+    interface CreatedItem {
+      id: string;
+      [key: string]: unknown;
+    }
+    const typedItem = item as CreatedItem | null;
+
+    if (createError || !typedItem) {
       console.error('Error creating store item:', createError);
       return NextResponse.json({ success: false, error: 'Failed to create item' }, { status: 500 });
     }
@@ -256,7 +284,7 @@ export async function POST(request: NextRequest) {
       const { data: hireSettingsData, error: hireSettingsError } = await adminClient
         .from('hire_settings')
         .insert({
-          item_id: item.id,
+          item_id: typedItem.id,
           duration_type: hireSettings.durationType,
           min_duration_days: hireSettings.minDurationDays,
           max_duration_days: hireSettings.maxDurationDays,

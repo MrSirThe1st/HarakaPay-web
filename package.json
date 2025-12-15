@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gen-types": "npx supabase gen types typescript --project-id apdeuckmufukrnuffetv --schema public > src/types/supabase.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -42,6 +43,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9",
     "eslint-config-next": "^16.0.10",
+    "supabase": "^2.67.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

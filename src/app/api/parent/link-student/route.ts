@@ -52,17 +52,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Parent profile not found' }, { status: 404 });
       }
 
-      const typedProfile = profile as { first_name: string | null; last_name: string | null; email: string | null; phone: string | null };
-
-      // Create parent record
+      // Create parent record (email comes from user.email, not profile)
       const { data: newParent, error: createParentError } = await supabase
         .from('parents')
         .insert({
           user_id: user.id,
-          first_name: typedProfile.first_name,
-          last_name: typedProfile.last_name,
-          email: typedProfile.email || user.email,
-          phone: typedProfile.phone,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          email: user.email,
+          phone: profile.phone,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

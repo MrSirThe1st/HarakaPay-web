@@ -223,7 +223,7 @@ export async function GET(req: NextRequest) {
 
     // Filter assignments that contain the specific category
 
-    const relevantAssignments = studentFeeAssignments.filter((assignment: StudentFeeAssignment) => {
+    const relevantAssignments = studentFeeAssignments.filter((assignment) => {
       // Handle payment_schedules as array or single object
       const paymentSchedule = Array.isArray(assignment.payment_schedules) 
         ? assignment.payment_schedules[0] 
@@ -258,9 +258,9 @@ export async function GET(req: NextRequest) {
       installment_number: number;
       name: string;
       amount: number;
-      percentage: number;
+      percentage?: number;
       due_date: string;
-      term_id: string | null;
+      term_id?: string | null;
       is_current: boolean;
       is_paid: boolean;
       schedule_name?: string;
@@ -268,12 +268,23 @@ export async function GET(req: NextRequest) {
     }> = [];
     const now = new Date();
 
-    relevantAssignments.forEach((assignment: StudentFeeAssignment) => {
+    relevantAssignments.forEach((assignment) => {
       // Handle payment_schedules as array or single object
-      const paymentSchedule = Array.isArray(assignment.payment_schedules) 
-        ? assignment.payment_schedules[0] 
+      const paymentSchedule = Array.isArray(assignment.payment_schedules)
+        ? assignment.payment_schedules[0]
         : assignment.payment_schedules;
-      const installments = paymentSchedule?.payment_installments || [];
+      const installments = (paymentSchedule?.payment_installments || []) as Array<{
+        id: string;
+        installment_number: number;
+        name: string;
+        amount: number;
+        percentage?: number;
+        due_date: string;
+        term_id?: string;
+        is_active: boolean;
+        payment_status: string;
+        [key: string]: unknown;
+      }>;
 
       installments.forEach((installment) => {
         // Determine if this is the current installment

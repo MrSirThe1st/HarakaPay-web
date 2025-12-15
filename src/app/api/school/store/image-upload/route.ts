@@ -21,12 +21,19 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!typedProfile.school_id || !['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -60,7 +67,7 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
-    const fileName = `${profile.school_id}/${timestamp}-${randomString}.${fileExtension}`;
+    const fileName = `${typedProfile.school_id}/${timestamp}-${randomString}.${fileExtension}`;
 
     // Upload file to Supabase storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -114,12 +121,19 @@ export async function DELETE(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!typedProfile.school_id || !['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -132,7 +146,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify file belongs to school (starts with school_id)
-    if (!fileName.startsWith(profile.school_id + '/')) {
+    if (!fileName.startsWith(typedProfile.school_id + '/')) {
       return NextResponse.json({ success: false, error: 'Unauthorized to delete this file' }, { status: 403 });
     }
 
