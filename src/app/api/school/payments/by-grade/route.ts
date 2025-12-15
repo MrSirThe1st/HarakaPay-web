@@ -12,6 +12,10 @@ export async function GET(req: NextRequest) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get URL parameters
     const { searchParams } = new URL(req.url);
     const gradeLevel = searchParams.get('grade_level'); // Optional filter by grade
@@ -28,15 +32,24 @@ export async function GET(req: NextRequest) {
 
     const { data: students, error: studentsError } = await studentsQuery;
 
+    interface Student {
+      id: string;
+      first_name: string;
+      last_name: string;
+      student_id: string;
+      grade_level: string;
+    }
+    const typedStudents = students as Student[] | null;
+
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch students' }, 
+        { success: false, error: 'Failed to fetch students' },
         { status: 500 }
       );
     }
 
-    if (!students || students.length === 0) {
+    if (!typedStudents || typedStudents.length === 0) {
       return NextResponse.json({
         success: true,
         data: {
@@ -46,7 +59,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const studentIds = students.map(s => s.id);
+    const studentIds = typedStudents.map(s => s.id);
 
     // Get fee assignments for these students
     const { data: feeAssignments, error: feeAssignmentsError } = await adminClient
@@ -65,16 +78,26 @@ export async function GET(req: NextRequest) {
       .in('student_id', studentIds)
       .in('status', ['active', 'fully_paid']);
 
+    interface FeeAssignment {
+      id: string;
+      student_id: string;
+      total_due: number;
+      paid_amount: number;
+      status: string;
+      students: unknown;
+    }
+    const typedFeeAssignments = feeAssignments as FeeAssignment[] | null;
+
     if (feeAssignmentsError) {
       console.error('Error fetching fee assignments:', feeAssignmentsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch fee assignments' }, 
+        { success: false, error: 'Failed to fetch fee assignments' },
         { status: 500 }
       );
     }
 
     // Get payment transactions for these fee assignments
-    const feeAssignmentIds = feeAssignments?.map(fa => fa.id) || [];
+    const feeAssignmentIds = typedFeeAssignments?.map(fa => fa.id) || [];
     
     let transactionsQuery = adminClient
       .from('payment_transactions')
@@ -107,7 +130,7 @@ export async function GET(req: NextRequest) {
         success: true,
         data: {
           byGrade: {},
-          students: students.map(s => ({
+          students: typedStudents.map(s => ({
             ...s,
             paymentStatus: 'no_fees_assigned',
             totalDue: 0,
@@ -122,10 +145,28 @@ export async function GET(req: NextRequest) {
 
     const { data: transactions, error: transactionsError } = await transactionsQuery;
 
+    interface Transaction {
+      student_fee_assignments?: {
+        student_id: string;
+      };
+      payments?: {
+        payment_date?: string;
+        amount?: number;
+        [key: string]: unknown;
+      };
+      payment_plans?: {
+        type: string;
+        installments?: unknown[];
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
+    }
+    const typedTransactions = transactions as Transaction[] | null;
+
     if (transactionsError) {
       console.error('Error fetching transactions:', transactionsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch transactions' }, 
+        { success: false, error: 'Failed to fetch transactions' },
         { status: 500 }
       );
     }
@@ -134,7 +175,7 @@ export async function GET(req: NextRequest) {
     const studentPaymentMap = new Map();
 
     // Initialize all students
-    students.forEach(student => {
+    typedStudents.forEach(student => {
       studentPaymentMap.set(student.id, {
         ...student,
         paymentStatus: 'not_paid',
@@ -148,7 +189,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Process fee assignments
-    feeAssignments?.forEach(fa => {
+    typedFeeAssignments?.forEach(fa => {
       const studentData = studentPaymentMap.get(fa.student_id);
       if (studentData) {
         const totalDue = parseFloat(fa.total_due?.toString() || '0');
@@ -176,7 +217,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Process transactions to get payment details
-    transactions?.forEach(transaction => {
+    typedTransactions?.forEach(transaction => {
       const studentId = transaction.student_fee_assignments?.student_id;
       const studentData = studentPaymentMap.get(studentId);
       

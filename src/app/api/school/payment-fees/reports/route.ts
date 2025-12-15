@@ -37,6 +37,15 @@ export async function GET(request: NextRequest) {
 
     const { data: snapshots, error: snapshotsError } = await query;
 
+    interface Snapshot {
+      id: string;
+      payment_id: string;
+      fee_amount: number;
+      created_at: string;
+      [key: string]: unknown;
+    }
+    const typedSnapshots = snapshots as Snapshot[] | null;
+
     if (snapshotsError) {
       console.error("Error fetching fee snapshots:", snapshotsError);
       return NextResponse.json(
@@ -46,8 +55,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate totals
-    const totalFeesOwed = snapshots?.reduce((sum, snapshot) => sum + Number(snapshot.fee_amount), 0) || 0;
-    const transactionCount = snapshots?.length || 0;
+    const totalFeesOwed = typedSnapshots?.reduce((sum, snapshot) => sum + Number(snapshot.fee_amount), 0) || 0;
+    const transactionCount = typedSnapshots?.length || 0;
 
     // Get current active fee rate
     const { data: activeFeeRate } = await adminClient
@@ -57,9 +66,14 @@ export async function GET(request: NextRequest) {
       .eq("status", "active")
       .single();
 
+    interface ActiveFeeRate {
+      fee_percentage: number;
+    }
+    const typedActiveFeeRate = activeFeeRate as ActiveFeeRate | null;
+
     // Group by month for trend analysis
     const monthlyData = new Map<string, { fees: number; count: number }>();
-    snapshots?.forEach((snapshot) => {
+    typedSnapshots?.forEach((snapshot) => {
       const month = snapshot.created_at.substring(0, 7); // YYYY-MM
       const existing = monthlyData.get(month);
       if (existing) {
@@ -87,14 +101,14 @@ export async function GET(request: NextRequest) {
         summary: {
           total_fees_owed: Number(totalFeesOwed.toFixed(2)),
           transaction_count: transactionCount,
-          current_fee_percentage: activeFeeRate?.fee_percentage || 2.5,
+          current_fee_percentage: typedActiveFeeRate?.fee_percentage || 2.5,
           date_range: {
             start: startDate || "All time",
             end: endDate || "Present",
           },
         },
         monthly_trends: monthlyTrends,
-        transactions: snapshots?.map(snapshot => ({
+        transactions: typedSnapshots?.map(snapshot => ({
           id: snapshot.id,
           payment_id: snapshot.payment_id,
           fee_amount: Number(snapshot.fee_amount),

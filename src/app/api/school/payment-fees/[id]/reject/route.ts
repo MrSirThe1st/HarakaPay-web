@@ -49,7 +49,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .eq("id", rateId)
       .single();
 
-    if (fetchError || !feeRate) {
+    interface FeeRate {
+      school_id: string;
+      status: string;
+      [key: string]: unknown;
+    }
+    const typedFeeRate = feeRate as FeeRate | null;
+
+    if (fetchError || !typedFeeRate) {
       return NextResponse.json(
         { success: false, error: "Fee rate not found" },
         { status: 404 }
@@ -57,7 +64,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify this rate belongs to the school
-    if (feeRate.school_id !== profile.school_id) {
+    if (typedFeeRate.school_id !== profile.school_id) {
       return NextResponse.json(
         { success: false, error: "Not authorized to reject this fee rate" },
         { status: 403 }
@@ -65,9 +72,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if this rate can be rejected by school
-    if (feeRate.status !== "pending_school") {
+    if (typedFeeRate.status !== "pending_school") {
       return NextResponse.json(
-        { success: false, error: `Cannot reject: rate status is ${feeRate.status}` },
+        { success: false, error: `Cannot reject: rate status is ${typedFeeRate.status}` },
         { status: 400 }
       );
     }
@@ -80,7 +87,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         rejection_reason,
         rejected_by: profile.id,
         rejected_at: new Date().toISOString(),
-      })
+      } as never)
       .eq("id", rateId)
       .select()
       .single();
