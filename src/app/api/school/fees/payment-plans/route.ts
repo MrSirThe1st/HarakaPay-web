@@ -12,6 +12,10 @@ export async function GET(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Parse query parameters
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -51,22 +55,24 @@ export async function GET(req: Request) {
     if (paymentPlansError) {
       console.error('Error fetching payment plans:', paymentPlansError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch payment plans' }, 
+        { success: false, error: 'Failed to fetch payment plans' },
         { status: 500 }
       );
     }
 
+    const typedPaymentPlans = paymentPlans as { is_active: boolean; type: string }[] | null;
+
     // Calculate statistics
     const totalPlans = count || 0;
-    const activePlans = paymentPlans?.filter(p => p.is_active).length || 0;
-    const monthlyPlans = paymentPlans?.filter(p => p.type === 'monthly').length || 0;
-    const upfrontPlans = paymentPlans?.filter(p => p.type === 'upfront').length || 0;
-    const perTermPlans = paymentPlans?.filter(p => p.type === 'per-term').length || 0;
+    const activePlans = typedPaymentPlans?.filter(p => p.is_active).length || 0;
+    const monthlyPlans = typedPaymentPlans?.filter(p => p.type === 'monthly').length || 0;
+    const upfrontPlans = typedPaymentPlans?.filter(p => p.type === 'upfront').length || 0;
+    const perTermPlans = typedPaymentPlans?.filter(p => p.type === 'per-term').length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        paymentPlans: paymentPlans || [],
+        paymentPlans: typedPaymentPlans || [],
         pagination: {
           page,
           limit,
@@ -104,6 +110,10 @@ export async function POST(req: Request) {
     }, req);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient, user } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body = await req.json();
     const {

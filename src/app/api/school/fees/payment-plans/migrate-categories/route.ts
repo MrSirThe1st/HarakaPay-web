@@ -12,6 +12,10 @@ export async function POST(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     console.log('🔄 Starting payment plans migration for school:', profile.school_id);
 
     // Get all payment plans for this school that don't have a fee_category_id
@@ -48,13 +52,24 @@ export async function POST(req: Request) {
       });
     }
 
-    console.log('📊 Found payment plans to migrate:', paymentPlans.length);
+    interface PaymentPlan {
+      id: string;
+      structure_id: string;
+      type: string;
+      discount_percentage?: number;
+      installments?: unknown;
+      fee_structures?: unknown;
+    }
+
+    const typedPaymentPlans = paymentPlans as PaymentPlan[];
+
+    console.log('📊 Found payment plans to migrate:', typedPaymentPlans.length);
 
     let updatedCount = 0;
     const updates = [];
 
     // For each payment plan, match it to a fee category based on amount
-    for (const plan of paymentPlans) {
+    for (const plan of typedPaymentPlans) {
       // Handle fee_structures as array or single object (Supabase type inference issue)
       const feeStructureData = plan.fee_structures;
       const feeStructure = Array.isArray(feeStructureData) ? feeStructureData[0] : feeStructureData;
@@ -106,7 +121,7 @@ export async function POST(req: Request) {
       for (const update of updates) {
         const { error: updateError } = await adminClient
           .from('payment_plans')
-          .update({ fee_category_id: update.fee_category_id })
+          .update({ fee_category_id: update.fee_category_id } as never)
           .eq('id', update.id);
 
         if (updateError) {

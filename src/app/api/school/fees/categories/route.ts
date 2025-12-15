@@ -11,6 +11,10 @@ export async function GET(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get URL parameters for filtering
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -31,20 +35,22 @@ export async function GET(req: Request) {
     if (feeCategoriesError) {
       console.error('Error fetching fee categories:', feeCategoriesError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch fee categories' }, 
+        { success: false, error: 'Failed to fetch fee categories' },
         { status: 500 }
       );
     }
 
+    const typedFeeCategories = feeCategories as { is_mandatory: boolean; is_recurring: boolean }[] | null;
+
     // Calculate statistics
     const totalCategories = count || 0;
-    const mandatoryCategories = feeCategories?.filter(c => c.is_mandatory).length || 0;
-    const recurringCategories = feeCategories?.filter(c => c.is_recurring).length || 0;
+    const mandatoryCategories = typedFeeCategories?.filter(c => c.is_mandatory).length || 0;
+    const recurringCategories = typedFeeCategories?.filter(c => c.is_recurring).length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        feeCategories: feeCategories || [],
+        feeCategories: typedFeeCategories || [],
         pagination: {
           page,
           limit,
@@ -80,6 +86,10 @@ export async function POST(req: Request) {
     }, req);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body = await req.json();
     const { 
