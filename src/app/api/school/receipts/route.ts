@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Fetch receipt templates for the school
     const { data: templates, error: templatesError } = await adminClient
       .from('receipt_templates')
@@ -48,6 +52,10 @@ export async function POST(request: NextRequest) {
     }, request);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body: ReceiptTemplateForm = await request.json();
 
@@ -96,7 +104,7 @@ export async function POST(request: NextRequest) {
         is_default: false,
         is_active: true,
         created_by: profile.user_id || null,  // Use profile.user_id or null if not available
-      } as any)
+      } as never)
       .select()
       .single();
 

@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Fetch fee categories for the school
     const { data: categories, error: categoriesError } = await adminClient
       .from('fee_categories')

@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
     // Update the school's logo_url in the database with the full public URL
     const { error: updateError } = await adminClient
       .from('schools')
-      .update({ logo_url: urlData.publicUrl })
-      .eq('id', profile.school_id);
+      .update({ logo_url: urlData.publicUrl } as never)
+      .eq('id', profileData.school_id!);
 
     if (updateError) {
       console.error('Error updating school logo_url:', updateError);
@@ -170,8 +170,8 @@ export async function DELETE(request: NextRequest) {
     // Remove the logo_url from the school's database record
     const { error: updateError } = await adminClient
       .from('schools')
-      .update({ logo_url: null })
-      .eq('id', profile.school_id);
+      .update({ logo_url: null } as never)
+      .eq('id', profileData.school_id!);
 
     if (updateError) {
       console.error('Error removing logo_url from database:', updateError);

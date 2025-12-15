@@ -26,12 +26,19 @@ export async function PUT(
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!typedProfile.school_id || !['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -49,7 +56,7 @@ export async function PUT(
       .from('store_categories')
       .select('*')
       .eq('id', id)
-      .eq('school_id', profile.school_id)
+      .eq('school_id', typedProfile.school_id)
       .single();
 
     if (fetchError || !existingCategory) {
@@ -60,7 +67,7 @@ export async function PUT(
     const { data: duplicateCategory } = await adminClient
       .from('store_categories')
       .select('id')
-      .eq('school_id', profile.school_id)
+      .eq('school_id', typedProfile.school_id)
       .eq('name', name.trim())
       .neq('id', id)
       .single();
@@ -77,9 +84,9 @@ export async function PUT(
         description: description?.trim() || null,
         is_active: isActive,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('id', id)
-      .eq('school_id', profile.school_id)
+      .eq('school_id', typedProfile.school_id)
       .select()
       .single();
 
@@ -123,12 +130,19 @@ export async function DELETE(
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!typedProfile.school_id || !['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -137,7 +151,7 @@ export async function DELETE(
       .from('store_categories')
       .select('*')
       .eq('id', id)
-      .eq('school_id', profile.school_id)
+      .eq('school_id', typedProfile.school_id)
       .single();
 
     if (fetchError || !existingCategory) {
@@ -167,7 +181,7 @@ export async function DELETE(
       .from('store_categories')
       .delete()
       .eq('id', id)
-      .eq('school_id', profile.school_id);
+      .eq('school_id', typedProfile.school_id);
 
     if (deleteError) {
       console.error('Error deleting store category:', deleteError);

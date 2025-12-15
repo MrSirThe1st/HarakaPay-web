@@ -19,6 +19,10 @@ export async function GET(
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Fetch specific receipt template
     const { data: template, error: templateError } = await adminClient
       .from('receipt_templates')
@@ -58,6 +62,10 @@ export async function PUT(
     }, request);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body: ReceiptTemplateForm = await request.json();
 
@@ -115,7 +123,7 @@ export async function PUT(
         logo_position: body.logo_position,
         visible_fields: body.visible_fields,
         style_config: body.style_config,
-      })
+      } as never)
       .eq('id', id)
       .eq('school_id', profile.school_id)
       .select()
@@ -154,6 +162,10 @@ export async function DELETE(
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Check if template exists and belongs to school
     const { data: existingTemplate } = await adminClient
       .from('receipt_templates')
@@ -162,19 +174,25 @@ export async function DELETE(
       .eq('school_id', profile.school_id)
       .single();
 
-    if (!existingTemplate) {
+    interface ExistingTemplate {
+      id: string;
+      is_default: boolean;
+    }
+    const typedExistingTemplate = existingTemplate as ExistingTemplate | null;
+
+    if (!typedExistingTemplate) {
       return NextResponse.json({ success: false, error: 'Receipt template not found' }, { status: 404 });
     }
 
     // Prevent deletion of default template
-    if (existingTemplate.is_default) {
+    if (typedExistingTemplate.is_default) {
       return NextResponse.json({ success: false, error: 'Cannot delete default template' }, { status: 400 });
     }
 
     // Soft delete by setting is_active to false
     const { error: deleteError } = await adminClient
       .from('receipt_templates')
-      .update({ is_active: false })
+      .update({ is_active: false } as never)
       .eq('id', id)
       .eq('school_id', profile.school_id);
 

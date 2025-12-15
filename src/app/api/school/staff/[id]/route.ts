@@ -15,6 +15,10 @@ export async function GET(
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get the staff member
     const { data: staff, error: staffError } = await adminClient
       .from('profiles')
@@ -61,6 +65,11 @@ export async function PUT(
     }, req);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     const body = await req.json();
     const { 
       first_name, 
@@ -108,7 +117,17 @@ export async function PUT(
       .eq('role', 'school_staff')
       .single();
 
-    if (staffError || !existingStaff) {
+    interface ExistingStaff {
+      id: string;
+      school_id: string;
+      user_id: string;
+      is_active: boolean;
+      permissions: unknown;
+      staff_id: string | null;
+    }
+    const typedExistingStaff = existingStaff as ExistingStaff | null;
+
+    if (staffError || !typedExistingStaff) {
       return NextResponse.json(
         { success: false, error: 'Staff member not found' }, 
         { status: 404 }
@@ -116,7 +135,7 @@ export async function PUT(
     }
 
     // Check if staff_id already exists (if provided and different from current)
-    if (staff_id && staff_id !== existingStaff.staff_id) {
+    if (staff_id && staff_id !== typedExistingStaff.staff_id) {
       const { data: existingStaffId } = await adminClient
         .from('profiles')
         .select('id')
@@ -137,8 +156,8 @@ export async function PUT(
     const updateData: Record<string, unknown> = {
       first_name: first_name.trim(),
       last_name: last_name.trim(),
-      is_active: is_active !== undefined ? is_active : existingStaff.is_active,
-      permissions: permissions || existingStaff.permissions,
+      is_active: is_active !== undefined ? is_active : typedExistingStaff.is_active,
+      permissions: permissions || typedExistingStaff.permissions,
     };
 
     // Add new fields if provided
@@ -151,7 +170,7 @@ export async function PUT(
 
     const { data: updatedStaff, error: updateError } = await adminClient
       .from('profiles')
-      .update(updateData)
+      .update(updateData as never)
       .eq('id', staffId)
       .select('*')
       .single();
@@ -196,6 +215,10 @@ export async function DELETE(
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // First, get the staff member to check permissions
     const { data: staff, error: staffError } = await adminClient
       .from('profiles')
@@ -205,15 +228,24 @@ export async function DELETE(
       .eq('role', 'school_staff')
       .single();
 
-    if (staffError || !staff) {
+    interface Staff {
+      id: string;
+      school_id: string;
+      first_name: string;
+      last_name: string;
+      user_id: string;
+    }
+    const typedStaff = staff as Staff | null;
+
+    if (staffError || !typedStaff) {
       return NextResponse.json(
-        { success: false, error: 'Staff member not found' }, 
+        { success: false, error: 'Staff member not found' },
         { status: 404 }
       );
     }
 
     // Delete the auth user first
-    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(staff.user_id);
+    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(typedStaff.user_id);
     if (deleteAuthError) {
       console.error('Error deleting auth user:', deleteAuthError);
       return NextResponse.json(
@@ -238,7 +270,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: `Staff member ${staff.first_name} ${staff.last_name} deleted successfully`
+      message: `Staff member ${typedStaff.first_name} ${typedStaff.last_name} deleted successfully`
     });
 
   } catch (error) {

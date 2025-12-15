@@ -36,11 +36,16 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status') || 'all';
 
     // First, get all student IDs for this school
-    console.log('[API] Fetching students for school_id:', profile.school_id);
+    console.log('[API] Fetching students for school_id:', school_id);
     const { data: schoolStudents, error: studentsError } = await adminClient
       .from('students')
       .select('id')
-      .eq('school_id', profile.school_id);
+      .eq('school_id', school_id);
+
+    interface SchoolStudent {
+      id: string;
+    }
+    const typedSchoolStudents = schoolStudents as SchoolStudent[] | null;
 
     if (studentsError) {
       console.error('[API] Error fetching students:', studentsError);
@@ -50,9 +55,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    console.log('[API] Found students:', schoolStudents?.length || 0);
+    console.log('[API] Found students:', typedSchoolStudents?.length || 0);
 
-    if (!schoolStudents || schoolStudents.length === 0) {
+    if (!typedSchoolStudents || typedSchoolStudents.length === 0) {
       console.log('[API] No students found for school, returning empty payment list');
       return NextResponse.json({
         success: true,
@@ -75,7 +80,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const studentIds = schoolStudents.map(s => s.id);
+    const studentIds = typedSchoolStudents.map(s => s.id);
 
     // Query payments directly filtered by student IDs
     let query = adminClient

@@ -54,23 +54,29 @@ export async function GET(req: Request) {
 
     const { data: staff, error: staffError, count } = await query;
 
+    interface StaffMember {
+      is_active: boolean;
+      [key: string]: unknown;
+    }
+    const typedStaff = staff as StaffMember[] | null;
+
     if (staffError) {
       console.error('Error fetching staff:', staffError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch staff' }, 
+        { success: false, error: 'Failed to fetch staff' },
         { status: 500 }
       );
     }
 
     // Calculate statistics
     const totalStaff = count || 0;
-    const activeStaff = staff?.filter(s => s.is_active).length || 0;
-    const inactiveStaff = staff?.filter(s => !s.is_active).length || 0;
+    const activeStaff = typedStaff?.filter(s => s.is_active).length || 0;
+    const inactiveStaff = typedStaff?.filter(s => !s.is_active).length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        staff: staff || [],
+        staff: typedStaff || [],
         pagination: {
           page,
           limit,
@@ -231,7 +237,7 @@ export async function POST(req: Request) {
         phone: phone?.trim() || null,
         position: position || null,
         staff_id: staff_id?.trim() || null
-      } as any)
+      } as never)
       .select('*')
       .single();
 
