@@ -39,20 +39,22 @@ export async function GET(req: Request) {
     if (paymentSchedulesError) {
       console.error('Error fetching payment schedules:', paymentSchedulesError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch payment schedules' }, 
+        { success: false, error: 'Failed to fetch payment schedules' },
         { status: 500 }
       );
     }
 
+    const typedPaymentSchedules = paymentSchedules as { schedule_type: string }[] | null;
+
     // Calculate statistics
     const totalSchedules = count || 0;
-    const upfrontSchedules = paymentSchedules?.filter(s => s.schedule_type === 'upfront').length || 0;
-    const installmentSchedules = paymentSchedules?.filter(s => s.schedule_type === 'per-term' || s.schedule_type === 'monthly').length || 0;
+    const upfrontSchedules = typedPaymentSchedules?.filter(s => s.schedule_type === 'upfront').length || 0;
+    const installmentSchedules = typedPaymentSchedules?.filter(s => s.schedule_type === 'per-term' || s.schedule_type === 'monthly').length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        paymentSchedules: paymentSchedules || [],
+        paymentSchedules: typedPaymentSchedules || [],
         pagination: {
           page,
           limit,
