@@ -13,6 +13,10 @@ export async function GET(request: NextRequest) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -38,10 +42,15 @@ export async function GET(request: NextRequest) {
       .select('is_active')
       .eq('school_id', profile.school_id);
 
+    interface StatsItem {
+      is_active: boolean;
+    }
+    const typedStatsData = statsData as StatsItem[] | null;
+
     const stats: StoreStatsData = {
       total: count || 0,
-      active: statsData?.filter(c => c.is_active).length || 0,
-      inactive: statsData?.filter(c => !c.is_active).length || 0,
+      active: typedStatsData?.filter(c => c.is_active).length || 0,
+      inactive: typedStatsData?.filter(c => !c.is_active).length || 0,
     };
 
     const pagination: StorePaginationData = {
@@ -81,6 +90,10 @@ export async function POST(request: NextRequest) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Parse request body
     const body = await request.json();
     const { name, description, isActive = true } = body;
@@ -110,7 +123,7 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         is_active: isActive,
-      } as any)
+      } as never)
       .select()
       .single();
 

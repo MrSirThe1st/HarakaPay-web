@@ -26,12 +26,19 @@ export async function POST(
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      school_id: string | null;
+      role: string;
+      [key: string]: unknown;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
     }
 
     // Check if user has school-level access
-    if (!profile.school_id || !['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!typedProfile.school_id || !['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -58,24 +65,39 @@ export async function POST(
       .eq('id', id)
       .single();
 
-    if (fetchError || !hireRecord) {
+    interface HireRecord {
+      store_order_items?: {
+        store_orders?: {
+          school_id: string;
+        };
+      };
+      status?: string;
+      expected_return_date?: string;
+      daily_rate?: number;
+      deposit?: number;
+      order_item_id?: string;
+      [key: string]: unknown;
+    }
+    const typedHireRecord = hireRecord as HireRecord | null;
+
+    if (fetchError || !typedHireRecord) {
       return NextResponse.json({ success: false, error: 'Hire record not found' }, { status: 404 });
     }
 
     // Verify school ownership
-    if (hireRecord.store_order_items?.store_orders?.school_id !== profile.school_id) {
+    if (typedHireRecord.store_order_items?.store_orders?.school_id !== typedProfile.school_id) {
       return NextResponse.json({ success: false, error: 'Unauthorized to process this return' }, { status: 403 });
     }
 
     // Check if already returned
-    if (hireRecord.status === 'returned') {
+    if (typedHireRecord.status === 'returned') {
       return NextResponse.json({ success: false, error: 'Item already returned' }, { status: 400 });
     }
 
     // Calculate late fees if not provided
     let calculatedLateFees = lateFees || 0;
-    if (!lateFees && actualReturnDate > hireRecord.expected_return_date) {
-      const daysLate = Math.ceil((new Date(actualReturnDate).getTime() - new Date(hireRecord.expected_return_date).getTime()) / (1000 * 60 * 60 * 24));
+    if (!lateFees && typedHireRecord.expected_return_date && actualReturnDate > typedHireRecord.expected_return_date) {
+      const daysLate = Math.ceil((new Date(actualReturnDate).getTime() - new Date(typedHireRecord.expected_return_date).getTime()) / (1000 * 60 * 60 * 24));
       
       // Get hire settings to calculate late fees
       const { data: orderItem } = await adminClient
@@ -87,7 +109,7 @@ export async function POST(
             )
           )
         `)
-        .eq('id', hireRecord.order_item_id)
+        .eq('id', typedHireRecord.order_item_id)
         .single();
 
       // Handle store_items as array or single object (Supabase type inference issue)
@@ -107,7 +129,7 @@ export async function POST(
         status: 'returned',
         notes: notes?.trim() || null,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq('id', id)
       .select(`
         *,
@@ -157,7 +179,7 @@ export async function POST(
     const { data: orderItem } = await adminClient
       .from('store_order_items')
       .select('item_id, quantity')
-      .eq('id', hireRecord.order_item_id)
+      .eq('id', typedHireRecord.order_item_id)
       .single();
 
     if (orderItem) {
