@@ -62,7 +62,7 @@ export function useSchoolInfo() {
 
         setSchoolInfo({
           ...school,
-          logo_url: logoUrl
+          logo_url: logoUrl || undefined
         });
       } catch (err) {
         console.error('Error fetching school info:', err);

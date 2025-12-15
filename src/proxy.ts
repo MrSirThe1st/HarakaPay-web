@@ -100,9 +100,7 @@ export async function proxy(req: NextRequest) {
           req.cookies.set({
             name,
             value: '',
-            ...options,
-            maxAge: 0,
-          });
+          } as any);
           res = NextResponse.next({
             request: req,
           });

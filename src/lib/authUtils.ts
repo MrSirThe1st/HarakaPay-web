@@ -86,10 +86,11 @@ export async function checkUserPermission(
           .eq('id', resourceId)
           .single();
           
-        return { 
-          allowed: school?.payment_transparency?.platform_admin_access === true, 
+        const transparency = school?.payment_transparency as { platform_admin_access?: boolean } | null;
+        return {
+          allowed: transparency?.platform_admin_access === true,
           profile,
-          reason: school?.payment_transparency?.platform_admin_access ? undefined : 'School has not enabled transparency'
+          reason: transparency?.platform_admin_access ? undefined : 'School has not enabled transparency'
         };
       }
       

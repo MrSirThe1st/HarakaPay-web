@@ -203,19 +203,21 @@ export async function PUT(
     }
 
     // Check if student ID already exists in this school (excluding current student)
-    const { data: duplicateStudent, error: checkError } = await adminClient
-      .from('students')
-      .select('id')
-      .eq('school_id', existingStudent.school_id)
-      .eq('student_id', student_id.trim())
-      .neq('id', studentId)
-      .single();
+    if (existingStudent.school_id) {
+      const { data: duplicateStudent, error: checkError } = await adminClient
+        .from('students')
+        .select('id')
+        .eq('school_id', existingStudent.school_id)
+        .eq('student_id', student_id.trim())
+        .neq('id', studentId)
+        .single();
 
-    if (duplicateStudent) {
-      return NextResponse.json(
-        { success: false, error: 'Student ID already exists in this school' }, 
-        { status: 409 }
-      );
+      if (duplicateStudent) {
+        return NextResponse.json(
+          { success: false, error: 'Student ID already exists in this school' },
+          { status: 409 }
+        );
+      }
     }
 
     // Update the student

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Step 6: Check for existing email using admin client
     const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-    const emailExists = existingUsers.users.some(u => u.email === email);
+    const emailExists = existingUsers.users.some((u: any) => u.email === email);
     
     if (emailExists) {
       return NextResponse.json(

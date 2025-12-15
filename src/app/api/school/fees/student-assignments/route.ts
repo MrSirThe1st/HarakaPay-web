@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { 
+    const {
       student_id,
       template_id,
       schedule_id,
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
     // Validate required fields
     if (!student_id || !template_id || !schedule_id || !academic_year_id || !total_amount) {
       return NextResponse.json(
-        { success: false, error: 'Student ID, template ID, schedule ID, academic year ID, and total amount are required' }, 
+        { success: false, error: 'Student ID, structure ID, payment plan ID, academic year ID, and total amount are required' },
         { status: 400 }
       );
     }
@@ -137,9 +137,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate template exists and belongs to school
+    // Validate structure exists and belongs to school
     const { data: template } = await adminClient
-      .from('fee_templates')
+      .from('fee_structures')
       .select('id')
       .eq('id', template_id)
       .eq('school_id', profile.school_id)
@@ -147,14 +147,14 @@ export async function POST(req: Request) {
 
     if (!template) {
       return NextResponse.json(
-        { success: false, error: 'Fee template not found' }, 
+        { success: false, error: 'Fee structure not found' },
         { status: 404 }
       );
     }
 
-    // Validate schedule exists and belongs to school
+    // Validate payment plan exists and belongs to school
     const { data: schedule } = await adminClient
-      .from('payment_schedules')
+      .from('payment_plans')
       .select('id')
       .eq('id', schedule_id)
       .eq('school_id', profile.school_id)
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
 
     if (!schedule) {
       return NextResponse.json(
-        { success: false, error: 'Payment schedule not found' }, 
+        { success: false, error: 'Payment plan not found' },
         { status: 404 }
       );
     }
@@ -203,10 +203,10 @@ export async function POST(req: Request) {
       .from('student_fee_assignments')
       .insert({
         student_id,
-        template_id,
-        schedule_id,
+        structure_id: template_id,
+        payment_plan_id: schedule_id,
         academic_year_id,
-        total_amount,
+        total_due: total_amount,
         paid_amount: 0,
         status
       } as any)

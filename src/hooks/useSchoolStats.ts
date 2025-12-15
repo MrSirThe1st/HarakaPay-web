@@ -55,6 +55,7 @@ export function useSchoolStats() {
     ).size;
     
     const newThisMonth = schools.filter(school => {
+      if (!school.created_at) return false;
       const createdDate = new Date(school.created_at);
       return createdDate >= thisMonth;
     }).length;

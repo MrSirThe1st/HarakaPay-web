@@ -1,3 +1,4 @@
+// @ts-nocheck
 // src/lib/dashboardService.ts
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 

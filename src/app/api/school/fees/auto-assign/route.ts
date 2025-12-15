@@ -36,17 +36,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate template exists and belongs to school
+    // Validate structure exists and belongs to school
     const { data: template, error: templateError } = await adminClient
-      .from('fee_templates')
-      .select('id, name, grade_level, program_type, total_amount, school_id')
+      .from('fee_structures')
+      .select('id, name, grade_level, applies_to, total_amount, school_id')
       .eq('id', template_id)
       .eq('school_id', profile.school_id)
       .single();
 
     if (templateError || !template) {
       return NextResponse.json(
-        { success: false, error: 'Fee template not found' },
+        { success: false, error: 'Fee structure not found' },
         { status: 404 }
       );
     }
@@ -55,44 +55,43 @@ export async function POST(req: NextRequest) {
       id: string;
       name: string;
       grade_level: string;
-      program_type: string;
+      applies_to: string;
       total_amount: number;
       school_id: string;
     }
 
     const typedTemplate = template as Template;
 
-    // Validate schedules exist and belong to school (through template)
-    console.log('Looking for schedules:', schedule_ids);
+    // Validate payment plans exist and belong to school
+    console.log('Looking for payment plans:', schedule_ids);
     console.log('School ID:', profile.school_id);
-    
+
     const { data: schedules, error: schedulesError } = await adminClient
-      .from('payment_schedules')
+      .from('payment_plans')
       .select(`
-        id, 
-        name, 
-        schedule_type, 
-        template_id,
-        fee_templates!inner(school_id)
+        id,
+        type,
+        fee_category_id,
+        school_id
       `)
       .in('id', schedule_ids)
-      .eq('fee_templates.school_id', profile.school_id);
+      .eq('school_id', profile.school_id);
 
-    console.log('Schedule query result:', { schedules, error: schedulesError });
+    console.log('Payment plan query result:', { schedules, error: schedulesError });
 
     if (schedulesError || !schedules || schedules.length === 0) {
-      console.log('No valid payment schedules found');
+      console.log('No valid payment plans found');
       return NextResponse.json(
-        { success: false, error: 'No valid payment schedules found' },
+        { success: false, error: 'No valid payment plans found' },
         { status: 404 }
       );
     }
 
     interface Schedule {
       id: string;
-      name: string;
-      schedule_type: string;
-      template_id: string;
+      type: string | null;
+      fee_category_id: string | null;
+      school_id: string;
     }
 
     const typedSchedules = schedules as Schedule[];
@@ -200,13 +199,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Check existing assignments for these students with this specific template
+    // Check existing assignments for these students with this specific structure
     const studentIds = typedMatchingStudents.map(student => student.id);
     const { data: existingAssignments, error: assignmentsError } = await adminClient
       .from('student_fee_assignments')
-      .select('student_id, status, template_id')
+      .select('student_id, status, structure_id')
       .in('student_id', studentIds)
-      .eq('template_id', template_id)
+      .eq('structure_id', template_id)
       .eq('academic_year_id', academic_year_id)
       .eq('status', 'active');
 
@@ -232,11 +231,10 @@ export async function POST(req: NextRequest) {
         student_name: string;
         student_id_display: string;
         grade_level: string;
-        template_name: string;
-        schedule_id: string;
-        schedule_name: string;
-        schedule_type: string;
-        template_total_amount: number;
+        structure_name: string;
+        payment_plan_id: string;
+        payment_plan_type: string | null;
+        structure_total_amount: number;
         status: string;
       }
       const assignments: AssignmentPreview[] = [];
@@ -247,11 +245,10 @@ export async function POST(req: NextRequest) {
             student_name: `${student.first_name} ${student.last_name}`,
             student_id_display: student.student_id,
             grade_level: student.grade_level,
-            template_name: typedTemplate.name,
-            schedule_id: schedule.id,
-            schedule_name: schedule.name,
-            schedule_type: schedule.schedule_type,
-            template_total_amount: typedTemplate.total_amount, // For preview display only
+            structure_name: typedTemplate.name,
+            payment_plan_id: schedule.id,
+            payment_plan_type: schedule.type,
+            structure_total_amount: typedTemplate.total_amount, // For preview display only
             status: 'would_be_assigned'
           });
         });
@@ -277,10 +274,10 @@ export async function POST(req: NextRequest) {
     // Actually create the assignments
     interface AssignmentToCreate {
       student_id: string;
-      template_id: string;
-      schedule_id: string;
+      structure_id: string;
+      payment_plan_id: string;
       academic_year_id: string;
-      total_amount: number;
+      total_due: number;
       paid_amount: number;
       status: string;
     }
@@ -289,10 +286,10 @@ export async function POST(req: NextRequest) {
       typedSchedules.forEach(schedule => {
         assignmentsToCreate.push({
           student_id: student.id,
-          template_id: template_id,
-          schedule_id: schedule.id,
+          structure_id: template_id,
+          payment_plan_id: schedule.id,
           academic_year_id: academic_year_id,
-          total_amount: typedTemplate.total_amount,
+          total_due: typedTemplate.total_amount,
           paid_amount: 0,
           status: 'active'
         });
@@ -351,11 +348,10 @@ export async function POST(req: NextRequest) {
           student_name: `${student.first_name} ${student.last_name}`,
           student_id_display: student.student_id,
           grade_level: student.grade_level,
-          template_name: typedTemplate.name,
-          schedules: typedSchedules.map(schedule => ({
-            schedule_id: schedule.id,
-            schedule_name: schedule.name,
-            schedule_type: schedule.schedule_type
+          structure_name: typedTemplate.name,
+          payment_plans: typedSchedules.map(schedule => ({
+            payment_plan_id: schedule.id,
+            payment_plan_type: schedule.type
           })),
           // total_amount removed - calculated from installments
           status: 'assigned'
@@ -366,10 +362,10 @@ export async function POST(req: NextRequest) {
           total_assignments: totalCreated,
           existing_assignments: existingStudentIds.size,
           skipped: 0,
-          schedules_count: typedSchedules.length
+          payment_plans_count: typedSchedules.length
         }
       },
-      message: `Successfully assigned fees to ${studentsToAssign.length} students across ${typedSchedules.length} payment schedules (${totalCreated} total assignments)`
+      message: `Successfully assigned fees to ${studentsToAssign.length} students across ${typedSchedules.length} payment plans (${totalCreated} total assignments)`
     });
 
   } catch (error) {

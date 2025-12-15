@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
       student_id: string;
       first_name: string;
       last_name: string;
-      grade_level: string;
-      school_id: string;
+      grade_level: string | null;
+      school_id: string | null;
       parent_name: string | null;
       parent_email: string | null;
       parent_phone: string | null;

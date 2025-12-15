@@ -144,9 +144,9 @@ export async function GET(req: NextRequest) {
       failedCount: 0,
     };
 
-    allPayments?.forEach((payment: { status: string; amount?: number | string }) => {
+    allPayments?.forEach((payment: { status: string | null; amount: number }) => {
       if (payment.status === 'completed') {
-        stats.totalRevenue += parseFloat(payment.amount?.toString() || '0');
+        stats.totalRevenue += payment.amount;
         stats.successfulCount++;
       } else if (payment.status === 'pending') {
         stats.pendingCount++;

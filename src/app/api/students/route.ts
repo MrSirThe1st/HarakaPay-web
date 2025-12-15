@@ -99,8 +99,8 @@ export async function GET(req: Request) {
     // New students this month
     const currentMonth = new Date();
     currentMonth.setDate(1);
-    const newThisMonth = stats?.filter(s => 
-      new Date(s.created_at) >= currentMonth
+    const newThisMonth = stats?.filter(s =>
+      s.created_at && new Date(s.created_at) >= currentMonth
     ).length || 0;
 
     // Graduating students (assuming grade 12)
