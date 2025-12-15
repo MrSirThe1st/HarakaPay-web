@@ -73,23 +73,29 @@ export async function GET(req: Request) {
 
     const { data: feeStructures, error: feeStructuresError, count } = await query;
 
+    interface FeeStructure {
+      is_active: boolean;
+      [key: string]: unknown;
+    }
+    const typedFeeStructures = feeStructures as FeeStructure[] | null;
+
     if (feeStructuresError) {
       console.error('Error fetching fee structures:', feeStructuresError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch fee structures' }, 
+        { success: false, error: 'Failed to fetch fee structures' },
         { status: 500 }
       );
     }
 
     // Calculate statistics
     const totalStructures = count || 0;
-    const activeStructures = feeStructures?.filter(s => s.is_active).length || 0;
-    const inactiveStructures = feeStructures?.filter(s => !s.is_active).length || 0;
+    const activeStructures = typedFeeStructures?.filter(s => s.is_active).length || 0;
+    const inactiveStructures = typedFeeStructures?.filter(s => !s.is_active).length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        feeStructures: feeStructures || [],
+        feeStructures: typedFeeStructures || [],
         pagination: {
           page,
           limit,
@@ -212,17 +218,23 @@ export async function POST(req: Request) {
       .select('*')
       .single();
 
-    if (createError) {
+    interface NewFeeStructure {
+      id: string;
+      [key: string]: unknown;
+    }
+    const typedNewFeeStructure = newFeeStructure as NewFeeStructure | null;
+
+    if (createError || !typedNewFeeStructure) {
       console.error('Fee structure creation error:', createError);
       return NextResponse.json(
-        { success: false, error: 'Failed to create fee structure' }, 
+        { success: false, error: 'Failed to create fee structure' },
         { status: 500 }
       );
     }
 
     // Create fee structure items
     const structureItems = items.map((item: { category_id: string; amount: number; is_mandatory?: boolean; is_recurring?: boolean; payment_modes?: string[] }) => ({
-      structure_id: newFeeStructure.id,
+      structure_id: typedNewFeeStructure.id,
       category_id: item.category_id,
       amount: item.amount,
       is_mandatory: item.is_mandatory || false,
@@ -245,7 +257,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        feeStructure: newFeeStructure
+        feeStructure: typedNewFeeStructure
       },
       message: 'Fee structure created successfully'
     });

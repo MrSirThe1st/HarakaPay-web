@@ -41,23 +41,29 @@ export async function GET(req: Request) {
 
     const { data: studentFeeAssignments, error: studentFeeAssignmentsError, count } = await query;
 
+    interface StudentFeeAssignment {
+      status: string;
+      [key: string]: unknown;
+    }
+    const typedStudentFeeAssignments = studentFeeAssignments as StudentFeeAssignment[] | null;
+
     if (studentFeeAssignmentsError) {
       console.error('Error fetching student fee assignments:', studentFeeAssignmentsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch student fee assignments' }, 
+        { success: false, error: 'Failed to fetch student fee assignments' },
         { status: 500 }
       );
     }
 
     // Calculate statistics
     const totalAssignments = count || 0;
-    const activeAssignments = studentFeeAssignments?.filter(a => a.status === 'active').length || 0;
-    const completedAssignments = studentFeeAssignments?.filter(a => a.status === 'completed').length || 0;
+    const activeAssignments = typedStudentFeeAssignments?.filter(a => a.status === 'active').length || 0;
+    const completedAssignments = typedStudentFeeAssignments?.filter(a => a.status === 'completed').length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        studentFeeAssignments: studentFeeAssignments || [],
+        studentFeeAssignments: typedStudentFeeAssignments || [],
         pagination: {
           page,
           limit,
@@ -93,6 +99,10 @@ export async function POST(req: Request) {
     }, req);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body = await req.json();
     const { 

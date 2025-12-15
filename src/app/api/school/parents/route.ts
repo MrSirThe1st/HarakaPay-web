@@ -51,14 +51,21 @@ export async function GET(req: Request) {
       .eq('user_id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    interface Profile {
+      role: string;
+      school_id: string | null;
+      is_active: boolean;
+    }
+    const typedProfile = profile as Profile | null;
+
+    if (profileError || !typedProfile) {
       return NextResponse.json(
-        { success: false, error: 'User profile not found' }, 
+        { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    if (!profile.is_active) {
+    if (!typedProfile.is_active) {
       return NextResponse.json(
         { success: false, error: 'Account inactive' }, 
         { status: 403 }
@@ -66,16 +73,16 @@ export async function GET(req: Request) {
     }
 
     // Only school admins and staff can view parents
-    if (!['school_admin', 'school_staff'].includes(profile.role)) {
+    if (!['school_admin', 'school_staff'].includes(typedProfile.role)) {
       return NextResponse.json(
-        { success: false, error: 'Insufficient permissions' }, 
+        { success: false, error: 'Insufficient permissions' },
         { status: 403 }
       );
     }
 
-    if (!profile.school_id) {
+    if (!typedProfile.school_id) {
       return NextResponse.json(
-        { success: false, error: 'School not found' }, 
+        { success: false, error: 'School not found' },
         { status: 404 }
       );
     }
@@ -85,9 +92,9 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || '';
 
     console.log('🔍 Parent search API called:', {
-      schoolId: profile.school_id,
+      schoolId: typedProfile.school_id,
       search,
-      userRole: profile.role
+      userRole: typedProfile.role
     });
 
     // Get parents linked to students in this school
@@ -95,7 +102,12 @@ export async function GET(req: Request) {
     const { data: students, error: studentsError } = await adminClient
       .from('students')
       .select('id')
-      .eq('school_id', profile.school_id);
+      .eq('school_id', typedProfile.school_id);
+
+    interface Student {
+      id: string;
+    }
+    const typedStudents = students as Student[] | null;
 
     if (studentsError) {
       console.error('❌ Error fetching students:', studentsError);
@@ -105,9 +117,9 @@ export async function GET(req: Request) {
       );
     }
 
-    console.log(`📚 Found ${students?.length || 0} students in school`);
+    console.log(`📚 Found ${typedStudents?.length || 0} students in school`);
 
-    if (!students || students.length === 0) {
+    if (!typedStudents || typedStudents.length === 0) {
       console.log('⚠️ No students found in school');
       return NextResponse.json({
         success: true,
@@ -116,7 +128,7 @@ export async function GET(req: Request) {
       });
     }
 
-    const studentIds = students.map(s => s.id);
+    const studentIds = typedStudents.map(s => s.id);
 
     console.log(`🔗 Looking for parents of ${studentIds.length} students`);
 
@@ -137,6 +149,21 @@ export async function GET(req: Request) {
       `)
       .in('student_id', studentIds);
 
+    interface ParentInfo {
+      id: string;
+      user_id: string;
+      first_name: string;
+      last_name: string;
+      phone: string | null;
+      email: string | null;
+    }
+    interface ParentStudent {
+      parent_id: string;
+      student_id: string;
+      parents: ParentInfo | ParentInfo[];
+    }
+    const typedParentStudents = parentStudents as ParentStudent[] | null;
+
     if (parentStudentsError) {
       console.error('❌ Error fetching parent-student relationships:', parentStudentsError);
       return NextResponse.json(
@@ -145,7 +172,7 @@ export async function GET(req: Request) {
       );
     }
 
-    console.log(`👪 Found ${parentStudents?.length || 0} parent-student relationships`);
+    console.log(`👪 Found ${typedParentStudents?.length || 0} parent-student relationships`);
 
     // Get unique parents and their students
     const parentMap = new Map<string, {
@@ -158,7 +185,7 @@ export async function GET(req: Request) {
       student_ids: string[];
     }>();
 
-    parentStudents?.forEach((ps) => {
+    typedParentStudents?.forEach((ps) => {
       const parent = Array.isArray(ps.parents) ? ps.parents[0] : ps.parents;
       if (!parent) return;
 
@@ -212,7 +239,7 @@ export async function GET(req: Request) {
           .from('students')
           .select('id, student_id, first_name, last_name, grade_level')
           .in('id', parent.student_ids)
-          .eq('school_id', profile.school_id);
+          .eq('school_id', typedProfile.school_id!);
 
         return {
           ...parent,

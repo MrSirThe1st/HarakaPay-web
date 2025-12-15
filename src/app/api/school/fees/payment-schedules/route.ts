@@ -148,10 +148,12 @@ export async function POST(req: Request) {
     if (createError) {
       console.error('Payment schedule creation error:', createError);
       return NextResponse.json(
-        { success: false, error: 'Failed to create payment schedule' }, 
+        { success: false, error: 'Failed to create payment schedule' },
         { status: 500 }
       );
     }
+
+    const typedNewPaymentSchedule = newPaymentSchedule as { id: string };
 
     // Create payment installments if provided
     if (installments.length > 0) {
@@ -162,7 +164,7 @@ export async function POST(req: Request) {
         due_date: string;
         term_id?: string;
       }, index: number) => ({
-        schedule_id: newPaymentSchedule.id,
+        schedule_id: typedNewPaymentSchedule.id,
         installment_number: index + 1,
         name: inst.description || `Installment ${index + 1}`,
         amount: inst.amount,
@@ -181,10 +183,10 @@ export async function POST(req: Request) {
         await adminClient
           .from('payment_schedules')
           .delete()
-          .eq('id', newPaymentSchedule.id);
-        
+          .eq('id', typedNewPaymentSchedule.id);
+
         return NextResponse.json(
-          { success: false, error: 'Failed to create payment installments' }, 
+          { success: false, error: 'Failed to create payment installments' },
           { status: 500 }
         );
       }
@@ -193,7 +195,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        paymentSchedule: newPaymentSchedule
+        paymentSchedule: typedNewPaymentSchedule
       },
       message: 'Payment schedule created successfully'
     });

@@ -12,6 +12,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     const { id: structureId } = await params;
     const body = await req.json();
     // Get all payment plans for this structure automatically
@@ -51,10 +55,36 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (structureError || !feeStructure) {
       console.error('Error fetching fee structure:', structureError);
       return NextResponse.json(
-        { success: false, error: 'Fee structure not found' }, 
+        { success: false, error: 'Fee structure not found' },
         { status: 404 }
       );
     }
+
+    interface FeeStructure {
+      applies_to: string;
+      grade_level?: string | string[];
+      program_type?: string;
+      academic_year_id: string;
+      total_amount?: number;
+      payment_plans?: Array<{
+        id: string;
+        type: string;
+        discount_percentage?: number;
+        currency?: string;
+        installments?: unknown;
+        is_active?: boolean;
+      }>;
+      academic_years?: {
+        id: string;
+        name: string;
+        start_date: string;
+        end_date: string;
+        is_active: boolean;
+      };
+      [key: string]: unknown;
+    }
+
+    const typedFeeStructure = feeStructure as FeeStructure;
 
     // Get students that match the fee structure criteria
     let studentsQuery = adminClient
@@ -64,17 +94,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       .eq('status', 'active');
 
     // Apply grade level filter if applies_to is 'grade'
-    if (feeStructure.applies_to === 'grade') {
+    if (typedFeeStructure.applies_to === 'grade') {
       // Handle both single grade and multiple grades (comma-separated or array)
       let gradeLevels: string[] = [];
 
-      if (typeof feeStructure.grade_level === 'string') {
+      if (typeof typedFeeStructure.grade_level === 'string') {
         // Split comma-separated string into array
-        gradeLevels = feeStructure.grade_level.split(',').map((g: string) => g.trim());
-      } else if (Array.isArray(feeStructure.grade_level)) {
-        gradeLevels = feeStructure.grade_level;
-      } else {
-        gradeLevels = [feeStructure.grade_level];
+        gradeLevels = typedFeeStructure.grade_level.split(',').map((g: string) => g.trim());
+      } else if (Array.isArray(typedFeeStructure.grade_level)) {
+        gradeLevels = typedFeeStructure.grade_level;
+      } else if (typedFeeStructure.grade_level) {
+        gradeLevels = [typedFeeStructure.grade_level];
       }
 
       console.log('🎯 Filtering students by grade levels:', gradeLevels);
@@ -90,21 +120,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const { data: students, error: studentsError } = await studentsQuery;
 
+    interface Student {
+      id: string;
+      student_id: string;
+      first_name: string;
+      last_name: string;
+      grade_level: string;
+    }
+    const typedStudents = students as Student[] | null;
+
     console.log('📊 Students query result:', {
-      count: students?.length || 0,
-      applies_to: feeStructure.applies_to,
-      grade_level: feeStructure.grade_level
+      count: typedStudents?.length || 0,
+      applies_to: typedFeeStructure.applies_to,
+      grade_level: typedFeeStructure.grade_level
     });
 
     if (studentsError) {
       console.error('Error fetching students:', studentsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch students' }, 
+        { success: false, error: 'Failed to fetch students' },
         { status: 500 }
       );
     }
 
-    if (!students || students.length === 0) {
+    if (!typedStudents || typedStudents.length === 0) {
       return NextResponse.json({
         success: true,
         data: {
@@ -116,28 +155,33 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     // Check for existing assignments to avoid duplicates
-    const studentIds = students.map(student => student.id);
+    const studentIds = typedStudents.map(student => student.id);
     const { data: existingAssignments, error: assignmentsError } = await adminClient
       .from('student_fee_assignments')
       .select('student_id')
       .in('student_id', studentIds)
       .eq('structure_id', structureId) // Using correct field name
-      .eq('academic_year_id', feeStructure.academic_year_id)
+      .eq('academic_year_id', typedFeeStructure.academic_year_id)
       .eq('status', 'active');
+
+    interface ExistingAssignment {
+      student_id: string;
+    }
+    const typedExistingAssignments = existingAssignments as ExistingAssignment[] | null;
 
     if (assignmentsError) {
       console.error('Error checking existing assignments:', assignmentsError);
       return NextResponse.json(
-        { success: false, error: 'Failed to check existing assignments' }, 
+        { success: false, error: 'Failed to check existing assignments' },
         { status: 500 }
       );
     }
 
-    const existingStudentIds = new Set(existingAssignments?.map(a => a.student_id) || []);
+    const existingStudentIds = new Set(typedExistingAssignments?.map(a => a.student_id) || []);
     const newStudentIds = studentIds.filter(id => !existingStudentIds.has(id));
 
     // Get all payment plans for this structure (automatically include all)
-    const structurePaymentPlans = feeStructure.payment_plans || [];
+    const structurePaymentPlans = typedFeeStructure.payment_plans || [];
     if (structurePaymentPlans.length === 0) {
       return NextResponse.json({
         success: false,
@@ -151,7 +195,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         success: true,
         data: {
           activated_students: newStudentIds.length,
-          academic_year_activated: feeStructure.academic_years ? !feeStructure.academic_years.is_active : false,
+          academic_year_activated: typedFeeStructure.academic_years ? !typedFeeStructure.academic_years.is_active : false,
           total_eligible_students: students.length,
           already_activated: existingStudentIds.size,
           payment_plans_used: structurePaymentPlans.length,
@@ -185,8 +229,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       student_id: studentId,
       structure_id: structureId, // Using correct field name
       payment_plan_id: primaryPaymentPlan.id, // Using correct field name
-      academic_year_id: feeStructure.academic_year_id,
-      total_due: feeStructure.total_amount, // Using correct field name
+      academic_year_id: typedFeeStructure.academic_year_id,
+      total_due: typedFeeStructure.total_amount, // Using correct field name
       paid_amount: 0,
       status: 'active' as const,
       assigned_by: profile.user_id
@@ -207,11 +251,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Activate the academic year if it's not already active
     let academicYearActivated = false;
-    if (feeStructure.academic_years && !feeStructure.academic_years.is_active) {
+    if (typedFeeStructure.academic_years && !typedFeeStructure.academic_years.is_active) {
       const { error: activateYearError } = await adminClient
         .from('academic_years')
-        .update({ is_active: true })
-        .eq('id', feeStructure.academic_year_id);
+        .update({ is_active: true } as never)
+        .eq('id', typedFeeStructure.academic_year_id);
 
       if (activateYearError) {
         console.error('Error activating academic year:', activateYearError);
@@ -224,7 +268,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // Mark the fee structure as active
     const { error: activateStructureError } = await adminClient
       .from('fee_structures')
-      .update({ is_active: true })
+      .update({ is_active: true } as never)
       .eq('id', structureId);
 
     if (activateStructureError) {

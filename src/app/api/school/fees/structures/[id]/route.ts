@@ -133,7 +133,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         total_amount: body.total_amount,
         is_active: body.is_active,
         updated_at: new Date().toISOString()
-      })
+      } as never)
       .eq('id', structureId)
       .eq('school_id', profile.school_id)
       .select()

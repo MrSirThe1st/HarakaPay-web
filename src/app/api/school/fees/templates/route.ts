@@ -11,6 +11,10 @@ export async function GET(req: Request) {
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get URL parameters for filtering
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -49,23 +53,29 @@ export async function GET(req: Request) {
 
     const { data: feeTemplates, error: feeTemplatesError, count } = await query;
 
+    interface FeeTemplate {
+      status: string;
+      [key: string]: unknown;
+    }
+    const typedFeeTemplates = feeTemplates as FeeTemplate[] | null;
+
     if (feeTemplatesError) {
       console.error('Error fetching fee templates:', feeTemplatesError);
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch fee templates' }, 
+        { success: false, error: 'Failed to fetch fee templates' },
         { status: 500 }
       );
     }
 
     // Calculate statistics
     const totalTemplates = count || 0;
-    const publishedTemplates = feeTemplates?.filter(t => t.status === 'published').length || 0;
-    const draftTemplates = feeTemplates?.filter(t => t.status === 'draft').length || 0;
+    const publishedTemplates = typedFeeTemplates?.filter(t => t.status === 'published').length || 0;
+    const draftTemplates = typedFeeTemplates?.filter(t => t.status === 'draft').length || 0;
 
     return NextResponse.json({
       success: true,
       data: {
-        feeTemplates: feeTemplates || [],
+        feeTemplates: typedFeeTemplates || [],
         pagination: {
           page,
           limit,
@@ -101,6 +111,10 @@ export async function POST(req: Request) {
     }, req);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body = await req.json();
     const { 
@@ -228,17 +242,23 @@ export async function POST(req: Request) {
       .select('*')
       .single();
 
-    if (createError) {
+    interface NewFeeTemplate {
+      id: string;
+      [key: string]: unknown;
+    }
+    const typedNewFeeTemplate = newFeeTemplate as NewFeeTemplate | null;
+
+    if (createError || !typedNewFeeTemplate) {
       console.error('Fee template creation error:', createError);
       return NextResponse.json(
-        { success: false, error: 'Failed to create fee template' }, 
+        { success: false, error: 'Failed to create fee template' },
         { status: 500 }
       );
     }
 
     // Create fee template categories
     const templateCategories = categories.map((cat: { category_id: string; amount: number }) => ({
-      template_id: newFeeTemplate.id,
+      template_id: typedNewFeeTemplate.id,
       category_id: cat.category_id,
       amount: cat.amount
     }));
@@ -253,7 +273,7 @@ export async function POST(req: Request) {
       await adminClient
         .from('fee_templates')
         .delete()
-        .eq('id', newFeeTemplate.id);
+        .eq('id', typedNewFeeTemplate.id);
       
       return NextResponse.json(
         { success: false, error: 'Failed to create fee template categories' }, 
@@ -264,7 +284,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        feeTemplate: newFeeTemplate
+        feeTemplate: typedNewFeeTemplate
       },
       message: 'Fee template created successfully'
     });

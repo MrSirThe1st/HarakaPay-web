@@ -12,6 +12,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Get fee template with categories
     const { data: feeTemplate, error: feeTemplateError } = await adminClient
       .from('fee_templates')
@@ -64,6 +68,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }, req);
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
+
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
 
     const body = await req.json();
     const { 
@@ -141,7 +149,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         program_type,
         total_amount,
         status: status || 'draft'
-      })
+      } as never)
       .eq('id', id)
       .eq('school_id', profile.school_id)
       .select('*')
@@ -212,6 +220,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (isAuthError(authResult)) return authResult;
     const { profile, adminClient } = authResult;
 
+    if (!profile.school_id) {
+      return NextResponse.json({ error: 'No school assigned' }, { status: 400 });
+    }
+
     // Check if template exists and belongs to school
     const { data: existingTemplate } = await adminClient
       .from('fee_templates')
@@ -220,15 +232,21 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       .eq('school_id', profile.school_id)
       .single();
 
-    if (!existingTemplate) {
+    interface ExistingTemplate {
+      id: string;
+      status: string;
+    }
+    const typedExistingTemplate = existingTemplate as ExistingTemplate | null;
+
+    if (!typedExistingTemplate) {
       return NextResponse.json(
-        { success: false, error: 'Fee template not found' }, 
+        { success: false, error: 'Fee template not found' },
         { status: 404 }
       );
     }
 
     // Check if template is published and has student assignments
-    if (existingTemplate.status === 'published') {
+    if (typedExistingTemplate.status === 'published') {
       const { data: studentAssignments } = await adminClient
         .from('student_fee_assignments')
         .select('id')
