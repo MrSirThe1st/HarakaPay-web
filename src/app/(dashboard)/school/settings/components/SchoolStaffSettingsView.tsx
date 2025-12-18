@@ -10,6 +10,7 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   PencilIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Database } from '@/types/supabase';
@@ -75,6 +76,7 @@ export function SchoolStaffSettingsView() {
   const [saving, setSaving] = useState(false);
   const [editingSchool, setEditingSchool] = useState(false);
   const [editingAcademicYear, setEditingAcademicYear] = useState(false);
+  const [editingAcademicYearId, setEditingAcademicYearId] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Payment fee states
@@ -239,9 +241,15 @@ export function SchoolStaffSettingsView() {
 
     try {
       setSaving(true);
-      
-      const response = await fetch('/api/academic-years', {
-        method: 'POST',
+
+      const url = editingAcademicYearId
+        ? `/api/academic-years/${editingAcademicYearId}`
+        : '/api/academic-years';
+
+      const method = editingAcademicYearId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -250,20 +258,67 @@ export function SchoolStaffSettingsView() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create academic year');
+        throw new Error(error.error || `Failed to ${editingAcademicYearId ? 'update' : 'create'} academic year`);
       }
 
-      // Clear cache after successful creation
+      // Clear cache after successful operation
       apiCache.clearPattern('academic-years');
-      
+
       await loadSchoolData();
       setAcademicYearForm({ name: '', start_date: '', end_date: '' });
       setEditingAcademicYear(false);
+      setEditingAcademicYearId(null);
     } catch (error) {
-      console.error('Error creating academic year:', error);
+      console.error('Error with academic year:', error);
+      alert(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEditAcademicYear = (year: AcademicYear) => {
+    setAcademicYearForm({
+      name: year.name,
+      start_date: year.start_date || '',
+      end_date: year.end_date || '',
+    });
+    setEditingAcademicYearId(year.id);
+    setEditingAcademicYear(true);
+  };
+
+  const handleDeleteAcademicYear = async (yearId: string) => {
+    if (!confirm(t('Are you sure you want to delete this academic year? This action cannot be undone.'))) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const response = await fetch(`/api/academic-years/${yearId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete academic year');
+      }
+
+      // Clear cache after successful deletion
+      apiCache.clearPattern('academic-years');
+
+      await loadSchoolData();
+    } catch (error) {
+      console.error('Error deleting academic year:', error);
+      alert(error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEditAcademicYear = () => {
+    setEditingAcademicYear(false);
+    setEditingAcademicYearId(null);
+    setAcademicYearForm({ name: '', start_date: '', end_date: '' });
   };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -826,7 +881,7 @@ export function SchoolStaffSettingsView() {
 
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setEditingAcademicYear(false)}
+                  onClick={handleCancelEditAcademicYear}
                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   {t('Cancel')}
@@ -836,7 +891,7 @@ export function SchoolStaffSettingsView() {
                   disabled={saving || !academicYearForm.name || !academicYearForm.start_date || !academicYearForm.end_date}
                   className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
                 >
-                  {saving ? t('Creating...') : t('Create Academic Year')}
+                  {saving ? (editingAcademicYearId ? t('Updating...') : t('Creating...')) : (editingAcademicYearId ? t('Update Academic Year') : t('Create Academic Year'))}
                 </button>
               </div>
             </div>
@@ -846,7 +901,7 @@ export function SchoolStaffSettingsView() {
                 academicYears.map((year) => (
                   <div key={year.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-sm font-medium text-gray-900">{year.name}</h4>
                         <p className="text-sm text-gray-500">
                           {year.start_date && year.end_date ? (
@@ -856,16 +911,36 @@ export function SchoolStaffSettingsView() {
                           )}
                         </p>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {year.is_active ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {t('Active')}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {t('Inactive')}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <div>
+                          {year.is_active ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {t('Active')}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              {t('Inactive')}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditAcademicYear(year)}
+                            disabled={saving}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50"
+                            title={t('Edit')}
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAcademicYear(year.id)}
+                            disabled={saving}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+                            title={t('Delete')}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

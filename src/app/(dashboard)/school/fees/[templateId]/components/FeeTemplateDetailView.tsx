@@ -160,7 +160,6 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{structure.name}</h1>
-            <p className="text-sm text-gray-600">Fee Template Details</p>
           </div>
         </div>
         <div className="flex space-x-3">
@@ -168,8 +167,8 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
             onClick={() => setShowAutoActivate(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
-            <UserGroupIcon className="h-4 w-4 mr-2" />
-            Activate Structure
+
+            Activate
           </button>
           <button
             onClick={() => handlePublishToggle()}

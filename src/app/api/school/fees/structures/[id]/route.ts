@@ -132,6 +132,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         applies_to: body.applies_to,
         total_amount: body.total_amount,
         is_active: body.is_active,
+        is_published: body.is_published,
         updated_at: new Date().toISOString()
       } as never)
       .eq('id', structureId)
