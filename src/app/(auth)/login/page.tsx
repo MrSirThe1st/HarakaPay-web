@@ -33,12 +33,12 @@ export default function LoginPage() {
     if (role === "super_admin" || role === "platform_admin" || role === "support_admin") {
       return "/admin/dashboard";
     }
-    
+
     // Check for school roles
     if (role === "school_admin" || role === "school_staff") {
-      return "/school/dashboard";
+      return "/school/payments";
     }
-    
+
     // Default fallback (shouldn't happen with valid users)
     return "/";
   };
