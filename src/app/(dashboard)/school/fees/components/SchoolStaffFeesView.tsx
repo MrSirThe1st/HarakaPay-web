@@ -53,13 +53,14 @@ export function SchoolStaffFeesView() {
           )}
           {viewMode === 'management' && (
             <>
-              <button
+              {/* Temporarily commented out - Manage Receipts functionality not ready for users */}
+              {/* <button
                 onClick={handleManageReceipts}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
               >
                 <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
                 {t('Manage Receipts')}
-              </button>
+              </button> */}
               <button
                 onClick={handleCreateNew}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"

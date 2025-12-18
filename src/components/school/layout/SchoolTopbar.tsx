@@ -22,8 +22,8 @@ export default function SchoolTopbar() {
     <div className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left side - School branding and mobile menu */}
-          <div className="flex items-center space-x-4">
+          {/* Left side - Mobile menu button */}
+          <div className="flex items-center">
             {/* Mobile menu button */}
             <button
               type="button"
@@ -36,58 +36,47 @@ export default function SchoolTopbar() {
                 <Bars3Icon className="h-6 w-6" />
               )}
             </button>
-
-            {/* School Branding */}
-            <div className="flex items-center space-x-3">
-              {/* School Logo */}
-              {schoolInfo?.logo_url ? (
-                <div className="flex-shrink-0 relative">
-                  <Image
-                    src={schoolInfo.logo_url}
-                    alt={`${schoolInfo.name} logo`}
-                    width={42}
-                    height={42}
-                    className="rounded-full object-cover"
-                    unoptimized={true}
-                  />
-                </div>
-              ) : (
-                <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {schoolLoading ? '...' : schoolInfo?.name?.charAt(0).toUpperCase() || 'S'}
-                  </span>
-                </div>
-              )}
-
-              {/* School Name */}
-              <div className="hidden sm:block">
-                <h1 className="text-lg font-semibold text-gray-900">
-                  {schoolLoading ? 'Loading...' : schoolInfo?.name || 'School Name'}
-                </h1>
-              </div>
-            </div>
           </div>
 
-          {/* Right side - Profile */}
+          {/* Right side - School Branding with dropdown */}
           <div className="flex items-center space-x-4">
-            {/* Profile dropdown */}
+            {/* School branding dropdown */}
             <div className="relative">
               <button
                 type="button"
-                className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100"
+                className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">S</span>
-                </div>
+                {/* School Logo */}
+                {schoolInfo?.logo_url ? (
+                  <div className="flex-shrink-0 relative">
+                    <Image
+                      src={schoolInfo.logo_url}
+                      alt={`${schoolInfo.name} logo`}
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover"
+                      unoptimized={true}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {schoolLoading ? '...' : schoolInfo?.name?.charAt(0).toUpperCase() || 'S'}
+                    </span>
+                  </div>
+                )}
+
+                {/* School Name */}
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">{t('School Staff')}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {schoolLoading ? 'Loading...' : schoolInfo?.name || 'School Name'}
+                  </p>
                   <p className="text-xs text-gray-500">{t('Staff Member')}</p>
                 </div>
-
               </button>
 
-              {/* Profile dropdown menu */}
+              {/* Dropdown menu */}
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                   <button
