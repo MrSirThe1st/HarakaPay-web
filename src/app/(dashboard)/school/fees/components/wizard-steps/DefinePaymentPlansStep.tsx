@@ -381,11 +381,9 @@ export function DefinePaymentPlansStep({ feeItems, academicYear, onFeeItemsChang
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-lg">{planType.icon}</span>
+                      <div className="flex items-center justify-center">
                         <span className="font-medium text-gray-900">{planType.label}</span>
                       </div>
-                      <p className="text-xs text-gray-600">{planType.description}</p>
                     </button>
                   ))}
                 </div>
@@ -631,10 +629,8 @@ export function DefinePaymentPlansStep({ feeItems, academicYear, onFeeItemsChang
                             {/* Plan Header */}
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center space-x-3">
-                                <span className="text-2xl">{planTypeInfo.icon}</span>
                                 <div>
                                   <h6 className="text-lg font-semibold text-gray-900">{planTypeInfo.label}</h6>
-                                  <p className="text-sm text-gray-600">{planTypeInfo.description}</p>
                                 </div>
                               </div>
                               <div className="flex items-center space-x-3">
