@@ -40,29 +40,21 @@ const PLAN_TYPES = [
   {
     value: 'monthly',
     label: 'Monthly',
-    description: '12 equal monthly payments',
-    icon: '📅',
     color: 'blue'
   },
   {
     value: 'termly',
     label: 'Termly',
-    description: 'Payments per academic term',
-    icon: '📚',
     color: 'green'
   },
   {
     value: 'one_time',
     label: 'One-time',
-    description: 'Single payment upfront',
-    icon: '💰',
     color: 'purple'
   },
   {
     value: 'installment',
     label: 'Custom Installment',
-    description: 'Define your own schedule',
-    icon: '⚙️',
     color: 'gray'
   }
 ];
