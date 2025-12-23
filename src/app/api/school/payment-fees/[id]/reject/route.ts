@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { z } from "zod";
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 interface RouteParams {
   params: Promise<{
     id: string;

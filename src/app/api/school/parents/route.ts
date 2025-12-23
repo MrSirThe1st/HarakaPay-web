@@ -4,6 +4,10 @@ import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(req: Request) {
   try {
     const cookieStore = await cookies();

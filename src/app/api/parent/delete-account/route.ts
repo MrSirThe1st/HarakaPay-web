@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function DELETE(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');

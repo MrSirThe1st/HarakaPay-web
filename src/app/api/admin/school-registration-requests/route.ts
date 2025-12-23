@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { createAdminClient } from "@/lib/supabaseServerOnly";
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     const authResult = await authenticateRequest({

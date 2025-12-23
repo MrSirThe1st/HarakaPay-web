@@ -2,6 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseServerOnly';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Handle CORS preflight requests
 export async function OPTIONS() {
   console.log('🚀 OPTIONS /api/parent/profile called');

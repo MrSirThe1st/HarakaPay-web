@@ -140,20 +140,10 @@ export async function proxy(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // TEMPORARY: Bypass all /api/parent routes for debugging
-  if (pathname.startsWith('/api/parent')) {
-    console.log('🟢 BYPASSING auth for /api/parent route:', pathname);
-    return res;
-  }
-
   // Allow public routes
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
-    console.log('🟢 Public route allowed:', pathname);
     return res;
   }
-
-  // Log when a route is NOT in public routes (for debugging)
-  console.log('🔴 Route requires auth:', pathname);
 
   // Allow static files and Next.js internals
   if (

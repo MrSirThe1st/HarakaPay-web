@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

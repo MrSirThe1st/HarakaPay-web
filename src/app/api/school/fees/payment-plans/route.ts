@@ -2,6 +2,10 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(req: Request) {
   try {
     const authResult = await authenticateRequest({

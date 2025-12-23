@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { getGradeByValue } from '@/lib/congoleseGrades';
 
-// Cache this data for 5 minutes (grade levels rarely change)
-export const revalidate = 300;
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   try {

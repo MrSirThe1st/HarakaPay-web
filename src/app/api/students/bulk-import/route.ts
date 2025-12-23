@@ -3,6 +3,10 @@ import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
 import { normalizeLevelValue } from '@/lib/csvParser';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 type StudentImport = {
   student_id: string;
   first_name: string;

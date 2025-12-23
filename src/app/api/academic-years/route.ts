@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { Database } from '@/types/supabase';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 type AcademicYearInsert = Database['public']['Tables']['academic_years']['Insert'];
 
 export async function GET(_request: NextRequest) {

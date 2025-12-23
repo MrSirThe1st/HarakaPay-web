@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Predefined admin accounts (server-side only)
 const PREDEFINED_ADMINS = [
   {

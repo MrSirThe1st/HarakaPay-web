@@ -3,6 +3,10 @@ import { authenticateRequest, isAuthError } from '@/lib/apiAuth';
 import { z } from 'zod';
 import type { SupportTicketWithDetails, TicketListResponse } from '@/types/message.types';
 
+// Force dynamic rendering (required for Next.js 16+)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 interface School {
   id: string;
   name: string;
