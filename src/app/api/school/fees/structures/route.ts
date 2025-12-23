@@ -143,14 +143,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { 
+    const {
       name,
       academic_year_id,
       grade_level,
       applies_to = 'school',
       total_amount,
       is_active = true,
-      is_published = false,
       items = []
     } = body;
 
@@ -211,7 +210,6 @@ export async function POST(req: Request) {
         applies_to,
         total_amount,
         is_active,
-        is_published,
         school_id: profile.school_id,
         created_by: user.id || null  // Use user.id or null if not available
       } as any)

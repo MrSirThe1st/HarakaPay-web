@@ -286,7 +286,6 @@ const FeeStructureWizardComponent = ({ onComplete, onCancel }: FeeStructureWizar
         applies_to: wizardData.academicContext.appliesTo,
         total_amount: totalAmount,
         is_active: false, 
-        is_published: true, 
         items: wizardData.feeItems.map((item, index) => ({
           category_id: categoryIds[index],
           amount: item.amount,

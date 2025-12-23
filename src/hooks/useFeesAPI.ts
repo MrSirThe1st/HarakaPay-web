@@ -62,7 +62,6 @@ export interface FeeStructure {
   applies_to: 'school' | 'grade' | string;
   total_amount: number;
   is_active: boolean;
-  is_published: boolean;
   school_id: string;
   created_at: string;
   updated_at: string;

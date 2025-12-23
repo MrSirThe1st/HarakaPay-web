@@ -26,12 +26,16 @@ interface Parent {
 }
 
 // Handle CORS preflight requests
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   console.log('🚀 OPTIONS /api/parent/create-profile called');
-  const response = new NextResponse(null, { status: 200 });
+  console.log('🔍 Request headers:', Object.fromEntries(request.headers.entries()));
+  console.log('🔍 Request origin:', request.headers.get('origin'));
+
+  const response = new NextResponse(null, { status: 204 });
   response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  response.headers.set('Access-Control-Max-Age', '86400');
   return response;
 }
 
@@ -51,15 +55,21 @@ export async function POST(request: NextRequest) {
     console.log('Received parent profile data:', profileData);
 
     // Validate required fields
-    const requiredFields = ['user_id', 'first_name', 'last_name', 'email'];
-    const missingFields = requiredFields.filter(field => !profileData[field]?.trim());
-    
+    const requiredFields = ['user_id', 'first_name', 'last_name', 'phone'];
+    const missingFields = requiredFields.filter(field => !profileData[field]?.trim?.());
+
     if (missingFields.length > 0) {
       return NextResponse.json(
         { error: `Missing required fields: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
+
+    // Use provided values (email is optional, generate from phone if not provided)
+    const firstName = profileData.first_name.trim();
+    const lastName = profileData.last_name.trim();
+    const phone = profileData.phone.trim();
+    const email = profileData.email?.trim() || `${phone.replace(/\D/g, '')}@harakapay.app`;
 
     // Create admin client to bypass RLS
     const adminClient = createAdminClient();
@@ -113,15 +123,15 @@ export async function POST(request: NextRequest) {
     // If only profile exists but not parent, create parent record
     if (existingProfile && !existingParent) {
       console.log('Profile exists but parent record missing, creating parent record');
-      
+
       const { data: parent, error: parentInsertError } = await adminClient
         .from('parents')
         .insert({
           user_id: profileData.user_id,
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          phone: profileData.phone || 'Not provided',
-          email: profileData.email,
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
+          email: email,
           address: profileData.address || null,
           is_active: true
         } as any)
@@ -167,14 +177,14 @@ export async function POST(request: NextRequest) {
     // If only parent exists but not profile, create profile record
     if (!existingProfile && existingParent) {
       console.log('Parent record exists but profile missing, creating profile record');
-      
+
       const { data: profile, error: profileInsertError } = await adminClient
         .from('profiles')
         .insert({
           user_id: profileData.user_id,
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          phone: profileData.phone || null,
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone,
           role: 'parent',
           admin_type: null,
           school_id: null,
@@ -226,9 +236,9 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .upsert({
         user_id: profileData.user_id,
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        phone: profileData.phone || null,
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone,
         role: 'parent',
         admin_type: null, // Parents are not platform admins
         school_id: null, // Parents don't belong to a specific school
@@ -258,10 +268,10 @@ export async function POST(request: NextRequest) {
       .from('parents')
       .upsert({
         user_id: profileData.user_id,
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        phone: profileData.phone || 'Not provided',
-        email: profileData.email,
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone,
+        email: email,
         address: profileData.address || null,
         is_active: true
       } as never, {

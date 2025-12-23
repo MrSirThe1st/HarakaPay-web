@@ -43,31 +43,6 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
     }
   };
 
-  const handlePublishToggle = async () => {
-    if (!structure) return;
-    
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await feesAPI.feeStructures.update(structure.id, {
-        is_published: !structure.is_published
-      });
-      
-      if (response.success && response.data) {
-        setStructure(response.data.feeStructure);
-        setSuccess(`Fee structure ${structure.is_published ? 'unpublished' : 'published'} successfully`);
-      } else {
-        setError(response.error || 'Failed to update fee structure');
-      }
-    } catch (error) {
-      setError('An error occurred while updating the fee structure');
-      console.error('Error updating fee structure:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDelete = async () => {
     if (!structure) return;
     
@@ -167,18 +142,7 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
             onClick={() => setShowAutoActivate(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
           >
-
             Activate
-          </button>
-          <button
-            onClick={() => handlePublishToggle()}
-            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white ${
-              structure.is_published 
-                ? 'bg-yellow-600 hover:bg-yellow-700' 
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            {structure.is_published ? 'Unpublish' : 'Publish'}
           </button>
           <button
             onClick={() => setDeleteConfirm(true)}
@@ -238,9 +202,9 @@ export function FeeStructureDetailView({ templateId }: FeeStructureDetailViewPro
               <dt className="text-sm font-medium text-gray-500">Status</dt>
               <dd className="mt-1">
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                  structure.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  structure.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {structure.is_published ? 'Published' : 'Draft'}
+                  {structure.is_active ? 'Active' : 'Inactive'}
                 </span>
               </dd>
             </div>

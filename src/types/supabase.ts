@@ -412,7 +412,6 @@ export type Database = {
           grade_level: string
           id: string
           is_active: boolean | null
-          is_published: boolean | null
           name: string
           school_id: string
           total_amount: number
@@ -426,7 +425,6 @@ export type Database = {
           grade_level: string
           id?: string
           is_active?: boolean | null
-          is_published?: boolean | null
           name: string
           school_id: string
           total_amount: number
@@ -440,7 +438,6 @@ export type Database = {
           grade_level?: string
           id?: string
           is_active?: boolean | null
-          is_published?: boolean | null
           name?: string
           school_id?: string
           total_amount?: number
