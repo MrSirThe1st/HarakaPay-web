@@ -49,14 +49,18 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🚀 POST /api/parent/create-profile called');
+  const startTime = Date.now();
+  console.log('🚀🚀🚀 POST /api/parent/create-profile ENTRY POINT 🚀🚀🚀');
   console.log('🚀 Request method:', request.method);
   console.log('🚀 Request URL:', request.url);
-  
+  console.log('🚀 Headers:', Object.fromEntries(request.headers.entries()));
+
   try {
     // Parse request body
+    console.log('📝 About to parse request body...');
     const profileData = await request.json();
-    console.log('Received parent profile data:', profileData);
+    console.log('✅ Request body parsed successfully');
+    console.log('📋 Received parent profile data:', profileData);
 
     // Validate required fields
     const requiredFields = ['user_id', 'first_name', 'last_name', 'phone'];

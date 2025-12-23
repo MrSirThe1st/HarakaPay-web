@@ -140,8 +140,20 @@ export async function proxy(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
+  // Debug logging for mobile API requests
+  if (pathname.startsWith('/api/parent')) {
+    console.log('📱 Mobile API request:', {
+      pathname,
+      method: req.method,
+      hasAuthHeader: !!req.headers.get('authorization'),
+      origin: req.headers.get('origin'),
+      contentType: req.headers.get('content-type')
+    });
+  }
+
   // Allow public routes
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    console.log('✅ Public route allowed:', pathname);
     return res;
   }
 
