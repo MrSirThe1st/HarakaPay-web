@@ -142,8 +142,12 @@ export async function proxy(req: NextRequest) {
 
   // Allow public routes
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    console.log('🟢 Public route allowed:', pathname);
     return res;
   }
+
+  // Log when a route is NOT in public routes (for debugging)
+  console.log('🔴 Route requires auth:', pathname);
 
   // Allow static files and Next.js internals
   if (
