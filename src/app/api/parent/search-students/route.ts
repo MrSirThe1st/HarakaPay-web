@@ -74,10 +74,13 @@ export async function POST(req: NextRequest) {
     }> = [];
 
     if (searchType === 'automatic') {
-      // Search for students by parent information
-      if (!parentName || !parentEmail) {
-        return NextResponse.json({ error: 'Parent name and email are required for automatic search' }, { status: 400 });
+      // Search for students by parent information (phone + name)
+      if (!parentName || !parentPhone) {
+        return NextResponse.json({ error: 'Parent name and phone are required for automatic search' }, { status: 400 });
       }
+
+      // Normalize phone for comparison
+      const normalizedParentPhone = normalizePhone(parentPhone);
 
       const { data, error } = await supabase
         .from('students')
@@ -93,7 +96,7 @@ export async function POST(req: NextRequest) {
           parent_phone,
           schools!inner(name)
         `)
-        .or(`parent_name.ilike.%${parentName}%,parent_email.ilike.%${parentEmail}%`);
+        .or(`parent_name.ilike.%${parentName}%,parent_phone.ilike.%${normalizedParentPhone}%`);
 
       if (error) {
         console.error('Error searching students:', error);
@@ -142,28 +145,29 @@ export async function POST(req: NextRequest) {
       let confidence: 'high' | 'medium' | 'low' = 'low';
 
       if (searchType === 'automatic') {
-        // Check name match
-        if (student.parent_name && normalizeName(student.parent_name) === normalizeName(parentName)) {
-          matchReasons.push('Parent name matches');
+        // Check phone match (primary identifier)
+        if (parentPhone && student.parent_phone && normalizePhone(student.parent_phone) === normalizePhone(parentPhone)) {
+          matchReasons.push('Phone number matches');
           confidence = 'high';
-        } else if (student.parent_name && normalizeName(student.parent_name).includes(normalizeName(parentName))) {
-          matchReasons.push('Parent name partially matches');
+        } else if (parentPhone && student.parent_phone && normalizePhone(student.parent_phone).includes(normalizePhone(parentPhone))) {
+          matchReasons.push('Phone number partially matches');
           confidence = 'medium';
         }
 
-        // Check email match
-        if (student.parent_email && student.parent_email.toLowerCase() === parentEmail.toLowerCase()) {
-          matchReasons.push('Email matches exactly');
-          confidence = 'high';
-        } else if (student.parent_email && student.parent_email.toLowerCase().includes(parentEmail.toLowerCase())) {
-          matchReasons.push('Email partially matches');
+        // Check name match (secondary identifier)
+        if (student.parent_name && normalizeName(student.parent_name) === normalizeName(parentName)) {
+          matchReasons.push('Parent name matches exactly');
+          if (confidence === 'low') confidence = 'medium';
+          if (confidence === 'medium') confidence = 'high';
+        } else if (student.parent_name && normalizeName(student.parent_name).includes(normalizeName(parentName))) {
+          matchReasons.push('Parent name partially matches');
           if (confidence === 'low') confidence = 'medium';
         }
 
-        // Check phone match
-        if (parentPhone && student.parent_phone && normalizePhone(student.parent_phone) === normalizePhone(parentPhone)) {
-          matchReasons.push('Phone number matches');
-          if (confidence === 'low') confidence = 'medium';
+        // If both phone and name match, this is the highest confidence
+        if (parentPhone && student.parent_phone && normalizePhone(student.parent_phone) === normalizePhone(parentPhone) &&
+            student.parent_name && normalizeName(student.parent_name) === normalizeName(parentName)) {
+          confidence = 'high';
         }
       } else {
         // Manual search - check name match
