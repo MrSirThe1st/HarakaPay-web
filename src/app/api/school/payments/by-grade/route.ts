@@ -24,49 +24,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const gradeLevel = searchParams.get('grade_level'); // Optional filter by grade
 
-    // Get all students for this school
-    let studentsQuery = adminClient
-      .from('students')
-      .select('id, first_name, last_name, student_id, grade_level')
-      .eq('school_id', profile.school_id);
-
-    if (gradeLevel) {
-      studentsQuery = studentsQuery.eq('grade_level', gradeLevel);
-    }
-
-    const { data: students, error: studentsError } = await studentsQuery;
-
-    interface Student {
-      id: string;
-      first_name: string;
-      last_name: string;
-      student_id: string;
-      grade_level: string;
-    }
-    const typedStudents = students as Student[] | null;
-
-    if (studentsError) {
-      console.error('Error fetching students:', studentsError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch students' },
-        { status: 500 }
-      );
-    }
-
-    if (!typedStudents || typedStudents.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          byGrade: {},
-          students: []
-        }
-      });
-    }
-
-    const studentIds = typedStudents.map(s => s.id);
-
-    // Get fee assignments for these students
-    const { data: feeAssignments, error: feeAssignmentsError } = await adminClient
+    // Get fee assignments with student data using join filter instead of IN clause
+    let feeAssignmentsQuery = adminClient
       .from('student_fee_assignments')
       .select(`
         id,
@@ -76,11 +35,30 @@ export async function GET(req: NextRequest) {
         status,
         students!inner(
           id,
-          grade_level
+          first_name,
+          last_name,
+          student_id,
+          grade_level,
+          school_id
         )
       `)
-      .in('student_id', studentIds)
+      .eq('students.school_id', profile.school_id)
       .in('status', ['active', 'fully_paid']);
+
+    if (gradeLevel) {
+      feeAssignmentsQuery = feeAssignmentsQuery.eq('students.grade_level', gradeLevel);
+    }
+
+    const { data: feeAssignments, error: feeAssignmentsError } = await feeAssignmentsQuery;
+
+    interface Student {
+      id: string;
+      first_name: string;
+      last_name: string;
+      student_id: string;
+      grade_level: string;
+      school_id: string;
+    }
 
     interface FeeAssignment {
       id: string;
@@ -88,21 +66,43 @@ export async function GET(req: NextRequest) {
       total_due: number;
       paid_amount: number;
       status: string;
-      students: unknown;
+      students: Student;
     }
     const typedFeeAssignments = feeAssignments as FeeAssignment[] | null;
 
     if (feeAssignmentsError) {
-      console.error('Error fetching fee assignments:', feeAssignmentsError);
+      console.error('Error fetching fee assignments:', {
+        message: feeAssignmentsError.message,
+        details: feeAssignmentsError.details,
+        hint: feeAssignmentsError.hint,
+        code: feeAssignmentsError.code
+      });
       return NextResponse.json(
         { success: false, error: 'Failed to fetch fee assignments' },
         { status: 500 }
       );
     }
 
-    // Get payment transactions for these fee assignments
-    const feeAssignmentIds = typedFeeAssignments?.map(fa => fa.id) || [];
-    
+    if (!typedFeeAssignments || typedFeeAssignments.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          byGrade: {},
+          students: []
+        }
+      });
+    }
+
+    // Extract unique students from fee assignments
+    const studentMap = new Map<string, Student>();
+    typedFeeAssignments.forEach(fa => {
+      if (!studentMap.has(fa.student_id)) {
+        studentMap.set(fa.student_id, fa.students);
+      }
+    });
+    const typedStudents = Array.from(studentMap.values());
+
+    // Get payment transactions using join filter instead of IN clause
     let transactionsQuery = adminClient
       .from('payment_transactions')
       .select(`
@@ -116,7 +116,10 @@ export async function GET(req: NextRequest) {
           created_at
         ),
         student_fee_assignments!inner(
-          student_id
+          student_id,
+          students!inner(
+            school_id
+          )
         ),
         payment_plans(
           id,
@@ -124,38 +127,22 @@ export async function GET(req: NextRequest) {
           installments
         )
       `)
+      .eq('student_fee_assignments.students.school_id', profile.school_id)
       .eq('transaction_status', 'completed');
-
-    if (feeAssignmentIds.length > 0) {
-      transactionsQuery = transactionsQuery.in('student_fee_assignment_id', feeAssignmentIds);
-    } else {
-      // No fee assignments, return empty
-      return NextResponse.json({
-        success: true,
-        data: {
-          byGrade: {},
-          students: typedStudents.map(s => ({
-            ...s,
-            paymentStatus: 'no_fees_assigned',
-            totalDue: 0,
-            paidAmount: 0,
-            remainingBalance: 0,
-            paymentPlanType: null,
-            paidInstallments: []
-          }))
-        }
-      });
-    }
 
     const { data: transactions, error: transactionsError } = await transactionsQuery;
 
     interface Transaction {
       student_fee_assignments?: {
         student_id: string;
+        students: {
+          school_id: string;
+        };
       };
       payments?: {
         payment_date?: string;
         amount?: number;
+        payment_method?: string;
         [key: string]: unknown;
       };
       payment_plans?: {
@@ -163,12 +150,21 @@ export async function GET(req: NextRequest) {
         installments?: unknown[];
         [key: string]: unknown;
       };
+      installment_number?: number;
+      installment_label?: string;
+      amount_paid?: number;
+      created_at?: string;
       [key: string]: unknown;
     }
     const typedTransactions = transactions as Transaction[] | null;
 
     if (transactionsError) {
-      console.error('Error fetching transactions:', transactionsError);
+      console.error('Error fetching transactions:', {
+        message: transactionsError.message,
+        details: transactionsError.details,
+        hint: transactionsError.hint,
+        code: transactionsError.code
+      });
       return NextResponse.json(
         { success: false, error: 'Failed to fetch transactions' },
         { status: 500 }

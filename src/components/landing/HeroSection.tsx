@@ -18,17 +18,17 @@ export function HeroSection() {
               <AcademicCapIcon className="w-4 h-4" />
               {t("Trusted by Schools Nationwide")}
             </div>
-            
+
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              {t("Streamline School Fee")}
+              {t("School Fee Payments")}
               <br />
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                {t("Management")}
+                {t("Made Simple")}
               </span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto">
-              {t("All-in-one platform for schools to manage payments, track fees, and connect with parents seamlessly.")}
+              {t("The easiest way for parents to pay school fees. Fast, secure, and hassle-free mobile payments for schools across Africa.")}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

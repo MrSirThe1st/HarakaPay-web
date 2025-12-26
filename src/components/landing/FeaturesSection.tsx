@@ -10,40 +10,40 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 const features = [
   {
-    icon: ReceiptPercentIcon,
-    title: "Instant Receipts",
-    description:
-      "Generate and send automated receipts immediately after payment processing.",
-  },
-  {
     icon: DevicePhoneMobileIcon,
-    title: "Parent Portal",
+    title: "Mobile Payments",
     description:
-      "Easy-to-use mobile app for parents to track payments and receive notifications.",
-  },
-  {
-    icon: ChartBarIcon,
-    title: "Financial Reports",
-    description:
-      "Real-time analytics and comprehensive reports for better financial oversight.",
-  },
-  {
-    icon: ClockIcon,
-    title: "Automated Reminders",
-    description:
-      "Never miss a payment with intelligent automated reminders sent to parents.",
+      "Parents pay instantly via mobile money, cards, or bank transfers right from their phones.",
   },
   {
     icon: ShieldCheckIcon,
-    title: "Secure & Compliant",
+    title: "Secure & Fast",
     description:
-      "Bank-level encryption and PCI DSS compliance for maximum security.",
+      "Bank-level security with instant payment confirmation. Funds reach schools safely.",
+  },
+  {
+    icon: ReceiptPercentIcon,
+    title: "Instant Receipts",
+    description:
+      "Parents receive digital receipts immediately after payment. No more paper trails.",
+  },
+  {
+    icon: ClockIcon,
+    title: "Flexible Payment Plans",
+    description:
+      "Let parents pay in installments or full amount. Configure payment schedules easily.",
+  },
+  {
+    icon: ChartBarIcon,
+    title: "Real-Time Tracking",
+    description:
+      "Schools see payments instantly. Track who paid, who's pending, all in one dashboard.",
   },
   {
     icon: UsersIcon,
-    title: "Multi-User Support",
+    title: "Parent Notifications",
     description:
-      "Assign roles and permissions for staff members with audit trail tracking.",
+      "Automated SMS and email reminders. Parents never miss payment deadlines.",
   },
 ];
 
@@ -55,10 +55,10 @@ export function FeaturesSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {t("Everything You Need to Manage School Fees")}
+            {t("Why Parents Love Paying With HarakaPay")}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {t("Powerful features designed to streamline your fee management process and enhance parent communication.")}
+            {t("Simple, secure mobile payments that make school fees stress-free for parents and schools.")}
           </p>
         </div>
 

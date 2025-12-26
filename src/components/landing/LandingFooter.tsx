@@ -56,44 +56,7 @@ export function LandingFooter() {
             </div>
           </div>
 
-          {/* Product */}
-          <div>
-            <h3 className="font-semibold mb-4">{t("Product")}</h3>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li>
-                <Link
-                  href="/#features"
-                  className="hover:text-white transition-colors"
-                >
-                  {t("Features")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#how-it-works"
-                  className="hover:text-white transition-colors"
-                >
-                  {t("How It Works")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#pricing"
-                  className="hover:text-white transition-colors"
-                >
-                  {t("Pricing")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/#faq"
-                  className="hover:text-white transition-colors"
-                >
-                  {t("FAQ")}
-                </Link>
-              </li>
-            </ul>
-          </div>
+         
 
           {/* Company */}
           <div>
@@ -102,11 +65,6 @@ export function LandingFooter() {
               <li>
                 <Link href="/about" className="hover:text-white transition-colors">
                   {t("About Us")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white transition-colors">
-                  {t("Contact")}
                 </Link>
               </li>
               <li>
@@ -123,11 +81,11 @@ export function LandingFooter() {
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <a
-                  href="mailto:info@harakapayment.com"
+                  href="mailto:support@harakapayment.com"
                   className="hover:text-white transition-colors flex items-center gap-2"
                 >
                   <EnvelopeIcon className="w-4 h-4" />
-                  info@harakapayment.com
+                  support@harakapayment.com
                 </a>
               </li>
               <li>

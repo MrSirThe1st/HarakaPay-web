@@ -17,7 +17,7 @@ const faqs = [
   {
     question: "What payment methods are supported?",
     answer:
-      "HarakaPay supports multiple payment methods including bank transfers, mobile money (MTN, Airtel, Orange Money), and credit/debit cards. The specific methods available depend on your region.",
+      "HarakaPay supports multiple payment methods including bank transfers, mobile money (MTN, Airtel), and credit/debit cards. The specific methods available depend on your region.",
   },
   {
     question: "How secure is the payment data?",
@@ -28,21 +28,6 @@ const faqs = [
     question: "Can parents track their payment history?",
     answer:
       "Yes! Parents can access a dedicated mobile app where they can view their complete payment history, upcoming fees, download receipts, and set up automated payment reminders.",
-  },
-  {
-    question: "What types of reports can I generate?",
-    answer:
-      "You can generate comprehensive reports including fee collection summaries, outstanding balances, payment trends, student payment history, and financial analytics to help with decision-making.",
-  },
-  {
-    question: "Is there a mobile app for administrators?",
-    answer:
-      "Yes, HarakaPay offers a mobile app for both administrators and parents. Administrators can approve payments, send notifications, and access real-time reports on the go.",
-  },
-  {
-    question: "How much does HarakaPay cost?",
-    answer:
-      "HarakaPay offers flexible pricing plans based on your school size and requirements. Contact our sales team at admin@harakapay.com for a custom quote tailored to your needs.",
   },
   {
     question: "Can I integrate with my existing school management system?",

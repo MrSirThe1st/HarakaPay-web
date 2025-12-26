@@ -21,6 +21,10 @@ const ContactSection = dynamic(() => import('@/components/landing/ContactSection
   loading: () => <div className="min-h-[400px] animate-pulse bg-gray-50" />
 });
 
+const DemoRequestSection = dynamic(() => import('@/components/landing/DemoRequestSection').then(mod => ({ default: mod.DemoRequestSection })), {
+  loading: () => <div className="min-h-[600px] animate-pulse bg-gray-50" />
+});
+
 const FAQSection = dynamic(() => import('@/components/landing/FAQSection').then(mod => ({ default: mod.FAQSection })), {
   loading: () => <div className="min-h-[400px] animate-pulse bg-gray-50" />
 });
@@ -41,6 +45,7 @@ export default function RootPage() {
         <FeaturesSection />
         <HowItWorksSection />
         <ContactSection />
+        <DemoRequestSection />
         <FAQSection />
       </main>
       <LandingFooter />

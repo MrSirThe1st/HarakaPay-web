@@ -1,4 +1,4 @@
-import { ArrowRightIcon, UserPlusIcon, CreditCardIcon, DocumentTextIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, UserPlusIcon, CreditCardIcon, DevicePhoneMobileIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const steps = [
@@ -7,28 +7,28 @@ const steps = [
     icon: UserPlusIcon,
     title: "Register Your School",
     description:
-      "Sign up and complete your school profile with basic information and fee structure.",
+      "Quick sign-up process. Add your school info and you're ready to start accepting payments.",
   },
   {
     number: "02",
     icon: CreditCardIcon,
     title: "Configure Payment Plans",
     description:
-      "Set up flexible payment schedules, categories, and assign to student groups.",
+      "Set up fee structures and flexible payment schedules. One-time or installments - you choose.",
   },
   {
     number: "03",
-    icon: DocumentTextIcon,
-    title: "Send Notifications",
+    icon: DevicePhoneMobileIcon,
+    title: "Parents Pay",
     description:
-      "Automatically notify parents about fees due via SMS, email, or in-app notifications.",
+      "Parents receive payment links and pay instantly via mobile money, cards, or bank transfer.",
   },
   {
     number: "04",
-    icon: CheckCircleIcon,
-    title: "Track & Analyze",
+    icon: ChartBarIcon,
+    title: "Track Everything",
     description:
-      "Monitor payments in real-time and generate comprehensive financial reports.",
+      "See all payments in real-time. Know exactly who paid, who's pending, all from one dashboard.",
   },
 ];
 
@@ -40,10 +40,10 @@ export function HowItWorksSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {t("How It Works")}
+            {t("Start Accepting Payments in Minutes")}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {t("Get started in minutes with our streamlined setup process")}
+            {t("From setup to first payment in 4 simple steps")}
           </p>
         </div>
 

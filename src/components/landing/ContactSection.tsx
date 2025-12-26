@@ -15,12 +15,6 @@ const contactInfo = [
     detail: "+243990111103",
     description: "Mon - Fri, 9am - 5pm",
   },
-  {
-    icon: MapPinIcon,
-    title: "Visit Us",
-    detail: "Kinshasa, DR Congo",
-    description: "Come say hello at our office",
-  },
 ];
 
 export function ContactSection() {
@@ -38,8 +32,8 @@ export function ContactSection() {
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             {contactInfo.map((contact, index) => {
               const Icon = contact.icon;
               return (
@@ -67,10 +61,10 @@ export function ContactSection() {
           <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
             <div className="max-w-2xl mx-auto text-center">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                  {t("Ready to get started?")}
+                  {t("Ready to Simplify Fee Payments?")}
               </h3>
               <p className="text-gray-600 mb-6">
-                  {t("Join hundreds of schools already using HarakaPay to streamline their fee management.")}
+                  {t("Join schools across Africa using HarakaPay for fast, easy, and secure fee payments.")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
