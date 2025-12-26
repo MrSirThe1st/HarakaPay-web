@@ -39,54 +39,8 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
     const status = searchParams.get('status') || 'all';
 
-    // First, get all student IDs for this school
-    console.log('[API] Fetching students for school_id:', school_id);
-    const { data: schoolStudents, error: studentsError } = await adminClient
-      .from('students')
-      .select('id')
-      .eq('school_id', school_id);
-
-    interface SchoolStudent {
-      id: string;
-    }
-    const typedSchoolStudents = schoolStudents as SchoolStudent[] | null;
-
-    if (studentsError) {
-      console.error('[API] Error fetching students:', studentsError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch students' },
-        { status: 500 }
-      );
-    }
-
-    console.log('[API] Found students:', typedSchoolStudents?.length || 0);
-
-    if (!typedSchoolStudents || typedSchoolStudents.length === 0) {
-      console.log('[API] No students found for school, returning empty payment list');
-      return NextResponse.json({
-        success: true,
-        data: {
-          payments: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            pages: 0,
-            hasMore: false
-          },
-          stats: {
-            totalRevenue: 0,
-            successfulCount: 0,
-            pendingCount: 0,
-            failedCount: 0,
-          }
-        }
-      });
-    }
-
-    const studentIds = typedSchoolStudents.map(s => s.id);
-
-    // Query payments directly filtered by student IDs
+    // Query payments with join filter on school_id instead of IN clause
+    console.log('[API] Fetching payments for school_id:', school_id);
     let query = adminClient
       .from('payments')
       .select(`
@@ -95,14 +49,15 @@ export async function GET(req: NextRequest) {
           id,
           first_name,
           last_name,
-          student_id
+          student_id,
+          school_id
         ),
         parents(
           first_name,
           last_name
         )
       `, { count: 'exact' })
-      .in('student_id', studentIds)
+      .eq('students.school_id', school_id)
       .order('created_at', { ascending: false });
 
     // Apply status filter
@@ -113,11 +68,16 @@ export async function GET(req: NextRequest) {
     // Apply pagination
     query = query.range(offset, offset + limit - 1);
 
-    console.log('[API] Querying payments for student IDs:', studentIds.length, 'students');
+    console.log('[API] Querying payments for school');
     const { data: payments, error: paymentsError, count } = await query;
 
     if (paymentsError) {
-      console.error('[API] Error fetching payments:', paymentsError);
+      console.error('[API] Error fetching payments:', {
+        message: paymentsError.message,
+        details: paymentsError.details,
+        hint: paymentsError.hint,
+        code: paymentsError.code
+      });
       return NextResponse.json(
         { success: false, error: 'Failed to fetch payments' },
         { status: 500 }
@@ -131,9 +91,10 @@ export async function GET(req: NextRequest) {
       .from('payments')
       .select(`
         amount,
-        status
+        status,
+        students!inner(school_id)
       `)
-      .in('student_id', studentIds);
+      .eq('students.school_id', school_id);
 
     if (status !== 'all') {
       statsQuery.eq('status', status);

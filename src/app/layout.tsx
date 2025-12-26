@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { GlobalStructuredData } from "@/components/seo/StructuredDataScripts";
 import { HOME_METADATA } from "@/lib/seo/metadata";
+import { CookieNotice } from "@/components/shared/CookieNotice";
 
 // Optimize font loading with Next.js font optimization
 const inter = Inter({
@@ -53,6 +54,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning={true}>
         {children}
+        <CookieNotice />
       </body>
     </html>
   );

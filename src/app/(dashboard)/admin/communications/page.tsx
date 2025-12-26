@@ -1,11 +1,6 @@
-'use client';
+import SchoolMessages from '@/components/admin/communications/SchoolMessages';
 
-import dynamic from 'next/dynamic';
-
-const SchoolMessages = dynamic(() => import('@/components/admin/communications/SchoolMessages'), {
-  loading: () => <div className="text-center py-8"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>,
-  ssr: false
-});
+export const dynamic = 'force-dynamic';
 
 export default function AdminCommunicationsPage() {
   return (
